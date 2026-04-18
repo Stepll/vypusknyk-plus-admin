@@ -3,7 +3,28 @@
     "allow": [
       "Bash(dotnet build *)",
       "Bash(npx tsc *)",
-      "Bash(dotnet ef *)"
+      "Bash(dotnet ef *)",
+      "Bash(git init *)",
+      "Bash(git remote *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(sed -i '' 's/public Guid Id { get; set; }/public long Id { get; set; }/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/DTOs/Auth/AuthResponse.cs)",
+      "Bash(sed -i '' 's/public Guid? UserId { get; set; }/public long? UserId { get; set; }/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/DTOs/Admin/AdminOrderResponse.cs)",
+      "Bash(sed -i '' 's/public Guid Id { get; set; }/public long Id { get; set; }/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/DTOs/Admin/AdminUserResponse.cs)",
+      "Bash(sed -i '' 's/Task<AuthResponse> UpdateProfileAsync\\(Guid userId/Task<AuthResponse> UpdateProfileAsync\\(long userId/g; s/Task ChangePasswordAsync\\(Guid userId/Task ChangePasswordAsync\\(long userId/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/Services/IAuthService.cs)",
+      "Bash(sed -i '' 's/Task<OrderListResponse> GetUserOrdersAsync\\(Guid userId/Task<OrderListResponse> GetUserOrdersAsync\\(long userId/g *)",
+      "Bash(sed -i '' 's/Task<DesignResponse> SaveAsync\\(Guid userId/Task<DesignResponse> SaveAsync\\(long userId/g *)",
+      "Bash(sed -i '' 's/Task<CartItemResponse> AddAsync\\(Guid userId/Task<CartItemResponse> AddAsync\\(long userId/g *)",
+      "Bash(sed -i '' 's/public async Task<OrderListResponse> GetUserOrdersAsync\\(Guid userId/public async Task<OrderListResponse> GetUserOrdersAsync\\(long userId/g *)",
+      "Bash(sed -i '' 's/public async Task<DesignResponse> SaveAsync\\(Guid userId/public async Task<DesignResponse> SaveAsync\\(long userId/g *)",
+      "Bash(sed -i '' 's/public async Task<CartItemResponse> AddAsync\\(Guid userId/public async Task<CartItemResponse> AddAsync\\(long userId/g *)",
+      "Bash(sed -i '' 's/UserId = o.UserId,/UserId = o.UserId,/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/Services/AdminService.cs)",
+      "Bash(sed -i '' 's/public async Task<OrderResponse> CreateAsync\\(Guid? userId/public async Task<OrderResponse> CreateAsync\\(long? userId/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/Services/OrderService.cs)",
+      "Bash(sed -i '' 's/public async Task<AdminUserResponse?> GetUserAsync\\(Guid id\\)/public async Task<AdminUserResponse?> GetUserAsync\\(long id\\)/g; s/\\\\.Where\\(u => u\\\\.Id == id\\)/.Where\\(u => u.Id == id\\)/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/Services/AdminService.cs)",
+      "Bash(sed -i '' 's/Task<AdminUserResponse?> GetUserAsync\\(Guid id\\)/Task<AdminUserResponse?> GetUserAsync\\(long id\\)/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/Services/IAdminService.cs)",
+      "Bash(sed -i '' 's/public async Task<ActionResult<AdminUserResponse>> GetById\\(Guid id\\)/public async Task<ActionResult<AdminUserResponse>> GetById\\(long id\\)/g; s/\\\\[HttpGet\\(\"{id:guid}\"\\)\\\\]/[HttpGet\\(\"{id:long}\"\\)]/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Api/Controllers/AdminUsersController.cs)",
+      "Bash(sed -i '' 's/Guid? userId = User.Identity?.IsAuthenticated == true ? GetUserId\\(\\) : null;/long? userId = User.Identity?.IsAuthenticated == true ? GetUserId\\(\\) : null;/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Api/Controllers/OrdersController.cs)"
     ]
   }
 }

@@ -19,7 +19,7 @@ export interface AdminOrder {
   status: 'Accepted' | 'Production' | 'Shipped' | 'Delivered'
   total: number
   isAnonymous: boolean
-  userId: string | null
+  userId: number | null
   email: string | null
   comment: string | null
   payment: string
@@ -39,7 +39,7 @@ export interface AdminProduct {
 }
 
 export interface AdminUser {
-  id: string
+  id: number
   email: string
   fullName: string
   phone: string | null
