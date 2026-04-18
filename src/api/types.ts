@@ -6,14 +6,14 @@ export interface PagedResponse<T> {
 }
 
 export interface AdminOrderItem {
-  id: string
+  id: number
   name: string
   quantity: number
   price: number
 }
 
 export interface AdminOrder {
-  id: string
+  id: number
   orderNumber: string
   createdAt: string
   status: 'Accepted' | 'Production' | 'Shipped' | 'Delivered'

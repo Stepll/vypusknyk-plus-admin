@@ -18,13 +18,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <Card style={{ width: 400 }}>
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-semibold text-gray-800">Випускник+</h1>
-          <p className="text-gray-500 text-sm mt-1">Панель адміністратора</p>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)',
+    }}>
+      <Card style={{ width: 400, borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.35)', border: 'none' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 44, lineHeight: 1, marginBottom: 10 }}>🎓</div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#1a1a2e', margin: 0 }}>Випускник+</h1>
+          <p style={{ color: '#8c8c8c', fontSize: 13, marginTop: 6, marginBottom: 0 }}>Панель адміністратора</p>
         </div>
-        {error && <Alert type="error" message={error} className="mb-4" />}
+        {error && <Alert type="error" message={error} style={{ marginBottom: 16 }} />}
         <Form layout="vertical" onFinish={onFinish} autoComplete="off">
           <Form.Item
             label="Email"
@@ -37,16 +44,18 @@ export default function LoginPage() {
             label="Пароль"
             name="password"
             rules={[{ required: true, message: 'Введіть пароль' }]}
+            style={{ marginBottom: 20 }}
           >
             <Input.Password size="large" placeholder="••••••••" />
           </Form.Item>
-          <Form.Item className="mb-0">
+          <Form.Item style={{ marginBottom: 0 }}>
             <Button
               type="primary"
               htmlType="submit"
               size="large"
               block
               loading={authStore.loading}
+              style={{ background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', border: 'none', height: 44 }}
             >
               Увійти
             </Button>

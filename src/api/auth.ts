@@ -1,7 +1,7 @@
 import { apiFetch } from './client'
 
 export interface AdminAuthResponse {
-  id: string
+  id: number
   email: string
   fullName: string
   isSuperAdmin: boolean

@@ -7,10 +7,10 @@ export const getOrders = (page = 1, pageSize = 20, status?: string) => {
   return apiFetch<PagedResponse<AdminOrder>>(`/api/v1/admin/orders?${params}`)
 }
 
-export const getOrder = (id: string) =>
+export const getOrder = (id: number) =>
   apiFetch<AdminOrder>(`/api/v1/admin/orders/${id}`)
 
-export const updateOrderStatus = (id: string, status: string) =>
+export const updateOrderStatus = (id: number, status: string) =>
   apiFetch<void>(`/api/v1/admin/orders/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),

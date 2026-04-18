@@ -31,7 +31,7 @@ class OrdersStore {
     }
   }
 
-  async updateStatus(id: string, status: string) {
+  async updateStatus(id: number, status: string) {
     await api.updateOrderStatus(id, status)
     await this.fetchOrders()
   }

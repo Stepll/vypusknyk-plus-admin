@@ -1,4 +1,4 @@
-import { Layout, Menu, Button } from 'antd'
+import { Layout, Menu, Button, Avatar } from 'antd'
 import { DashboardOutlined, ShoppingCartOutlined, AppstoreOutlined, TeamOutlined, LogoutOutlined } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
@@ -18,12 +18,25 @@ const AdminLayout = observer(() => {
   const { pathname } = useLocation()
 
   const selectedKey = menuItems.find(item => item.key !== '/' && pathname.startsWith(item.key))?.key ?? '/'
+  const initials = authStore.admin?.fullName?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'A'
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider theme="dark" width={220}>
-        <div className="text-white text-center py-4 font-bold text-lg border-b border-gray-700">
-          Випускник+ Адмін
+      <Sider
+        width={230}
+        style={{
+          background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 60%, #1e1b4b 100%)',
+          boxShadow: '2px 0 8px rgba(0,0,0,0.18)',
+        }}
+      >
+        <div style={{
+          padding: '20px 20px 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          marginBottom: 8,
+        }}>
+          <div style={{ fontSize: 26, lineHeight: 1, marginBottom: 6 }}>🎓</div>
+          <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.3 }}>Випускник+</div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginTop: 2 }}>Панель адміна</div>
         </div>
         <Menu
           theme="dark"
@@ -31,21 +44,47 @@ const AdminLayout = observer(() => {
           selectedKeys={[selectedKey]}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
+          style={{ background: 'transparent', border: 'none' }}
         />
       </Sider>
-      <Layout>
-        <Header style={{ background: '#fff', padding: '0 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span className="text-gray-500 text-sm">{authStore.admin?.fullName}</span>
-          <Button
-            icon={<LogoutOutlined />}
-            type="text"
-            onClick={() => { authStore.logout(); navigate('/login') }}
-          >
-            Вийти
-          </Button>
+      <Layout style={{ background: '#f0f2f5' }}>
+        <Header style={{
+          background: '#fff',
+          padding: '0 24px',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: 56,
+        }}>
+          <span style={{ color: '#8c8c8c', fontSize: 13 }}>
+            Вітаємо, <strong style={{ color: '#262626' }}>{authStore.admin?.fullName}</strong>
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Avatar size={32} style={{ background: '#4f46e5', fontSize: 13, fontWeight: 600, cursor: 'default' }}>
+              {initials}
+            </Avatar>
+            <Button
+              icon={<LogoutOutlined />}
+              type="text"
+              size="small"
+              onClick={() => { authStore.logout(); navigate('/login') }}
+              style={{ color: '#8c8c8c' }}
+            >
+              Вийти
+            </Button>
+          </div>
         </Header>
-        <Content style={{ margin: '24px', background: '#fff', padding: '24px', borderRadius: '8px' }}>
-          <Outlet />
+        <Content style={{ margin: '24px' }}>
+          <div style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: '24px 28px',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            minHeight: 'calc(100vh - 56px - 48px)',
+          }}>
+            <Outlet />
+          </div>
         </Content>
       </Layout>
     </Layout>

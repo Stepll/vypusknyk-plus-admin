@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { Table, Button, Popconfirm, Image, Tag } from 'antd'
-import { DeleteOutlined } from '@ant-design/icons'
+import { DeleteOutlined, AppstoreOutlined } from '@ant-design/icons'
 import { productsStore } from '../../stores/ProductsStore'
 import type { AdminProduct } from '../../api/types'
 
@@ -13,20 +13,25 @@ const columns = [
     key: 'imageUrl',
     width: 80,
     render: (url: string | null) =>
-      url ? <Image src={url} width={48} height={48} style={{ objectFit: 'cover' }} /> : <span className="text-gray-400">—</span>,
+      url
+        ? <Image src={url} width={48} height={48} style={{ objectFit: 'cover', borderRadius: 8 }} />
+        : <span style={{ color: '#bfbfbf' }}>—</span>,
   },
   { title: 'Назва', dataIndex: 'name', key: 'name' },
   { title: 'Категорія', dataIndex: 'category', key: 'category' },
-  { title: 'Ціна', dataIndex: 'price', key: 'price', render: (v: number) => `${v} грн` },
+  { title: 'Ціна', dataIndex: 'price', key: 'price', render: (v: number) => <strong>{v} грн</strong> },
   {
     title: 'Статус',
     dataIndex: 'isDeleted',
     key: 'isDeleted',
-    render: (v: boolean) => v ? <Tag color="red">Видалено</Tag> : <Tag color="green">Активний</Tag>,
+    render: (v: boolean) => v
+      ? <Tag color="red">Видалено</Tag>
+      : <Tag color="green">Активний</Tag>,
   },
   {
     title: 'Дії',
     key: 'actions',
+    width: 80,
     render: (_: unknown, r: AdminProduct) => (
       <Popconfirm
         title="Видалити продукт?"
@@ -45,7 +50,19 @@ const ProductsPage = observer(() => {
 
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-4">Продукти</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: 10,
+          background: 'linear-gradient(135deg, #059669 0%, #0891b2 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 18,
+        }}>
+          <AppstoreOutlined />
+        </div>
+        <div>
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>Продукти</h2>
+          <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>Каталог товарів платформи</p>
+        </div>
+      </div>
       <Table
         rowKey="id"
         dataSource={productsStore.products}
