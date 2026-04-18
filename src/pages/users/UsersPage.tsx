@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { Table } from 'antd'
 import { usersStore } from '../../stores/UsersStore'
-import type { AdminUser } from '../../api/types'
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
