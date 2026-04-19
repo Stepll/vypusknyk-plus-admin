@@ -9,6 +9,15 @@ import ProductsPage from './pages/products/ProductsPage'
 import ProductEditPage from './pages/products/ProductEditPage'
 import UsersPage from './pages/users/UsersPage'
 import UserDetailPage from './pages/users/UserDetailPage'
+import SavedDesignsPage from './pages/designs/SavedDesignsPage'
+import AdminsPage from './pages/admins/AdminsPage'
+import WarehousePage from './pages/warehouse/WarehousePage'
+import HistoryPage from './pages/history/HistoryPage'
+import CategoriesPage from './pages/settings/CategoriesPage'
+import DeliveryMethodsPage from './pages/settings/DeliveryMethodsPage'
+import PaymentMethodsPage from './pages/settings/PaymentMethodsPage'
+import OrderStatusesPage from './pages/settings/OrderStatusesPage'
+import ColorsPage from './pages/settings/constructor/ColorsPage'
 
 export default function App() {
   return (
@@ -24,6 +33,15 @@ export default function App() {
             <Route path="products/:id" element={<ProductEditPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="users/:id" element={<UserDetailPage />} />
+            <Route path="designs" element={<SavedDesignsPage />} />
+            <Route path="admins" element={<AdminsPage />} />
+            <Route path="warehouse" element={<WarehousePage />} />
+            <Route path="history" element={<HistoryPage />} />
+            <Route path="settings/categories" element={<CategoriesPage />} />
+            <Route path="settings/delivery" element={<DeliveryMethodsPage />} />
+            <Route path="settings/payment" element={<PaymentMethodsPage />} />
+            <Route path="settings/order-statuses" element={<OrderStatusesPage />} />
+            <Route path="settings/constructor/colors" element={<ColorsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

@@ -29,7 +29,11 @@
       "Bash(npm run *)",
       "Bash(git stash *)",
       "Bash(docker buildx *)",
-      "Bash(xargs cat *)"
+      "Bash(xargs cat *)",
+      "Bash(grep -i \"\\\\.cs$\")",
+      "Bash(xargs ls *)",
+      "Bash(ssh vmi3229320 *)",
+      "Read(//Users/stepankobrii/.ssh/**)"
     ]
   }
 }

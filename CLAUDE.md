@@ -19,7 +19,7 @@ src/
 │   ├── client.ts          # apiFetch утиліта (base URL, Content-Type)
 │   ├── types.ts           # Shared TypeScript типи (AdminOrder, AdminProduct, AdminUser, PagedResponse)
 │   ├── orders.ts          # GET /admin/orders, GET /admin/orders/:id, PATCH status
-│   ├── products.ts        # GET /admin/products, DELETE, uploadImage
+│   ├── products.ts        # GET /admin/products, DELETE, uploadImage, deleteImage, setPreview
 │   └── users.ts           # GET /admin/users, GET /admin/users/:id
 ├── stores/
 │   ├── OrdersStore.ts     # MobX store — orders list, pagination, status filter
@@ -30,30 +30,42 @@ src/
 │       └── AdminLayout.tsx  # Ant Design Sider + Header + Content (Outlet)
 └── pages/
     ├── dashboard/DashboardPage.tsx   # Статистика (TODO: підключити реальні дані)
-    ├── orders/OrdersPage.tsx         # Таблиця замовлень + фільтр статусу + inline зміна статусу
+    ├── orders/OrdersPage.tsx         # Таблиця замовлень + фільтр статусу + inline зміна статусу + клік → деталі
+    ├── orders/OrderDetailPage.tsx    # Деталі замовлення: позиції (колапс персоналізації), покупець, доставка, оплата
     ├── products/ProductsPage.tsx     # Таблиця продуктів + soft delete
+    ├── products/ProductEditPage.tsx  # Редагування/створення продукту: хедер з кнопками, ліва колонка налаштувань, права карточка фото
     └── users/UsersPage.tsx           # Таблиця користувачів
 ```
 
 ## API ендпоінти (бекенд)
 
-Всі admin ендпоінти — в існуючому `VypusknykPlus.Api`, без авторизації (поки що).
+Всі admin ендпоінти — в існуючому `VypusknykPlus.Api`.
 
-| Метод  | Шлях                              | Опис                        |
-|--------|-----------------------------------|-----------------------------|
-| GET    | /api/v1/admin/orders              | Всі замовлення (paginated)  |
-| GET    | /api/v1/admin/orders/{id}         | Деталі замовлення            |
-| PATCH  | /api/v1/admin/orders/{id}/status  | Оновити статус               |
-| GET    | /api/v1/admin/products            | Всі продукти (з IsDeleted)  |
-| DELETE | /api/v1/admin/products/{id}       | Soft delete продукту         |
-| GET    | /api/v1/admin/users               | Всі користувачі (paginated) |
-| GET    | /api/v1/admin/users/{id}          | Деталі користувача           |
+| Метод  | Шлях                                          | Опис                                     |
+|--------|-----------------------------------------------|------------------------------------------|
+| GET    | /api/v1/admin/orders                          | Всі замовлення (paginated)               |
+| GET    | /api/v1/admin/orders/{id}                     | Деталі замовлення                         |
+| PATCH  | /api/v1/admin/orders/{id}/status              | Оновити статус                            |
+| GET    | /api/v1/admin/products                        | Всі продукти (з IsDeleted)               |
+| GET    | /api/v1/admin/products/{id}                   | Деталі продукту (включно з images[])     |
+| PUT    | /api/v1/admin/products/{id}                   | Зберегти продукт                          |
+| POST   | /api/v1/admin/products                        | Створити продукт                          |
+| DELETE | /api/v1/admin/products/{id}                   | Soft delete продукту                      |
+| POST   | /api/v1/admin/products/{id}/images            | Завантажити фото (multipart, ліміт 10MB) |
+| DELETE | /api/v1/admin/products/{id}/images/{imageId}  | Видалити фото                             |
+| PATCH  | /api/v1/admin/products/{id}/images/{imageId}/preview | Зробити фото превʼю              |
+| GET    | /api/v1/admin/users                           | Всі користувачі (paginated)              |
+| GET    | /api/v1/admin/users/{id}                      | Деталі користувача                        |
 
 ## Типи даних
 
 **OrderStatus** (enum з бекенду): `Accepted | Production | Shipped | Delivered`
 
 **User** — має поле `fullName: string` (одне поле, не `firstName + lastName`)
+
+**AdminOrderItem** — містить `namesData: NamesData | null` і `ribbonCustomization: RibbonCustomization | null` — зберігаються як JSONB в БД через EF Core `OwnsOne().ToJson()`.
+
+**AdminProductDetail** — містить `images: ProductImageItem[]` (id, imageUrl, isPreview). Превʼю також дублюється в `Product.ImageKey` для зворотньої сумісності.
 
 ## Правила ID
 
@@ -107,11 +119,28 @@ docker start prod-api-1
 
 **Локальна БД** — `appsettings.Development.json`, `Host=localhost;Port=5432;Database=vypusknyk_plus;Username=postgres;Password=postgres`
 
+## Nginx (сервер)
+
+Конфіг: `/etc/nginx/sites-enabled/vypusknyk` (або `/etc/nginx/sites-available/vypusknyk`)
+
+Важливі налаштування що були додані:
+- `client_max_body_size 15m;` — для завантаження фото (без цього nginx повертає 413)
+- `location /storage/ { proxy_pass http://localhost:9000/; }` — проксі до MinIO (порт 9000 не відкритий зовні)
+
+**MinIO** — публічний endpoint: `https://75.119.152.4.sslip.io/storage` (через nginx proxy). Змінна `MINIO_PUBLIC_ENDPOINT` в docker-compose.
+
+## Бекенд — важливі патерни
+
+- **EF Core JSONB**: `OwnsOne(e => e.Field, b => { b.ToJson(); ... })` для зберігання value objects як JSON колонок
+- **Global query filters**: `HasQueryFilter(e => !e.IsDeleted)` — при перевірці унікальності email (реєстрація) треба `IgnoreQueryFilters()` щоб не пропустити soft-deleted записи
+- **Middleware order**: `UseSerilogRequestLogging()` має бути ДО `UseMiddleware<ExceptionHandlingMiddleware>()` — інакше Serilog логує до того як exception middleware встановлює правильний статус код
+
 ## TODO
 
 - [ ] Підключити реальні дані до Дашборду (кількість замовлень, продуктів, юзерів)
-- [ ] Сторінка деталей замовлення
-- [ ] Форма редагування/створення продукту
-- [ ] Завантаження зображень продуктів
-- [ ] Аутентифікація адміна (роль Admin + JWT) ✅ зроблено
+- [x] Сторінка деталей замовлення
+- [x] Форма редагування/створення продукту
+- [x] Завантаження зображень продуктів (мульти-фото, превʼю, видалення)
+- [x] Аутентифікація адміна (роль Admin + JWT)
 - [ ] CORS: додати admin URL до `Cors:AllowedOrigins` в бекенді при деплої
+- [ ] Деплой бекенду з міграціями `AddProductImages` + `AddOrderItemPersonalization`

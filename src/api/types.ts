@@ -125,6 +125,22 @@ export interface AdminUserSavedDesign {
   savedAt: string
 }
 
+export interface AdminSavedDesignItem {
+  id: number
+  designName: string
+  savedAt: string
+  userId: number
+  userFullName: string
+  userEmail: string
+}
+
+export interface AdminAdminItem {
+  id: number
+  email: string
+  fullName: string
+  createdAt: string
+}
+
 export interface AdminUserDetail {
   id: number
   email: string

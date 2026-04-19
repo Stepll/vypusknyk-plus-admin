@@ -1,23 +1,69 @@
+import { useState } from 'react'
 import { Layout, Menu, Button, Avatar } from 'antd'
-import { DashboardOutlined, ShoppingCartOutlined, AppstoreOutlined, TeamOutlined, LogoutOutlined } from '@ant-design/icons'
+import {
+  DashboardOutlined, ShoppingCartOutlined, AppstoreOutlined, TeamOutlined,
+  LogoutOutlined, HeartOutlined, CrownOutlined, InboxOutlined, HistoryOutlined,
+  SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined,
+  CreditCardOutlined, CheckCircleOutlined, ToolOutlined,
+} from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { authStore } from '../../stores/AuthStore'
 
 const { Header, Sider, Content } = Layout
 
+const ROUTE_KEYS = [
+  '/settings/constructor/colors',
+  '/settings/categories',
+  '/settings/delivery',
+  '/settings/payment',
+  '/settings/order-statuses',
+  '/designs', '/admins', '/warehouse', '/history',
+  '/orders', '/products', '/users',
+]
+
 const menuItems = [
   { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
   { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Замовлення' },
   { key: '/products', icon: <AppstoreOutlined />, label: 'Продукти' },
   { key: '/users', icon: <TeamOutlined />, label: 'Користувачі' },
+  { key: '/designs', icon: <HeartOutlined />, label: 'Збережені дизайни' },
+  { key: '/admins', icon: <CrownOutlined />, label: 'Адміни' },
+  { key: '/warehouse', icon: <InboxOutlined />, label: 'Складський облік' },
+  { key: '/history', icon: <HistoryOutlined />, label: 'Історія змін' },
+  {
+    key: 'settings',
+    icon: <SettingOutlined />,
+    label: 'Налаштування',
+    children: [
+      { key: '/settings/categories', icon: <TagsOutlined />, label: 'Категорії товарів' },
+      { key: '/settings/delivery', icon: <CarOutlined />, label: 'Методи доставки' },
+      { key: '/settings/payment', icon: <CreditCardOutlined />, label: 'Методи оплати' },
+      { key: '/settings/order-statuses', icon: <CheckCircleOutlined />, label: 'Статуси замовлень' },
+      {
+        key: 'constructor',
+        icon: <ToolOutlined />,
+        label: 'Конструктор',
+        children: [
+          { key: '/settings/constructor/colors', icon: <BgColorsOutlined />, label: 'Кольори' },
+        ],
+      },
+    ],
+  },
 ]
 
 const AdminLayout = observer(() => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
-  const selectedKey = menuItems.find(item => item.key !== '/' && pathname.startsWith(item.key))?.key ?? '/'
+  const selectedKey = pathname === '/' ? '/' : ROUTE_KEYS.find(k => pathname.startsWith(k)) ?? '/'
+
+  const [openKeys, setOpenKeys] = useState<string[]>(() => {
+    if (pathname.startsWith('/settings/constructor')) return ['settings', 'constructor']
+    if (pathname.startsWith('/settings')) return ['settings']
+    return []
+  })
+
   const initials = authStore.admin?.fullName?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'A'
 
   return (
@@ -27,6 +73,7 @@ const AdminLayout = observer(() => {
         style={{
           background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 60%, #1e1b4b 100%)',
           boxShadow: '2px 0 8px rgba(0,0,0,0.18)',
+          overflowY: 'auto',
         }}
       >
         <div style={{
@@ -42,8 +89,10 @@ const AdminLayout = observer(() => {
           theme="dark"
           mode="inline"
           selectedKeys={[selectedKey]}
+          openKeys={openKeys}
+          onOpenChange={keys => setOpenKeys(keys as string[])}
           items={menuItems}
-          onClick={({ key }) => navigate(key)}
+          onClick={({ key }) => { if (!key.startsWith('settings') && key !== 'constructor') navigate(key) }}
           style={{ background: 'transparent', border: 'none' }}
         />
       </Sider>
