@@ -109,3 +109,28 @@ export interface AdminUser {
   createdAt: string
   ordersCount: number
 }
+
+export interface AdminUserOrderSummary {
+  id: number
+  orderNumber: string
+  status: string
+  total: number
+  itemsCount: number
+  createdAt: string
+}
+
+export interface AdminUserSavedDesign {
+  id: number
+  designName: string
+  savedAt: string
+}
+
+export interface AdminUserDetail {
+  id: number
+  email: string
+  fullName: string
+  phone: string | null
+  createdAt: string
+  orders: AdminUserOrderSummary[]
+  savedDesigns: AdminUserSavedDesign[]
+}

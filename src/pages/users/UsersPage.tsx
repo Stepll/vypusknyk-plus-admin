@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { Table } from 'antd'
 import { TeamOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { usersStore } from '../../stores/UsersStore'
 
 const columns = [
@@ -19,6 +20,7 @@ const columns = [
 ]
 
 const UsersPage = observer(() => {
+  const navigate = useNavigate()
   useEffect(() => { usersStore.fetchUsers() }, [])
 
   return (
@@ -47,6 +49,7 @@ const UsersPage = observer(() => {
           total: usersStore.total,
           onChange: p => usersStore.setPage(p),
         }}
+        onRow={record => ({ onClick: () => navigate(`/users/${record.id}`), style: { cursor: 'pointer' } })}
       />
     </div>
   )

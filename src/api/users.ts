@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { AdminUser, PagedResponse } from './types'
+import type { AdminUser, AdminUserDetail, PagedResponse } from './types'
 
 export const getUsers = (page = 1, pageSize = 20) => {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) })
@@ -7,4 +7,4 @@ export const getUsers = (page = 1, pageSize = 20) => {
 }
 
 export const getUser = (id: number) =>
-  apiFetch<AdminUser>(`/api/v1/admin/users/${id}`)
+  apiFetch<AdminUserDetail>(`/api/v1/admin/users/${id}`)
