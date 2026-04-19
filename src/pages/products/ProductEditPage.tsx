@@ -153,7 +153,7 @@ export default function ProductEditPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
         <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate('/products')} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
           <div style={{
             width: 40, height: 40, borderRadius: 10,
             background: 'linear-gradient(135deg, #059669 0%, #0891b2 100%)',
@@ -170,12 +170,34 @@ export default function ProductEditPage() {
             </p>
           </div>
         </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {!isNew && (
+            <Popconfirm
+              title="Видалити продукт?"
+              description="Продукт буде позначено як видалений."
+              onConfirm={handleDelete}
+              okText="Так"
+              cancelText="Ні"
+            >
+              <Button danger icon={<DeleteOutlined />}>Видалити</Button>
+            </Popconfirm>
+          )}
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            loading={saving}
+            onClick={handleSave}
+            style={{ background: 'linear-gradient(135deg, #059669, #0891b2)', border: 'none' }}
+          >
+            {isNew ? 'Створити продукт' : 'Зберегти зміни'}
+          </Button>
+        </div>
       </div>
 
       <Form form={form} layout="vertical" initialValues={{ minOrder: 1, popular: false, isNew: false, isDeleted: false }}>
         <Row gutter={24} align="top">
 
-          {/* Left column — main form */}
+          {/* Left column — main form + settings */}
           <Col xs={24} lg={16}>
             <Card style={{ borderRadius: 12, marginBottom: 16 }}>
               <Form.Item label="Назва" name="name" rules={[{ required: true, message: 'Введіть назву' }]}>
@@ -236,14 +258,41 @@ export default function ProductEditPage() {
                 />
               </Form.Item>
             </Card>
+
+            {/* Settings */}
+            <Card
+              style={{ borderRadius: 12 }}
+              title={<span style={{ fontSize: 14, fontWeight: 600 }}>Налаштування</span>}
+            >
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 14 }}>Популярне</span>
+                  <Form.Item name="popular" valuePropName="checked" style={{ margin: 0 }}>
+                    <Switch />
+                  </Form.Item>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 14 }}>Новинка</span>
+                  <Form.Item name="isNew" valuePropName="checked" style={{ margin: 0 }}>
+                    <Switch />
+                  </Form.Item>
+                </div>
+                <Form.Item label="Статус" name="isDeleted" style={{ marginBottom: 0 }}>
+                  <Select
+                    options={[
+                      { value: false, label: 'Активний' },
+                      { value: true, label: 'Видалено' },
+                    ]}
+                  />
+                </Form.Item>
+              </div>
+            </Card>
           </Col>
 
-          {/* Right column — image + settings + actions */}
+          {/* Right column — image */}
           <Col xs={24} lg={8}>
-
-            {/* Image */}
             <Card
-              style={{ borderRadius: 12, marginBottom: 16 }}
+              style={{ borderRadius: 12 }}
               title={<span style={{ fontSize: 14, fontWeight: 600 }}>Зображення</span>}
             >
               <div style={{
@@ -271,62 +320,6 @@ export default function ProductEditPage() {
                 </p>
               )}
             </Card>
-
-            {/* Settings */}
-            <Card
-              style={{ borderRadius: 12, marginBottom: 16 }}
-              title={<span style={{ fontSize: 14, fontWeight: 600 }}>Налаштування</span>}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 14 }}>Популярне</span>
-                  <Form.Item name="popular" valuePropName="checked" style={{ margin: 0 }}>
-                    <Switch />
-                  </Form.Item>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 14 }}>Новинка</span>
-                  <Form.Item name="isNew" valuePropName="checked" style={{ margin: 0 }}>
-                    <Switch />
-                  </Form.Item>
-                </div>
-                <Form.Item label="Статус" name="isDeleted" style={{ marginBottom: 0 }}>
-                  <Select
-                    options={[
-                      { value: false, label: 'Активний' },
-                      { value: true, label: 'Видалено' },
-                    ]}
-                  />
-                </Form.Item>
-              </div>
-            </Card>
-
-            {/* Actions */}
-            <Button
-              type="primary"
-              icon={<SaveOutlined />}
-              block
-              size="large"
-              loading={saving}
-              onClick={handleSave}
-              style={{ marginBottom: 8, background: 'linear-gradient(135deg, #059669, #0891b2)', border: 'none' }}
-            >
-              {isNew ? 'Створити продукт' : 'Зберегти зміни'}
-            </Button>
-
-            {!isNew && (
-              <Popconfirm
-                title="Видалити продукт?"
-                description="Продукт буде позначено як видалений."
-                onConfirm={handleDelete}
-                okText="Так"
-                cancelText="Ні"
-              >
-                <Button danger icon={<DeleteOutlined />} block>
-                  Видалити
-                </Button>
-              </Popconfirm>
-            )}
           </Col>
         </Row>
       </Form>
