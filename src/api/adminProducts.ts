@@ -23,7 +23,7 @@ export const uploadProductImage = async (id: number, file: File): Promise<AdminP
   const formData = new FormData()
   formData.append('image', file)
 
-  const res = await fetch(`${API_URL}/api/v1/products/${id}/image`, {
+  const res = await fetch(`${API_URL}/api/v1/admin/products/${id}/images`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
@@ -32,3 +32,9 @@ export const uploadProductImage = async (id: number, file: File): Promise<AdminP
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
   return res.json()
 }
+
+export const deleteProductImage = (productId: number, imageId: number) =>
+  apiFetch<AdminProductDetail>(`/api/v1/admin/products/${productId}/images/${imageId}`, { method: 'DELETE' })
+
+export const setPreviewImage = (productId: number, imageId: number) =>
+  apiFetch<AdminProductDetail>(`/api/v1/admin/products/${productId}/images/${imageId}/preview`, { method: 'PATCH' })

@@ -6,13 +6,14 @@ import {
 } from 'antd'
 import {
   AppstoreOutlined, ArrowLeftOutlined, SaveOutlined,
-  DeleteOutlined, PlusOutlined, UploadOutlined,
+  DeleteOutlined, PlusOutlined,
 } from '@ant-design/icons'
 import {
-  getAdminProduct, createAdminProduct, updateAdminProduct, uploadProductImage,
+  getAdminProduct, createAdminProduct, updateAdminProduct,
+  uploadProductImage, deleteProductImage, setPreviewImage,
 } from '../../api/adminProducts'
 import { productsStore } from '../../stores/ProductsStore'
-import type { SaveProductRequest } from '../../api/types'
+import type { ProductImageItem, SaveProductRequest } from '../../api/types'
 
 const CATEGORY_OPTIONS = [
   { value: 'Ribbon', label: 'Стрічки' },
@@ -40,7 +41,7 @@ export default function ProductEditPage() {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [images, setImages] = useState<ProductImageItem[]>([])
   const [imageUploading, setImageUploading] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
@@ -63,7 +64,7 @@ export default function ProductEditPage() {
           isDeleted: p.isDeleted,
         })
         setTags(p.tags)
-        setImageUrl(p.imageUrl)
+        setImages(p.images ?? [])
         setSavedId(p.id)
       })
       .catch(() => { message.error('Не вдалося завантажити продукт'); navigate('/products') })
@@ -113,12 +114,33 @@ export default function ProductEditPage() {
     setImageUploading(true)
     try {
       const result = await uploadProductImage(productId, options.file as File)
-      setImageUrl(result.imageUrl)
+      setImages(result.images ?? [])
       message.success('Зображення завантажено')
     } catch {
       message.error('Помилка завантаження зображення')
     } finally {
       setImageUploading(false)
+    }
+  }
+
+  const handleDeleteImage = async (imageId: number) => {
+    const productId = savedId ?? Number(id)
+    try {
+      const result = await deleteProductImage(productId, imageId)
+      setImages(result.images ?? [])
+      message.success('Зображення видалено')
+    } catch {
+      message.error('Помилка видалення зображення')
+    }
+  }
+
+  const handleSetPreview = async (imageId: number) => {
+    const productId = savedId ?? Number(id)
+    try {
+      const result = await setPreviewImage(productId, imageId)
+      setImages(result.images ?? [])
+    } catch {
+      message.error('Помилка зміни превʼю')
     }
   }
 
@@ -289,37 +311,92 @@ export default function ProductEditPage() {
             </Card>
           </Col>
 
-          {/* Right column — image */}
+          {/* Right column — images */}
           <Col xs={24} lg={8}>
-            <Card
-              style={{ borderRadius: 12 }}
-              title={<span style={{ fontSize: 14, fontWeight: 600 }}>Зображення</span>}
-            >
-              <div style={{
-                width: '100%', aspectRatio: '1', borderRadius: 10, overflow: 'hidden',
-                background: 'linear-gradient(135deg, #059669, #0891b2)',
-                marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                {imageUrl
-                  ? <Image src={imageUrl} width="100%" height="100%" style={{ objectFit: 'cover' }} preview={false} />
-                  : <AppstoreOutlined style={{ fontSize: 48, color: 'rgba(255,255,255,0.4)' }} />
-                }
-              </div>
-              <Upload
-                customRequest={handleUpload}
-                showUploadList={false}
-                accept="image/jpeg,image/png,image/webp"
-              >
-                <Button icon={<UploadOutlined />} block loading={imageUploading}>
-                  {imageUrl ? 'Змінити фото' : 'Завантажити фото'}
-                </Button>
-              </Upload>
-              {isNew && !savedId && (
-                <p style={{ color: '#8c8c8c', fontSize: 12, marginTop: 8, marginBottom: 0 }}>
-                  Спочатку збережіть продукт, потім завантажте фото
-                </p>
-              )}
-            </Card>
+            {(() => {
+              const previewImage = images.find(i => i.isPreview) ?? null
+              const canUpload = !isNew || !!savedId
+              return (
+                <Card
+                  style={{ borderRadius: 12 }}
+                  title={<span style={{ fontSize: 14, fontWeight: 600 }}>Зображення</span>}
+                  extra={
+                    <Upload
+                      customRequest={handleUpload}
+                      showUploadList={false}
+                      accept="image/jpeg,image/png,image/webp"
+                      disabled={!canUpload}
+                    >
+                      <Button
+                        icon={<PlusOutlined />}
+                        size="small"
+                        loading={imageUploading}
+                        disabled={!canUpload}
+                      >
+                        Додати фото
+                      </Button>
+                    </Upload>
+                  }
+                >
+                  {/* Preview */}
+                  <div style={{
+                    width: '100%', aspectRatio: '1', borderRadius: 10, overflow: 'hidden',
+                    background: 'linear-gradient(135deg, #059669, #0891b2)',
+                    marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {previewImage
+                      ? <Image src={previewImage.imageUrl} width="100%" height="100%" style={{ objectFit: 'cover' }} preview={false} />
+                      : <AppstoreOutlined style={{ fontSize: 48, color: 'rgba(255,255,255,0.4)' }} />
+                    }
+                  </div>
+
+                  {/* Image list */}
+                  {images.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {images.map(img => (
+                        <div key={img.id} style={{
+                          display: 'flex', alignItems: 'center', gap: 8,
+                          padding: '6px 8px', borderRadius: 8,
+                          border: img.isPreview ? '1.5px solid #059669' : '1px solid #f0f0f0',
+                          background: img.isPreview ? '#f0fdf4' : '#fafafa',
+                        }}>
+                          <img
+                            src={img.imageUrl}
+                            style={{ width: 44, height: 44, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {img.isPreview && (
+                              <Tag color="green" style={{ fontSize: 11, lineHeight: '18px' }}>Превʼю</Tag>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                            {!img.isPreview && (
+                              <Button size="small" onClick={() => handleSetPreview(img.id)}>
+                                Превʼю
+                              </Button>
+                            )}
+                            <Popconfirm
+                              title="Видалити фото?"
+                              onConfirm={() => handleDeleteImage(img.id)}
+                              okText="Так"
+                              cancelText="Ні"
+                            >
+                              <Button size="small" danger icon={<DeleteOutlined />} />
+                            </Popconfirm>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!canUpload && (
+                    <p style={{ color: '#8c8c8c', fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+                      Спочатку збережіть продукт, потім завантажте фото
+                    </p>
+                  )}
+                </Card>
+              )
+            })()}
           </Col>
         </Row>
       </Form>

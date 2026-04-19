@@ -38,6 +38,12 @@ export interface AdminProduct {
   isDeleted: boolean
 }
 
+export interface ProductImageItem {
+  id: number
+  imageUrl: string
+  isPreview: boolean
+}
+
 export interface AdminProductDetail {
   id: number
   name: string
@@ -53,6 +59,7 @@ export interface AdminProductDetail {
   isDeleted: boolean
   createdAt: string
   updatedAt: string
+  images: ProductImageItem[]
 }
 
 export interface SaveProductRequest {
