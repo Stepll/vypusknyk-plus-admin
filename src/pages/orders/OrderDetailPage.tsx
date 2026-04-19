@@ -164,7 +164,7 @@ export default function OrderDetailPage() {
       .finally(() => setLoading(false))
   }, [id, navigate])
 
-  const handleStatusChange = async (status: string) => {
+  const handleStatusChange = async (status: AdminOrder['status']) => {
     if (!order) return
     setStatusUpdating(true)
     try {
