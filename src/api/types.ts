@@ -5,11 +5,37 @@ export interface PagedResponse<T> {
   pageSize: number
 }
 
+export interface ClassGroup {
+  className: string
+  names: string
+}
+
+export interface NamesData {
+  school: string
+  groups: ClassGroup[]
+}
+
+export interface RibbonCustomization {
+  mainText: string
+  school: string
+  comment: string
+  printType: string
+  color: string
+  material: string
+  textColor: string
+  extraTextColor: string
+  font: string
+  emblemKey: number
+  designName: string
+}
+
 export interface AdminOrderItem {
   id: number
   name: string
   quantity: number
   price: number
+  namesData: NamesData | null
+  ribbonCustomization: RibbonCustomization | null
 }
 
 export interface AdminOrder {

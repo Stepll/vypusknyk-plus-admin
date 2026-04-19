@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { Table, Tag, Select } from 'antd'
 import { ShoppingCartOutlined } from '@ant-design/icons'
+import { useNavigate } from 'react-router-dom'
 import { ordersStore } from '../../stores/OrdersStore'
 import type { AdminOrder } from '../../api/types'
 
@@ -71,6 +72,7 @@ const columns = [
 ]
 
 const OrdersPage = observer(() => {
+  const navigate = useNavigate()
   useEffect(() => { ordersStore.fetchOrders() }, [])
 
   return (
@@ -108,6 +110,7 @@ const OrdersPage = observer(() => {
           total: ordersStore.total,
           onChange: p => ordersStore.setPage(p),
         }}
+        onRow={record => ({ onClick: () => navigate(`/orders/${record.id}`), style: { cursor: 'pointer' } })}
       />
     </div>
   )

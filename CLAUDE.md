@@ -55,6 +55,15 @@ src/
 
 **User** — має поле `fullName: string` (одне поле, не `firstName + lastName`)
 
+## Правила ID
+
+**Всі ID завжди `bigint`** — це обов'язкове правило проекту:
+- DB: `BIGINT`
+- Backend C#: `long`
+- Frontend TypeScript: `number`
+
+`SavedDesign.id` у `AuthStore.ts` має тип `number | string` — `string` використовується тільки для тимчасових optimistic update ID (до синхронізації з сервером).
+
 ## Команди
 
 ```bash
@@ -72,11 +81,37 @@ npm run lint     # ESLint
 
 Окремий проект на Vercel. `VITE_API_URL` встановити в Vercel env vars.
 
+## Деплой бекенду (Docker)
+
+Бекенд на сервері `vmi3229320` в Docker. Флоу деплою:
+
+```bash
+# 1. Локально — зібрати і запушити image (обов'язково --platform linux/amd64, сервер amd64)
+cd /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend
+docker buildx build --platform linux/amd64 -t stepll/vypusknyk-plus:latest --push .
+
+# 2. На сервері
+cd ~/vypusknyk-plus/prod
+docker compose pull && docker compose up -d
+```
+
+**Автоміграції** — `MigrateAsync()` в `Program.cs` запускається при старті, міграції застосовуються автоматично.
+
+**Якщо треба скинути БД на сервері:**
+```bash
+docker stop prod-api-1
+docker exec prod-db-1 psql -U postgres -c "DROP DATABASE vypusknyk_plus;"
+docker exec prod-db-1 psql -U postgres -c "CREATE DATABASE vypusknyk_plus;"
+docker start prod-api-1
+```
+
+**Локальна БД** — `appsettings.Development.json`, `Host=localhost;Port=5432;Database=vypusknyk_plus;Username=postgres;Password=postgres`
+
 ## TODO
 
 - [ ] Підключити реальні дані до Дашборду (кількість замовлень, продуктів, юзерів)
 - [ ] Сторінка деталей замовлення
 - [ ] Форма редагування/створення продукту
 - [ ] Завантаження зображень продуктів
-- [ ] Аутентифікація адміна (роль Admin + JWT)
+- [ ] Аутентифікація адміна (роль Admin + JWT) ✅ зроблено
 - [ ] CORS: додати admin URL до `Cors:AllowedOrigins` в бекенді при деплої

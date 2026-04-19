@@ -24,7 +24,12 @@
       "Bash(sed -i '' 's/public async Task<AdminUserResponse?> GetUserAsync\\(Guid id\\)/public async Task<AdminUserResponse?> GetUserAsync\\(long id\\)/g; s/\\\\.Where\\(u => u\\\\.Id == id\\)/.Where\\(u => u.Id == id\\)/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/Services/AdminService.cs)",
       "Bash(sed -i '' 's/Task<AdminUserResponse?> GetUserAsync\\(Guid id\\)/Task<AdminUserResponse?> GetUserAsync\\(long id\\)/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Application/Services/IAdminService.cs)",
       "Bash(sed -i '' 's/public async Task<ActionResult<AdminUserResponse>> GetById\\(Guid id\\)/public async Task<ActionResult<AdminUserResponse>> GetById\\(long id\\)/g; s/\\\\[HttpGet\\(\"{id:guid}\"\\)\\\\]/[HttpGet\\(\"{id:long}\"\\)]/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Api/Controllers/AdminUsersController.cs)",
-      "Bash(sed -i '' 's/Guid? userId = User.Identity?.IsAuthenticated == true ? GetUserId\\(\\) : null;/long? userId = User.Identity?.IsAuthenticated == true ? GetUserId\\(\\) : null;/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Api/Controllers/OrdersController.cs)"
+      "Bash(sed -i '' 's/Guid? userId = User.Identity?.IsAuthenticated == true ? GetUserId\\(\\) : null;/long? userId = User.Identity?.IsAuthenticated == true ? GetUserId\\(\\) : null;/g' /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src/VypusknykPlus.Api/Controllers/OrdersController.cs)",
+      "Bash(ssh root@75.119.152.4 \"ls ~/vypusknyk-plus/prod/\")",
+      "Bash(npm run *)",
+      "Bash(git stash *)",
+      "Bash(docker buildx *)",
+      "Bash(xargs cat *)"
     ]
   }
 }
