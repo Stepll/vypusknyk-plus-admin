@@ -5,6 +5,7 @@ import LoginPage from './pages/login/LoginPage'
 import DashboardPage from './pages/dashboard/DashboardPage'
 import OrdersPage from './pages/orders/OrdersPage'
 import ProductsPage from './pages/products/ProductsPage'
+import ProductEditPage from './pages/products/ProductEditPage'
 import UsersPage from './pages/users/UsersPage'
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
             <Route index element={<DashboardPage />} />
             <Route path="orders" element={<OrdersPage />} />
             <Route path="products" element={<ProductsPage />} />
+            <Route path="products/:id" element={<ProductEditPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

@@ -38,6 +38,36 @@ export interface AdminProduct {
   isDeleted: boolean
 }
 
+export interface AdminProductDetail {
+  id: number
+  name: string
+  description: string
+  price: number
+  minOrder: number
+  category: string
+  color: string | null
+  tags: string[]
+  popular: boolean
+  isNew: boolean
+  imageUrl: string | null
+  isDeleted: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SaveProductRequest {
+  name: string
+  description: string
+  price: number
+  minOrder: number
+  category: string
+  color: string | null
+  tags: string[]
+  popular: boolean
+  isNew: boolean
+  isDeleted: boolean
+}
+
 export interface AdminUser {
   id: number
   email: string
