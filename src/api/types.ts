@@ -164,3 +164,69 @@ export interface AdminUserDetail {
   orders: AdminUserOrderSummary[]
   savedDesigns: AdminUserSavedDesign[]
 }
+
+// Warehouse / Stock types
+export type StockMaterial = 'Atlas' | 'Satin' | 'Silk'
+export type StockStatus = 'in_stock' | 'low_stock' | 'out_of_stock'
+
+export interface StockCategoryResponse {
+  id: number
+  name: string
+  order: number
+}
+
+export interface StockProductSummary {
+  id: number
+  categoryId: number
+  categoryName: string
+  name: string
+  totalStock: number
+  variantCount: number
+  status: StockStatus
+}
+
+export interface StockVariantResponse {
+  id: number
+  material: StockMaterial
+  color: string
+  currentStock: number
+}
+
+export interface StockTransactionResponse {
+  id: number
+  variantId: number
+  material: StockMaterial
+  color: string
+  type: 'income' | 'outcome'
+  quantity: number
+  date: string
+  note: string
+  createdAt: string
+}
+
+export interface StockProductDetail {
+  id: number
+  categoryId: number
+  categoryName: string
+  name: string
+  variants: StockVariantResponse[]
+  recentTransactions: StockTransactionResponse[]
+}
+
+export interface WarehouseStats {
+  totalStock: number
+  outOfStockCount: number
+  lowStockCount: number
+  categoryCount: number
+  productCount: number
+}
+
+export interface CreateStockTransactionRequest {
+  productId: number
+  material: StockMaterial
+  color: string
+  type: 'income' | 'outcome'
+  quantity: number
+  date: string
+  note: string
+}
