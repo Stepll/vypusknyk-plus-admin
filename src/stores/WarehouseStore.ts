@@ -19,8 +19,13 @@ class WarehouseStore {
 
   stats: WarehouseStats | null = null
   categories: StockCategoryResponse[] = []
-  selectedProduct: StockProductDetail | null = null
-  productDetailLoading = false
+
+  // Per-product detail cache (keyed by product id)
+  productDetails = new Map<number, StockProductDetail>()
+  productDetailsLoading = new Set<number>()
+
+  // Modal
+  modalProductId: number | null = null
 
   categoryFilter = ''
   materialFilter = ''
@@ -36,8 +41,6 @@ class WarehouseStore {
     try {
       const data = await api.getWarehouseStats()
       runInAction(() => { this.stats = data })
-    } catch {
-      // ignore stats errors silently
     } finally {
       runInAction(() => { this.statsLoading = false })
     }
@@ -76,21 +79,26 @@ class WarehouseStore {
   }
 
   async fetchProductDetail(id: number) {
-    this.productDetailLoading = true
-    this.selectedProduct = null
+    if (this.productDetailsLoading.has(id)) return
+    runInAction(() => { this.productDetailsLoading.add(id) })
     try {
       const data = await api.getWarehouseProductDetail(id)
-      runInAction(() => { this.selectedProduct = data })
-    } catch {
-      // ignore
+      runInAction(() => { this.productDetails.set(id, data) })
     } finally {
-      runInAction(() => { this.productDetailLoading = false })
+      runInAction(() => { this.productDetailsLoading.delete(id) })
     }
   }
 
   async addTransaction(req: CreateStockTransactionRequest) {
     await api.createStockTransaction(req)
     await Promise.all([this.fetchStats(), this.fetchProducts()])
+    // Refresh detail if cached
+    if (this.productDetails.has(req.productId)) {
+      await this.fetchProductDetail(req.productId)
+    }
+    if (this.modalProductId !== null && this.productDetails.has(this.modalProductId)) {
+      await this.fetchProductDetail(this.modalProductId)
+    }
   }
 
   setPage(page: number) {

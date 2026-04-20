@@ -210,7 +210,7 @@ export interface StockProductDetail {
   categoryName: string
   name: string
   variants: StockVariantResponse[]
-  recentTransactions: StockTransactionResponse[]
+  transactions: StockTransactionResponse[]
 }
 
 export interface WarehouseStats {
