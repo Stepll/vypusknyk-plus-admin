@@ -2,10 +2,12 @@ import { makeAutoObservable, runInAction } from 'mobx'
 import * as api from '../api/warehouse'
 import type {
   StockCategoryResponse,
+  StockSubcategoryResponse,
   StockProductSummary,
   StockProductDetail,
   WarehouseStats,
   CreateStockTransactionRequest,
+  CreateStockProductRequest,
 } from '../api/types'
 
 class WarehouseStore {
@@ -19,17 +21,18 @@ class WarehouseStore {
 
   stats: WarehouseStats | null = null
   categories: StockCategoryResponse[] = []
+  subcategories: StockSubcategoryResponse[] = []
+  allSubcategories: StockSubcategoryResponse[] = []
 
-  // Per-product detail cache (keyed by product id)
   productDetails = new Map<number, StockProductDetail>()
   productDetailsLoading = new Set<number>()
-
-  // Modal
   modalProductId: number | null = null
 
   categoryFilter = ''
+  subcategoryFilter = ''
   materialFilter = ''
   statusFilter = ''
+  colorFilter = ''
   search = ''
 
   constructor() {
@@ -48,11 +51,23 @@ class WarehouseStore {
 
   async fetchCategories() {
     try {
-      const data = await api.getWarehouseCategories()
-      runInAction(() => { this.categories = data })
-    } catch {
-      // ignore
-    }
+      const [cats, subs] = await Promise.all([
+        api.getWarehouseCategories(),
+        api.getWarehouseSubcategories(),
+      ])
+      runInAction(() => {
+        this.categories = cats
+        this.allSubcategories = subs
+        this.subcategories = subs
+      })
+    } catch { /* ignore */ }
+  }
+
+  async fetchSubcategories(categoryId?: number) {
+    try {
+      const data = await api.getWarehouseSubcategories(categoryId)
+      runInAction(() => { this.subcategories = data })
+    } catch { /* ignore */ }
   }
 
   async fetchProducts() {
@@ -63,9 +78,11 @@ class WarehouseStore {
         page: this.page,
         pageSize: this.pageSize,
         categoryId: this.categoryFilter ? Number(this.categoryFilter) : undefined,
+        subcategoryId: this.subcategoryFilter ? Number(this.subcategoryFilter) : undefined,
         material: this.materialFilter || undefined,
         status: this.statusFilter || undefined,
         search: this.search || undefined,
+        color: this.colorFilter || undefined,
       })
       runInAction(() => {
         this.products = data.items
@@ -92,13 +109,13 @@ class WarehouseStore {
   async addTransaction(req: CreateStockTransactionRequest) {
     await api.createStockTransaction(req)
     await Promise.all([this.fetchStats(), this.fetchProducts()])
-    // Refresh detail if cached
-    if (this.productDetails.has(req.productId)) {
+    if (this.productDetails.has(req.productId))
       await this.fetchProductDetail(req.productId)
-    }
-    if (this.modalProductId !== null && this.productDetails.has(this.modalProductId)) {
-      await this.fetchProductDetail(this.modalProductId)
-    }
+  }
+
+  async createProduct(req: CreateStockProductRequest) {
+    await api.createWarehouseProduct(req)
+    await this.fetchProducts()
   }
 
   setPage(page: number) {
@@ -108,6 +125,16 @@ class WarehouseStore {
 
   setCategoryFilter(v: string) {
     this.categoryFilter = v
+    this.subcategoryFilter = ''
+    this.subcategories = v
+      ? this.allSubcategories.filter(s => s.categoryId === Number(v))
+      : this.allSubcategories
+    this.page = 1
+    this.fetchProducts()
+  }
+
+  setSubcategoryFilter(v: string) {
+    this.subcategoryFilter = v
     this.page = 1
     this.fetchProducts()
   }
@@ -120,6 +147,12 @@ class WarehouseStore {
 
   setStatusFilter(v: string) {
     this.statusFilter = v
+    this.page = 1
+    this.fetchProducts()
+  }
+
+  setColorFilter(v: string) {
+    this.colorFilter = v
     this.page = 1
     this.fetchProducts()
   }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import {
   Table, Button, Tag, Select, Input, Card, Row, Col, Modal, Tabs,
-  Drawer, Form, InputNumber, DatePicker, Statistic, Space, Badge, Spin,
+  Drawer, Form, InputNumber, DatePicker, Statistic, Space, Badge, Spin, Checkbox,
 } from 'antd'
 import {
   InboxOutlined, PlusOutlined, MinusOutlined, SearchOutlined,
@@ -17,9 +17,7 @@ import type {
 // ─── Static data ─────────────────────────────────────────────────────────────
 
 const MATERIAL_LABELS: Record<StockMaterial, string> = {
-  Atlas: 'Атлас',
-  Satin: 'Сатин',
-  Silk: 'Шовк',
+  Atlas: 'Атлас', Satin: 'Сатин', Silk: 'Шовк',
 }
 
 const COLORS_BY_MATERIAL: Record<StockMaterial, string[]> = {
@@ -39,6 +37,8 @@ const COLORS_BY_MATERIAL: Record<StockMaterial, string[]> = {
     'Рожевий', 'Салатовий', 'Зелений', 'Голубий',
   ],
 }
+
+const ALL_COLORS = [...new Set(Object.values(COLORS_BY_MATERIAL).flat())]
 
 const COLOR_HEX: Record<string, string> = {
   'Білий': '#F8F8F8', 'Синій': '#1D4ED8', 'Червоний': '#DC2626',
@@ -61,19 +61,23 @@ const STATUS_CONFIG = {
 
 const MATERIALS: StockMaterial[] = ['Atlas', 'Satin', 'Silk']
 
-// ─── Color dot ────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function ColorDot({ color }: { color: string }) {
-  const hex = COLOR_HEX[color] ?? '#E5E7EB'
+function ColorDot({ color, size = 12 }: { color: string; size?: number }) {
   return (
     <span style={{
-      display: 'inline-block', width: 12, height: 12, borderRadius: '50%',
-      background: hex, border: '1px solid #D1D5DB', marginRight: 6, verticalAlign: 'middle',
+      display: 'inline-block', width: size, height: size, borderRadius: '50%',
+      background: COLOR_HEX[color] ?? '#E5E7EB',
+      border: '1px solid #D1D5DB', marginRight: 6, verticalAlign: 'middle', flexShrink: 0,
     }} />
   )
 }
 
-// ─── Expanded transactions row ────────────────────────────────────────────────
+function colorOption(c: string) {
+  return { value: c, label: <span style={{ display: 'flex', alignItems: 'center' }}><ColorDot color={c} />{c}</span> }
+}
+
+// ─── Expanded transactions ────────────────────────────────────────────────────
 
 const ExpandedTransactions = observer(({ productId }: { productId: number }) => {
   const detail = warehouseStore.productDetails.get(productId)
@@ -81,14 +85,7 @@ const ExpandedTransactions = observer(({ productId }: { productId: number }) => 
   const [colorFilter, setColorFilter] = useState('')
   const [materialFilter, setMaterialFilter] = useState('')
 
-  if (isLoading) {
-    return (
-      <div style={{ padding: '16px', textAlign: 'center' }}>
-        <Spin size="small" />
-      </div>
-    )
-  }
-
+  if (isLoading) return <div style={{ padding: 16, textAlign: 'center' }}><Spin size="small" /></div>
   if (!detail) return null
 
   const transactions = detail.transactions.filter(t => {
@@ -102,43 +99,26 @@ const ExpandedTransactions = observer(({ productId }: { productId: number }) => 
 
   return (
     <div style={{ padding: '12px 16px' }}>
-      {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
         <Select
-          value={colorFilter || undefined}
-          placeholder="Всі кольори"
-          allowClear
-          size="small"
-          style={{ width: 160 }}
-          onChange={v => setColorFilter(v ?? '')}
-          options={availableColors.map(c => ({
-            value: c,
-            label: <span><ColorDot color={c} />{c}</span>,
-          }))}
+          value={colorFilter || undefined} placeholder="Всі кольори" allowClear size="small"
+          style={{ width: 160 }} onChange={v => setColorFilter(v ?? '')}
+          options={availableColors.map(colorOption)}
         />
         <Select
-          value={materialFilter || undefined}
-          placeholder="Всі матеріали"
-          allowClear
-          size="small"
-          style={{ width: 130 }}
-          onChange={v => setMaterialFilter(v ?? '')}
+          value={materialFilter || undefined} placeholder="Всі матеріали" allowClear size="small"
+          style={{ width: 130 }} onChange={v => setMaterialFilter(v ?? '')}
           options={availableMaterials.map(m => ({ value: m, label: MATERIAL_LABELS[m] }))}
         />
         <span style={{ color: '#9CA3AF', fontSize: 12, lineHeight: '24px' }}>
           {transactions.length} записів
         </span>
       </div>
-
-      {/* Transaction list */}
-      <div style={{ height: 280, overflowY: 'auto', borderRadius: 6, border: '1px solid #F3F4F6' }}>
-        {transactions.length === 0 ? (
-          <div style={{ padding: 24, textAlign: 'center', color: '#9CA3AF' }}>
-            Немає транзакцій
-          </div>
-        ) : (
-          transactions.map(t => <TransactionListItem key={t.id} t={t} />)
-        )}
+      <div style={{ height: 280, overflowY: 'auto', border: '1px solid #F3F4F6', borderRadius: 6 }}>
+        {transactions.length === 0
+          ? <div style={{ padding: 24, textAlign: 'center', color: '#9CA3AF' }}>Немає транзакцій</div>
+          : transactions.map(t => <TransactionListItem key={t.id} t={t} />)
+        }
       </div>
     </div>
   )
@@ -147,25 +127,14 @@ const ExpandedTransactions = observer(({ productId }: { productId: number }) => 
 function TransactionListItem({ t }: { t: StockTransactionResponse }) {
   const isIncome = t.type === 'income'
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '7px 12px', borderBottom: '1px solid #F9FAFB',
-    }}>
-      <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>
-        {isIncome ? '📦' : '📤'}
-      </span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 12px', borderBottom: '1px solid #F9FAFB' }}>
+      <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{isIncome ? '📦' : '📤'}</span>
       <span style={{ width: 86, color: '#6B7280', fontSize: 12, flexShrink: 0 }}>{t.date}</span>
-      <span style={{ width: 46, fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>
-        {MATERIAL_LABELS[t.material]}
-      </span>
+      <span style={{ width: 46, fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>{MATERIAL_LABELS[t.material]}</span>
       <span style={{ minWidth: 90, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-        <ColorDot color={t.color} />
-        <span style={{ fontSize: 12 }}>{t.color}</span>
+        <ColorDot color={t.color} /><span style={{ fontSize: 12 }}>{t.color}</span>
       </span>
-      <span style={{
-        width: 52, fontWeight: 700, fontSize: 13, flexShrink: 0,
-        color: isIncome ? '#16A34A' : '#DC2626',
-      }}>
+      <span style={{ width: 52, fontWeight: 700, fontSize: 13, flexShrink: 0, color: isIncome ? '#16A34A' : '#DC2626' }}>
         {isIncome ? '+' : '-'}{t.quantity}
       </span>
       <span style={{ flex: 1, color: '#6B7280', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -180,86 +149,24 @@ function TransactionListItem({ t }: { t: StockTransactionResponse }) {
 const ProductDetailModal = observer(({
   productId, open, onClose, onIncome, onOutcome,
 }: {
-  productId: number | null
-  open: boolean
-  onClose: () => void
-  onIncome: () => void
-  onOutcome: () => void
+  productId: number | null; open: boolean; onClose: () => void
+  onIncome: () => void; onOutcome: () => void
 }) => {
   const detail = productId ? warehouseStore.productDetails.get(productId) : null
   const isLoading = productId ? warehouseStore.productDetailsLoading.has(productId) : false
-
   const variants = detail?.variants ?? []
   const allColors = [...new Set(variants.map(v => v.color))]
   const allMaterials = MATERIALS.filter(m => variants.some(v => v.material === m))
   const stockMap = new Map(variants.map(v => [`${v.material}:${v.color}`, v.currentStock]))
 
-  const stockGrid = (
-    <div>
-      {allColors.length === 0 ? (
-        <p style={{ color: '#9CA3AF' }}>Немає надходжень</p>
-      ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13 }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>
-                  Колір
-                </th>
-                {allMaterials.map(m => (
-                  <th key={m} style={{ padding: '6px 12px', textAlign: 'center', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>
-                    {MATERIAL_LABELS[m]}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {allColors.map(color => (
-                <tr key={color} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                  <td style={{ padding: '8px 12px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center' }}>
-                      <ColorDot color={color} />{color}
-                    </span>
-                  </td>
-                  {allMaterials.map(m => {
-                    const qty = stockMap.get(`${m}:${color}`) ?? 0
-                    return (
-                      <td key={m} style={{
-                        padding: '8px 12px', textAlign: 'center', fontWeight: 600,
-                        color: qty === 0 ? '#D1D5DB' : qty < 10 ? '#EF4444' : '#111827',
-                      }}>
-                        {qty > 0 ? qty : '—'}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  )
-
-  const historyItems = (
-    <div style={{ height: 380, overflowY: 'auto' }}>
-      {(detail?.transactions ?? []).length === 0 ? (
-        <p style={{ color: '#9CA3AF' }}>Немає транзакцій</p>
-      ) : (
-        (detail?.transactions ?? []).map(t => <TransactionListItem key={t.id} t={t} />)
-      )}
-    </div>
-  )
-
   return (
-    <Modal
-      open={open}
-      onCancel={onClose}
-      width={820}
+    <Modal open={open} onCancel={onClose} width={820}
       title={
         <div>
           <div style={{ fontWeight: 600, fontSize: 16 }}>{detail?.name ?? '...'}</div>
-          <div style={{ color: '#9CA3AF', fontSize: 13, fontWeight: 400 }}>{detail?.categoryName}</div>
+          <div style={{ color: '#9CA3AF', fontSize: 13, fontWeight: 400 }}>
+            {detail?.categoryName} / {detail?.subcategoryName}
+          </div>
         </div>
       }
       footer={
@@ -270,16 +177,57 @@ const ProductDetailModal = observer(({
       }
       loading={isLoading}
     >
-      <Tabs
-        items={[
-          { key: 'stock', label: 'Залишки', children: stockGrid },
-          {
-            key: 'history',
-            label: `Історія (${detail?.transactions.length ?? 0})`,
-            children: historyItems,
-          },
-        ]}
-      />
+      <Tabs items={[
+        {
+          key: 'stock', label: 'Залишки',
+          children: allColors.length === 0
+            ? <p style={{ color: '#9CA3AF' }}>Немає надходжень</p>
+            : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>Колір</th>
+                      {allMaterials.map(m => (
+                        <th key={m} style={{ padding: '6px 12px', textAlign: 'center', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>
+                          {MATERIAL_LABELS[m]}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allColors.map(color => (
+                      <tr key={color} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                        <td style={{ padding: '8px 12px' }}>
+                          <span style={{ display: 'flex', alignItems: 'center' }}><ColorDot color={color} />{color}</span>
+                        </td>
+                        {allMaterials.map(m => {
+                          const qty = stockMap.get(`${m}:${color}`) ?? 0
+                          return (
+                            <td key={m} style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: qty === 0 ? '#D1D5DB' : qty < 10 ? '#EF4444' : '#111827' }}>
+                              {qty > 0 ? qty : '—'}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ),
+        },
+        {
+          key: 'history', label: `Історія (${detail?.transactions.length ?? 0})`,
+          children: (
+            <div style={{ height: 380, overflowY: 'auto' }}>
+              {(detail?.transactions ?? []).length === 0
+                ? <p style={{ color: '#9CA3AF' }}>Немає транзакцій</p>
+                : (detail?.transactions ?? []).map(t => <TransactionListItem key={t.id} t={t} />)
+              }
+            </div>
+          ),
+        },
+      ]} />
     </Modal>
   )
 })
@@ -289,16 +237,16 @@ const ProductDetailModal = observer(({
 function TransactionDrawer({
   open, type, productId, presetMaterial, presetColor, onClose, onSuccess,
 }: {
-  open: boolean
-  type: 'income' | 'outcome'
-  productId: number | null
-  presetMaterial?: StockMaterial
-  presetColor?: string
-  onClose: () => void
-  onSuccess: () => void
+  open: boolean; type: 'income' | 'outcome'; productId: number | null
+  presetMaterial?: StockMaterial; presetColor?: string
+  onClose: () => void; onSuccess: () => void
 }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
+
+  const selectedProduct = productId
+    ? warehouseStore.products.find(p => p.id === productId)
+    : null
 
   useEffect(() => {
     if (open) {
@@ -311,15 +259,37 @@ function TransactionDrawer({
     }
   }, [open, productId, presetMaterial, presetColor, form])
 
+  const watchProductId = Form.useWatch('productId', form) as number | undefined
   const watchMaterial = Form.useWatch('material', form) as StockMaterial | undefined
   const watchColor = Form.useWatch('color', form) as string | undefined
 
-  const currentVariant = productId
-    ? warehouseStore.productDetails.get(productId)?.variants.find(
-        v => v.material === watchMaterial && v.color === watchColor
-      )
+  const activeProduct = watchProductId
+    ? warehouseStore.products.find(p => p.id === watchProductId)
+    : selectedProduct
+
+  const currentVariant = watchProductId
+    ? warehouseStore.productDetails.get(watchProductId)?.variants.find(
+        v => v.material === watchMaterial && v.color === watchColor)
     : undefined
   const maxQty = type === 'outcome' ? (currentVariant?.currentStock ?? 0) : undefined
+
+  const { products, categories, allSubcategories } = warehouseStore
+  const productOptions = categories
+    .map(cat => ({
+      label: cat.name,
+      options: allSubcategories
+        .filter(s => s.categoryId === cat.id)
+        .flatMap(sub =>
+          products
+            .filter(p => p.subcategoryId === sub.id)
+            .map(p => ({ label: `${p.name} (${sub.name})`, value: p.id }))
+        ),
+    }))
+    .filter(g => g.options.length > 0)
+
+  const colorOptions = (activeProduct?.hasColor && watchMaterial)
+    ? COLORS_BY_MATERIAL[watchMaterial].map(colorOption)
+    : []
 
   const handleSubmit = async () => {
     const values = await form.validateFields()
@@ -327,8 +297,8 @@ function TransactionDrawer({
     try {
       await warehouseStore.addTransaction({
         productId: values.productId,
-        material: values.material,
-        color: values.color,
+        material: values.material ?? '',
+        color: values.color ?? '',
         type,
         quantity: values.quantity,
         date: (values.date as dayjs.Dayjs).format('YYYY-MM-DD'),
@@ -343,28 +313,8 @@ function TransactionDrawer({
     }
   }
 
-  const { products, categories } = warehouseStore
-  const productOptions = categories
-    .map(cat => ({
-      label: cat.name,
-      options: products
-        .filter(p => p.categoryId === cat.id)
-        .map(p => ({ label: p.name, value: p.id })),
-    }))
-    .filter(g => g.options.length > 0)
-
-  const colorOptions = watchMaterial
-    ? COLORS_BY_MATERIAL[watchMaterial].map(c => ({
-        label: <span><ColorDot color={c} />{c}</span>,
-        value: c,
-      }))
-    : []
-
   return (
-    <Drawer
-      open={open}
-      onClose={onClose}
-      width={480}
+    <Drawer open={open} onClose={onClose} width={480}
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {type === 'income'
@@ -375,10 +325,8 @@ function TransactionDrawer({
       footer={
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           <Button onClick={onClose}>Скасувати</Button>
-          <Button
-            type="primary" loading={loading} onClick={handleSubmit}
-            style={type === 'outcome' ? { background: '#DC2626', borderColor: '#DC2626' } : {}}
-          >
+          <Button type="primary" loading={loading} onClick={handleSubmit}
+            style={type === 'outcome' ? { background: '#DC2626', borderColor: '#DC2626' } : {}}>
             {type === 'income' ? 'Зберегти прихід' : 'Зберегти видачу'}
           </Button>
         </div>
@@ -386,22 +334,27 @@ function TransactionDrawer({
     >
       <Form form={form} layout="vertical">
         <Form.Item name="productId" label="Товар" rules={[{ required: true, message: 'Оберіть товар' }]}>
-          <Select showSearch optionFilterProp="label" options={productOptions} placeholder="Оберіть товар..." />
-        </Form.Item>
-        <Form.Item name="material" label="Матеріал" rules={[{ required: true, message: 'Оберіть матеріал' }]}>
-          <Select
-            options={MATERIALS.map(m => ({ value: m, label: MATERIAL_LABELS[m] }))}
-            placeholder="Атлас / Сатин / Шовк"
-            onChange={() => form.setFieldValue('color', undefined)}
+          <Select showSearch optionFilterProp="label" options={productOptions} placeholder="Оберіть товар..."
+            onChange={() => { form.setFieldValue('material', undefined); form.setFieldValue('color', undefined) }}
           />
         </Form.Item>
-        <Form.Item name="color" label="Колір" rules={[{ required: true, message: 'Оберіть колір' }]}>
-          <Select
-            showSearch options={colorOptions}
-            placeholder={watchMaterial ? 'Оберіть колір...' : 'Спочатку оберіть матеріал'}
-            disabled={!watchMaterial}
-          />
-        </Form.Item>
+        {activeProduct?.hasMaterial !== false && (
+          <Form.Item name="material" label="Матеріал" rules={[{ required: true, message: 'Оберіть матеріал' }]}>
+            <Select
+              options={MATERIALS.map(m => ({ value: m, label: MATERIAL_LABELS[m] }))}
+              placeholder="Атлас / Сатин / Шовк"
+              onChange={() => form.setFieldValue('color', undefined)}
+            />
+          </Form.Item>
+        )}
+        {activeProduct?.hasColor !== false && (
+          <Form.Item name="color" label="Колір" rules={[{ required: true, message: 'Оберіть колір' }]}>
+            <Select showSearch options={colorOptions}
+              placeholder={watchMaterial ? 'Оберіть колір...' : 'Спочатку оберіть матеріал'}
+              disabled={activeProduct?.hasMaterial !== false && !watchMaterial}
+            />
+          </Form.Item>
+        )}
         <Form.Item
           name="quantity"
           label={type === 'outcome' && maxQty !== undefined ? `Кількість (є на складі: ${maxQty})` : 'Кількість'}
@@ -409,8 +362,7 @@ function TransactionDrawer({
             { required: true, message: 'Вкажіть кількість' },
             { type: 'number', min: 1, message: 'Мінімум 1' },
             ...(type === 'outcome' && maxQty !== undefined
-              ? [{ type: 'number' as const, max: maxQty, message: `Максимум ${maxQty}` }]
-              : []),
+              ? [{ type: 'number' as const, max: maxQty, message: `Максимум ${maxQty}` }] : []),
           ]}
         >
           <InputNumber min={1} max={maxQty} style={{ width: '100%' }} />
@@ -426,6 +378,86 @@ function TransactionDrawer({
   )
 }
 
+// ─── Create product drawer ────────────────────────────────────────────────────
+
+const CreateProductDrawer = observer(({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!open) { form.resetFields(); setSelectedCategoryId(null) }
+  }, [open, form])
+
+  const subcategoryOptions = warehouseStore.allSubcategories
+    .filter(s => !selectedCategoryId || s.categoryId === selectedCategoryId)
+    .map(s => ({ value: s.id, label: s.name }))
+
+  const handleSubmit = async () => {
+    const values = await form.validateFields()
+    setLoading(true)
+    try {
+      await warehouseStore.createProduct({
+        subcategoryId: values.subcategoryId,
+        name: values.name,
+        description: values.description,
+        hasColor: values.hasColor ?? false,
+        hasMaterial: values.hasMaterial ?? false,
+      })
+      onClose()
+    } catch (e) {
+      form.setFields([{ name: 'name', errors: [e instanceof Error ? e.message : 'Помилка'] }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Drawer open={open} onClose={onClose} width={440}
+      title={<div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><PlusOutlined /><span>Створити товар</span></div>}
+      footer={
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <Button onClick={onClose}>Скасувати</Button>
+          <Button type="primary" loading={loading} onClick={handleSubmit}>Створити</Button>
+        </div>
+      }
+    >
+      <Form form={form} layout="vertical" initialValues={{ hasColor: false, hasMaterial: false }}>
+        <Form.Item name="name" label="Назва товару" rules={[{ required: true, message: "Введіть назву" }]}>
+          <Input placeholder="Наприклад: Дзвоник великий синій" />
+        </Form.Item>
+        <Form.Item label="Категорія">
+          <Select
+            placeholder="Оберіть категорію..."
+            allowClear
+            options={warehouseStore.categories.map(c => ({ value: c.id, label: c.name }))}
+            onChange={(v: number | undefined) => {
+              setSelectedCategoryId(v ?? null)
+              form.setFieldValue('subcategoryId', undefined)
+            }}
+          />
+        </Form.Item>
+        <Form.Item name="subcategoryId" label="Підкатегорія" rules={[{ required: true, message: 'Оберіть підкатегорію' }]}>
+          <Select
+            placeholder="Оберіть підкатегорію..."
+            options={subcategoryOptions}
+            disabled={subcategoryOptions.length === 0}
+          />
+        </Form.Item>
+        <Form.Item name="hasColor" valuePropName="checked">
+          <Checkbox>Параметр кольору (стрічка має колір)</Checkbox>
+        </Form.Item>
+        <Form.Item name="hasMaterial" valuePropName="checked">
+          <Checkbox>Параметр матеріалу (атлас / сатин / шовк)</Checkbox>
+        </Form.Item>
+        <Form.Item name="description" label="Опис (необов'язково)">
+          <Input.TextArea rows={3} />
+        </Form.Item>
+      </Form>
+    </Drawer>
+  )
+})
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const WarehousePage = observer(() => {
@@ -434,6 +466,7 @@ const WarehousePage = observer(() => {
   const [detailOpen, setDetailOpen] = useState(false)
   const [incomeOpen, setIncomeOpen] = useState(false)
   const [outcomeOpen, setOutcomeOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
   const [activeProductId, setActiveProductId] = useState<number | null>(null)
   const [presetMaterial, setPresetMaterial] = useState<StockMaterial | undefined>()
   const [presetColor, setPresetColor] = useState<string | undefined>()
@@ -445,19 +478,11 @@ const WarehousePage = observer(() => {
   }, [])
 
   const openIncome = (id: number, material?: StockMaterial, color?: string) => {
-    setActiveProductId(id)
-    setPresetMaterial(material)
-    setPresetColor(color)
-    setIncomeOpen(true)
+    setActiveProductId(id); setPresetMaterial(material); setPresetColor(color); setIncomeOpen(true)
   }
-
   const openOutcome = (id: number, material?: StockMaterial, color?: string) => {
-    setActiveProductId(id)
-    setPresetMaterial(material)
-    setPresetColor(color)
-    setOutcomeOpen(true)
+    setActiveProductId(id); setPresetMaterial(material); setPresetColor(color); setOutcomeOpen(true)
   }
-
   const openDetail = (id: number) => {
     setActiveProductId(id)
     store.modalProductId = id
@@ -465,55 +490,36 @@ const WarehousePage = observer(() => {
     if (!store.productDetails.has(id)) store.fetchProductDetail(id)
   }
 
-  const handleTransactionSuccess = () => {
-    setIncomeOpen(false)
-    setOutcomeOpen(false)
-  }
-
   const columns = [
     {
-      title: 'Назва',
-      dataIndex: 'name',
-      key: 'name',
+      title: 'Назва', dataIndex: 'name', key: 'name',
       render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,
     },
     {
-      title: 'Категорія',
-      dataIndex: 'categoryName',
-      key: 'categoryName',
+      title: 'Категорія', dataIndex: 'categoryName', key: 'categoryName',
       render: (v: string) => <span style={{ color: '#6B7280', fontSize: 13 }}>{v}</span>,
     },
     {
-      title: 'На складі',
-      dataIndex: 'totalStock',
-      key: 'totalStock',
-      width: 110,
+      title: 'Підкатегорія', dataIndex: 'subcategoryName', key: 'subcategoryName',
+      render: (v: string) => <span style={{ color: '#9CA3AF', fontSize: 12 }}>{v}</span>,
+    },
+    {
+      title: 'На складі', dataIndex: 'totalStock', key: 'totalStock', width: 100,
       render: (v: number) => <strong>{v} шт</strong>,
     },
     {
-      title: 'Статус',
-      dataIndex: 'status',
-      key: 'status',
-      width: 130,
+      title: 'Статус', dataIndex: 'status', key: 'status', width: 130,
       render: (s: string) => {
         const cfg = STATUS_CONFIG[s as keyof typeof STATUS_CONFIG] ?? { label: s, color: 'default' }
         return <Tag color={cfg.color}>{cfg.label}</Tag>
       },
     },
     {
-      title: 'Дії',
-      key: 'actions',
-      width: 160,
+      title: 'Дії', key: 'actions', width: 160,
       render: (_: unknown, r: StockProductSummary) => (
         <Space onClick={e => e.stopPropagation()}>
-          <Button size="small" type="primary" icon={<PlusOutlined />}
-            onClick={() => openIncome(r.id)}>
-            Прихід
-          </Button>
-          <Button size="small" danger icon={<MinusOutlined />}
-            onClick={() => openOutcome(r.id)}>
-            Видача
-          </Button>
+          <Button size="small" type="primary" icon={<PlusOutlined />} onClick={() => openIncome(r.id)}>Прихід</Button>
+          <Button size="small" danger icon={<MinusOutlined />} onClick={() => openOutcome(r.id)}>Видача</Button>
         </Space>
       ),
     },
@@ -533,21 +539,18 @@ const WarehousePage = observer(() => {
           </div>
           <div>
             <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>Облік товарів</h2>
-            <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>Залишки стрічок на складі</p>
+            <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>Залишки товарів на складі</p>
           </div>
         </div>
         <Space>
-          <Button
-            type="primary" icon={<PlusOutlined />}
+          <Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>Створити товар</Button>
+          <Button type="primary" icon={<PlusOutlined />}
             onClick={() => { setActiveProductId(null); setPresetMaterial(undefined); setPresetColor(undefined); setIncomeOpen(true) }}
-            style={{ background: 'linear-gradient(135deg, #0891b2, #0f766e)', border: 'none' }}
-          >
+            style={{ background: 'linear-gradient(135deg, #0891b2, #0f766e)', border: 'none' }}>
             Додати прихід
           </Button>
-          <Button
-            danger icon={<MinusOutlined />}
-            onClick={() => { setActiveProductId(null); setPresetMaterial(undefined); setPresetColor(undefined); setOutcomeOpen(true) }}
-          >
+          <Button danger icon={<MinusOutlined />}
+            onClick={() => { setActiveProductId(null); setPresetMaterial(undefined); setPresetColor(undefined); setOutcomeOpen(true) }}>
             Зареєструвати видачу
           </Button>
         </Space>
@@ -555,58 +558,47 @@ const WarehousePage = observer(() => {
 
       {/* Stats */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Всього на складі" value={store.stats?.totalStock ?? 0} suffix="шт"
-              prefix={<BarChartOutlined style={{ color: '#0891b2' }} />}
-              valueStyle={{ color: '#0891b2' }} loading={store.statsLoading}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Нульовий залишок" value={store.stats?.outOfStockCount ?? 0} suffix="позицій"
-              prefix={<StopOutlined style={{ color: '#DC2626' }} />}
-              valueStyle={{ color: '#DC2626' }} loading={store.statsLoading}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Мало (< 10 шт)" value={store.stats?.lowStockCount ?? 0} suffix="позицій"
-              prefix={<WarningOutlined style={{ color: '#D97706' }} />}
-              valueStyle={{ color: '#D97706' }} loading={store.statsLoading}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="Категорій товарів" value={store.stats?.categoryCount ?? 0}
-              prefix={<AppstoreOutlined style={{ color: '#059669' }} />}
-              valueStyle={{ color: '#059669' }} loading={store.statsLoading}
-            />
-          </Card>
-        </Col>
+        {[
+          { title: 'Всього на складі', value: store.stats?.totalStock ?? 0, suffix: 'шт', icon: <BarChartOutlined />, color: '#0891b2' },
+          { title: 'Нульовий залишок', value: store.stats?.outOfStockCount ?? 0, suffix: 'позицій', icon: <StopOutlined />, color: '#DC2626' },
+          { title: 'Мало (< 10 шт)', value: store.stats?.lowStockCount ?? 0, suffix: 'позицій', icon: <WarningOutlined />, color: '#D97706' },
+          { title: 'Категорій товарів', value: store.stats?.categoryCount ?? 0, suffix: '', icon: <AppstoreOutlined />, color: '#059669' },
+        ].map(s => (
+          <Col span={6} key={s.title}>
+            <Card>
+              <Statistic title={s.title} value={s.value} suffix={s.suffix}
+                prefix={<span style={{ color: s.color }}>{s.icon}</span>}
+                valueStyle={{ color: s.color }} loading={store.statsLoading}
+              />
+            </Card>
+          </Col>
+        ))}
       </Row>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
         <Select
-          value={store.categoryFilter || undefined} placeholder="Всі категорії" allowClear style={{ width: 220 }}
+          value={store.categoryFilter || undefined} placeholder="Всі категорії" allowClear style={{ width: 200 }}
           onChange={v => store.setCategoryFilter(v ?? '')}
           options={store.categories.map(c => ({ value: String(c.id), label: c.name }))}
         />
         <Select
-          value={store.materialFilter || undefined} placeholder="Всі матеріали" allowClear style={{ width: 160 }}
+          value={store.subcategoryFilter || undefined} placeholder="Всі підкатегорії" allowClear style={{ width: 200 }}
+          onChange={v => store.setSubcategoryFilter(v ?? '')}
+          options={store.subcategories.map(s => ({ value: String(s.id), label: s.name }))}
+        />
+        <Select
+          value={store.materialFilter || undefined} placeholder="Матеріал" allowClear style={{ width: 140 }}
           onChange={v => store.setMaterialFilter(v ?? '')}
           options={MATERIALS.map(m => ({ value: m, label: MATERIAL_LABELS[m] }))}
         />
         <Select
-          value={store.statusFilter || undefined} placeholder="Всі статуси" allowClear style={{ width: 160 }}
+          value={store.colorFilter || undefined} placeholder="Колір" allowClear style={{ width: 160 }}
+          onChange={v => store.setColorFilter(v ?? '')}
+          options={ALL_COLORS.map(colorOption)}
+        />
+        <Select
+          value={store.statusFilter || undefined} placeholder="Статус" allowClear style={{ width: 140 }}
           onChange={v => store.setStatusFilter(v ?? '')}
           options={[
             { value: 'in_stock', label: 'В наявності' },
@@ -615,9 +607,8 @@ const WarehousePage = observer(() => {
           ]}
         />
         <Input
-          prefix={<SearchOutlined />} placeholder="Пошук по назві..."
-          value={store.search} onChange={e => store.setSearch(e.target.value)}
-          style={{ width: 220 }} allowClear
+          prefix={<SearchOutlined />} placeholder="Пошук..." value={store.search}
+          onChange={e => store.setSearch(e.target.value)} style={{ width: 180 }} allowClear
         />
         <Badge count={store.total} showZero overflowCount={999} color="#6B7280">
           <span style={{ color: '#6B7280', fontSize: 13, padding: '4px 8px' }}>товарів</span>
@@ -626,57 +617,30 @@ const WarehousePage = observer(() => {
 
       {/* Table */}
       <Table
-        rowKey="id"
-        dataSource={store.products}
-        columns={columns}
-        loading={store.loading}
-        pagination={{
-          current: store.page,
-          pageSize: store.pageSize,
-          total: store.total,
-          onChange: p => store.setPage(p),
-          showSizeChanger: false,
-        }}
+        rowKey="id" dataSource={store.products} columns={columns} loading={store.loading}
+        pagination={{ current: store.page, pageSize: store.pageSize, total: store.total, onChange: p => store.setPage(p), showSizeChanger: false }}
         expandable={{
           expandedRowRender: r => <ExpandedTransactions productId={r.id} />,
           onExpand: (expanded, r) => {
-            if (expanded && !store.productDetails.has(r.id)) {
-              store.fetchProductDetail(r.id)
-            }
+            if (expanded && !store.productDetails.has(r.id)) store.fetchProductDetail(r.id)
           },
         }}
-        onRow={r => ({
-          onClick: () => openDetail(r.id),
-          style: { cursor: 'pointer' },
-        })}
+        onRow={r => ({ onClick: () => openDetail(r.id), style: { cursor: 'pointer' } })}
       />
 
-      {/* Product detail modal */}
-      <ProductDetailModal
-        productId={activeProductId}
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
+      <ProductDetailModal productId={activeProductId} open={detailOpen} onClose={() => setDetailOpen(false)}
         onIncome={() => { setDetailOpen(false); if (activeProductId) openIncome(activeProductId) }}
         onOutcome={() => { setDetailOpen(false); if (activeProductId) openOutcome(activeProductId) }}
       />
-
-      {/* Income drawer */}
-      <TransactionDrawer
-        open={incomeOpen} type="income"
-        productId={activeProductId}
+      <TransactionDrawer open={incomeOpen} type="income" productId={activeProductId}
         presetMaterial={presetMaterial} presetColor={presetColor}
-        onClose={() => setIncomeOpen(false)}
-        onSuccess={handleTransactionSuccess}
+        onClose={() => setIncomeOpen(false)} onSuccess={() => setIncomeOpen(false)}
       />
-
-      {/* Outcome drawer */}
-      <TransactionDrawer
-        open={outcomeOpen} type="outcome"
-        productId={activeProductId}
+      <TransactionDrawer open={outcomeOpen} type="outcome" productId={activeProductId}
         presetMaterial={presetMaterial} presetColor={presetColor}
-        onClose={() => setOutcomeOpen(false)}
-        onSuccess={handleTransactionSuccess}
+        onClose={() => setOutcomeOpen(false)} onSuccess={() => setOutcomeOpen(false)}
       />
+      <CreateProductDrawer open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   )
 })

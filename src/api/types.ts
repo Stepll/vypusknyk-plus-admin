@@ -175,11 +175,22 @@ export interface StockCategoryResponse {
   order: number
 }
 
+export interface StockSubcategoryResponse {
+  id: number
+  categoryId: number
+  name: string
+  order: number
+}
+
 export interface StockProductSummary {
   id: number
+  subcategoryId: number
+  subcategoryName: string
   categoryId: number
   categoryName: string
   name: string
+  hasColor: boolean
+  hasMaterial: boolean
   totalStock: number
   variantCount: number
   status: StockStatus
@@ -206,9 +217,13 @@ export interface StockTransactionResponse {
 
 export interface StockProductDetail {
   id: number
+  subcategoryId: number
+  subcategoryName: string
   categoryId: number
   categoryName: string
   name: string
+  hasColor: boolean
+  hasMaterial: boolean
   variants: StockVariantResponse[]
   transactions: StockTransactionResponse[]
 }
@@ -229,4 +244,12 @@ export interface CreateStockTransactionRequest {
   quantity: number
   date: string
   note: string
+}
+
+export interface CreateStockProductRequest {
+  subcategoryId: number
+  name: string
+  description?: string
+  hasColor: boolean
+  hasMaterial: boolean
 }
