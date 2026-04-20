@@ -4,7 +4,7 @@ import {
   DashboardOutlined, ShoppingCartOutlined, AppstoreOutlined, TeamOutlined,
   LogoutOutlined, HeartOutlined, CrownOutlined, InboxOutlined, HistoryOutlined,
   SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined,
-  CreditCardOutlined, CheckCircleOutlined, ToolOutlined,
+  CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
@@ -18,6 +18,7 @@ const ROUTE_KEYS = [
   '/settings/delivery',
   '/settings/payment',
   '/settings/order-statuses',
+  '/settings/roles',
   '/designs', '/admins', '/warehouse', '/history',
   '/orders', '/products', '/users',
 ]
@@ -40,6 +41,7 @@ const menuItems = [
       { key: '/settings/delivery', icon: <CarOutlined />, label: 'Методи доставки' },
       { key: '/settings/payment', icon: <CreditCardOutlined />, label: 'Методи оплати' },
       { key: '/settings/order-statuses', icon: <CheckCircleOutlined />, label: 'Статуси замовлень' },
+      { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі' },
       {
         key: 'constructor',
         icon: <ToolOutlined />,

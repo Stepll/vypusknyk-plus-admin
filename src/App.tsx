@@ -19,6 +19,7 @@ import DeliveryMethodsPage from './pages/settings/DeliveryMethodsPage'
 import PaymentMethodsPage from './pages/settings/PaymentMethodsPage'
 import OrderStatusesPage from './pages/settings/OrderStatusesPage'
 import ColorsPage from './pages/settings/constructor/ColorsPage'
+import RolesPage from './pages/settings/RolesPage'
 
 export default function App() {
   return (
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="settings/payment" element={<PaymentMethodsPage />} />
             <Route path="settings/order-statuses" element={<OrderStatusesPage />} />
             <Route path="settings/constructor/colors" element={<ColorsPage />} />
+            <Route path="settings/roles" element={<RolesPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>
