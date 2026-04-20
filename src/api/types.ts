@@ -141,6 +141,20 @@ export interface AdminAdminItem {
   createdAt: string
 }
 
+export interface AdminAdminDetail {
+  id: number
+  email: string
+  fullName: string
+  createdAt: string
+  lastLoginAt: string | null
+}
+
+export interface CreateAdminRequest {
+  email: string
+  fullName: string
+  password: string
+}
+
 export interface AdminUserDetail {
   id: number
   email: string
