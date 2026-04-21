@@ -5,6 +5,7 @@ import {
   LogoutOutlined, HeartOutlined, CrownOutlined, InboxOutlined, HistoryOutlined,
   SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined,
   CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
+  TruckOutlined, ShopOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
@@ -19,7 +20,8 @@ const ROUTE_KEYS = [
   '/settings/payment',
   '/settings/order-statuses',
   '/settings/roles',
-  '/designs', '/admins', '/warehouse', '/history',
+  '/settings/suppliers',
+  '/designs', '/admins', '/warehouse', '/deliveries', '/history',
   '/orders', '/products', '/users',
 ]
 
@@ -31,6 +33,7 @@ const menuItems = [
   { key: '/designs', icon: <HeartOutlined />, label: 'Збережені дизайни' },
   { key: '/admins', icon: <CrownOutlined />, label: 'Адміни' },
   { key: '/warehouse', icon: <InboxOutlined />, label: 'Складський облік' },
+  { key: '/deliveries', icon: <TruckOutlined />, label: 'Поставки' },
   { key: '/history', icon: <HistoryOutlined />, label: 'Історія змін' },
   {
     key: 'settings',
@@ -41,6 +44,7 @@ const menuItems = [
       { key: '/settings/delivery', icon: <CarOutlined />, label: 'Методи доставки' },
       { key: '/settings/payment', icon: <CreditCardOutlined />, label: 'Методи оплати' },
       { key: '/settings/order-statuses', icon: <CheckCircleOutlined />, label: 'Статуси замовлень' },
+      { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники' },
       { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі' },
       {
         key: 'constructor',

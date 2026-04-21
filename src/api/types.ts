@@ -206,6 +206,7 @@ export interface StockVariantResponse {
 export interface StockTransactionResponse {
   id: number
   variantId: number
+  deliveryItemId: number | null
   material: StockMaterial
   color: string
   type: 'income' | 'outcome'
@@ -252,4 +253,77 @@ export interface CreateStockProductRequest {
   description?: string
   hasColor: boolean
   hasMaterial: boolean
+}
+
+// ─── Delivery / Supplier types ────────────────────────────────────────────────
+
+export interface SupplierResponse {
+  id: number
+  name: string
+  phone: string | null
+  address: string | null
+}
+
+export type DeliveryStatus = 'pending' | 'partial' | 'received'
+
+export interface DeliverySummary {
+  id: number
+  number: string
+  supplierId: number | null
+  supplierName: string | null
+  expectedDate: string
+  status: DeliveryStatus
+  note: string | null
+  itemCount: number
+  totalExpectedQty: number
+  totalReceivedQty: number
+  createdAt: string
+}
+
+export interface DeliveryItemResponse {
+  id: number
+  deliveryId: number
+  productId: number
+  productName: string
+  subcategoryName: string
+  categoryName: string
+  hasColor: boolean
+  hasMaterial: boolean
+  material: string
+  color: string
+  expectedQty: number
+  receivedQty: number
+  receivedAt: string | null
+}
+
+export interface DeliveryDetail {
+  id: number
+  number: string
+  supplierId: number | null
+  supplierName: string | null
+  expectedDate: string
+  status: DeliveryStatus
+  note: string | null
+  createdAt: string
+  items: DeliveryItemResponse[]
+}
+
+export interface CreateDeliveryItemRequest {
+  productId: number
+  material: string
+  color: string
+  expectedQty: number
+}
+
+export interface CreateDeliveryRequest {
+  supplierId: number | null
+  expectedDate: string
+  note: string | null
+  items: CreateDeliveryItemRequest[]
+}
+
+export interface ReceiveDeliveryItemRequest {
+  quantity: number
+  date: string
+  note: string | null
 }

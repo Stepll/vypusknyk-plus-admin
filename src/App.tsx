@@ -13,6 +13,9 @@ import SavedDesignsPage from './pages/designs/SavedDesignsPage'
 import AdminsPage from './pages/admins/AdminsPage'
 import AdminDetailPage from './pages/admins/AdminDetailPage'
 import WarehousePage from './pages/warehouse/WarehousePage'
+import DeliveriesPage from './pages/deliveries/DeliveriesPage'
+import DeliveryDetailPage from './pages/deliveries/DeliveryDetailPage'
+import NewDeliveryPage from './pages/deliveries/NewDeliveryPage'
 import HistoryPage from './pages/history/HistoryPage'
 import CategoriesPage from './pages/settings/CategoriesPage'
 import DeliveryMethodsPage from './pages/settings/DeliveryMethodsPage'
@@ -20,6 +23,7 @@ import PaymentMethodsPage from './pages/settings/PaymentMethodsPage'
 import OrderStatusesPage from './pages/settings/OrderStatusesPage'
 import ColorsPage from './pages/settings/constructor/ColorsPage'
 import RolesPage from './pages/settings/RolesPage'
+import SuppliersPage from './pages/settings/SuppliersPage'
 
 export default function App() {
   return (
@@ -39,6 +43,9 @@ export default function App() {
             <Route path="admins" element={<AdminsPage />} />
             <Route path="admins/:id" element={<AdminDetailPage />} />
             <Route path="warehouse" element={<WarehousePage />} />
+            <Route path="deliveries" element={<DeliveriesPage />} />
+            <Route path="deliveries/new" element={<NewDeliveryPage />} />
+            <Route path="deliveries/:id" element={<DeliveryDetailPage />} />
             <Route path="history" element={<HistoryPage />} />
             <Route path="settings/categories" element={<CategoriesPage />} />
             <Route path="settings/delivery" element={<DeliveryMethodsPage />} />
@@ -46,6 +53,7 @@ export default function App() {
             <Route path="settings/order-statuses" element={<OrderStatusesPage />} />
             <Route path="settings/constructor/colors" element={<ColorsPage />} />
             <Route path="settings/roles" element={<RolesPage />} />
+            <Route path="settings/suppliers" element={<SuppliersPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>
