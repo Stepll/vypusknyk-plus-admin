@@ -294,6 +294,14 @@ export interface DeliverySummary {
   createdAt: string
 }
 
+export interface ReceiveTransactionInfo {
+  id: number
+  quantity: number
+  date: string
+  note: string
+  createdAt: string
+}
+
 export interface DeliveryItemResponse {
   id: number
   deliveryId: number
@@ -308,6 +316,7 @@ export interface DeliveryItemResponse {
   expectedQty: number
   receivedQty: number
   receivedAt: string | null
+  receiveHistory: ReceiveTransactionInfo[]
 }
 
 export interface DeliveryDetail {

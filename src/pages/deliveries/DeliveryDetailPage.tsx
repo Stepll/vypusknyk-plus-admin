@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import {
-  Table, Button, Tag, Modal, Form, InputNumber, DatePicker,
-  Card, Row, Col, Statistic, Space, Spin, message,
+  Table, Button, Tag, Modal, Form, InputNumber, DatePicker, Input,
+  Card, Row, Col, Statistic, Space, Spin, message, Drawer, Timeline,
 } from 'antd'
 import {
   ArrowLeftOutlined, CheckOutlined, CheckCircleOutlined,
-  InboxOutlined, ClockCircleOutlined, TruckOutlined,
+  InboxOutlined, ClockCircleOutlined, TruckOutlined, InfoCircleOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { deliveryStore } from '../../stores/DeliveryStore'
-import type { DeliveryItemResponse, DeliveryStatus } from '../../api/types'
+import type { DeliveryItemResponse, DeliveryStatus, ReceiveTransactionInfo } from '../../api/types'
 
 const MATERIAL_LABELS: Record<string, string> = {
   Atlas: 'Атлас', Satin: 'Сатин', Silk: 'Шовк',
@@ -34,6 +34,7 @@ const DeliveryDetailPage = observer(() => {
 
   const [receiveItem, setReceiveItem] = useState<DeliveryItemResponse | null>(null)
   const [receiveAllOpen, setReceiveAllOpen] = useState(false)
+  const [historyItem, setHistoryItem] = useState<DeliveryItemResponse | null>(null)
   const [form] = Form.useForm()
   const [allForm] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
@@ -140,19 +141,28 @@ const DeliveryDetailPage = observer(() => {
       },
     },
     {
-      title: 'Дії', key: 'actions', width: 110,
-      render: (_: unknown, r: DeliveryItemResponse) =>
-        r.receivedQty < r.expectedQty ? (
-          <Button size="small" type="primary" icon={<CheckOutlined />}
-            onClick={() => {
-              setReceiveItem(r)
-              form.setFieldsValue({ quantity: r.expectedQty - r.receivedQty, date: dayjs() })
-            }}>
-            Прийняти
-          </Button>
-        ) : (
-          <CheckCircleOutlined style={{ color: '#16A34A', fontSize: 18 }} />
-        ),
+      title: 'Дії', key: 'actions', width: 140,
+      render: (_: unknown, r: DeliveryItemResponse) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<InfoCircleOutlined />}
+            title="Історія прийому"
+            onClick={() => setHistoryItem(r)}
+          />
+          {r.receivedQty < r.expectedQty ? (
+            <Button size="small" type="primary" icon={<CheckOutlined />}
+              onClick={() => {
+                setReceiveItem(r)
+                form.setFieldsValue({ quantity: r.expectedQty - r.receivedQty, date: dayjs() })
+              }}>
+              Прийняти
+            </Button>
+          ) : (
+            <CheckCircleOutlined style={{ color: '#16A34A', fontSize: 18 }} />
+          )}
+        </Space>
+      ),
     },
   ]
 
@@ -241,7 +251,7 @@ const DeliveryDetailPage = observer(() => {
             <DatePicker style={{ width: '100%' }} format="DD.MM.YYYY" />
           </Form.Item>
           <Form.Item name="note" label="Примітка">
-            <input className="ant-input" placeholder="Необов'язково..." style={{ width: '100%', padding: '4px 11px', border: '1px solid #d9d9d9', borderRadius: 6 }} />
+            <Input placeholder="Необов'язково..." />
           </Form.Item>
         </Form>
       </Modal>
@@ -271,6 +281,59 @@ const DeliveryDetailPage = observer(() => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Receive history drawer */}
+      <Drawer
+        open={!!historyItem}
+        onClose={() => setHistoryItem(null)}
+        width={420}
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <InfoCircleOutlined />
+            <span>Історія прийому</span>
+          </div>
+        }
+      >
+        {historyItem && (
+          <div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: 15 }}>{historyItem.productName}</div>
+              <div style={{ color: '#9CA3AF', fontSize: 12, marginTop: 2 }}>
+                {historyItem.categoryName} / {historyItem.subcategoryName}
+                {historyItem.hasMaterial && <span> · {MATERIAL_LABELS[historyItem.material] ?? historyItem.material}</span>}
+                {historyItem.hasColor && <span> · {historyItem.color}</span>}
+              </div>
+              <div style={{ display: 'flex', gap: 16, marginTop: 8, fontSize: 13 }}>
+                <span>Очікувано: <strong>{historyItem.expectedQty} шт</strong></span>
+                <span>Прийнято: <strong style={{ color: historyItem.receivedQty >= historyItem.expectedQty ? '#16A34A' : '#D97706' }}>{historyItem.receivedQty} шт</strong></span>
+              </div>
+            </div>
+
+            {historyItem.receiveHistory.length === 0 ? (
+              <div style={{ color: '#9CA3AF', textAlign: 'center', padding: '32px 0' }}>
+                Прийомів ще не було
+              </div>
+            ) : (
+              <Timeline
+                items={historyItem.receiveHistory.map((t: ReceiveTransactionInfo) => ({
+                  color: 'green',
+                  children: (
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                        <span style={{ fontWeight: 600, fontSize: 14 }}>+{t.quantity} шт</span>
+                        <span style={{ color: '#9CA3AF', fontSize: 12 }}>{t.date}</span>
+                      </div>
+                      {t.note && (
+                        <div style={{ color: '#6B7280', fontSize: 13, marginTop: 2 }}>{t.note}</div>
+                      )}
+                    </div>
+                  ),
+                }))}
+              />
+            )}
+          </div>
+        )}
+      </Drawer>
     </div>
   )
 })
