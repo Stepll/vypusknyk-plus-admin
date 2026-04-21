@@ -495,8 +495,17 @@ function TransactionDrawer({
               optionFilterProp="label"
               options={orders.map(o => ({
                 value: o.id,
-                label: `${o.orderNumber} · ${dayjs(o.createdAt).format('DD.MM.YYYY')}`,
+                label: o.orderNumber,
               }))}
+              optionRender={option => {
+                const o = orders.find(x => x.id === option.value)
+                return (
+                  <div>
+                    <span>{option.label}</span>
+                    {o && <span style={{ color: '#9CA3AF', fontSize: 12, marginLeft: 8 }}>{dayjs(o.createdAt).format('DD.MM.YYYY')}</span>}
+                  </div>
+                )
+              }}
             />
           </Form.Item>
         )}
