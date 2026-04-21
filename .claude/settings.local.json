@@ -33,7 +33,12 @@
       "Bash(grep -i \"\\\\.cs$\")",
       "Bash(xargs ls *)",
       "Bash(ssh vmi3229320 *)",
-      "Read(//Users/stepankobrii/.ssh/**)"
+      "Read(//Users/stepankobrii/.ssh/**)",
+      "Bash(git commit *)",
+      "Bash(ASPNETCORE_ENVIRONMENT=Development dotnet ef database update --project ../VypusknykPlus.Application)",
+      "Bash(MINIO__ENDPOINT=localhost dotnet ef database update --project ../VypusknykPlus.Application)",
+      "Bash(MINIO__ENDPOINT=localhost dotnet ef migrations add AddDeliveriesAndSuppliers --project ../VypusknykPlus.Application)",
+      "Bash(MINIO__ENDPOINT=localhost dotnet ef migrations add AddSupplierExtraFields --project ../VypusknykPlus.Application)"
     ]
   }
 }

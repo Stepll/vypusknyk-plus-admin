@@ -1,7 +1,7 @@
 import { apiFetch } from './client'
 import type {
-  SupplierResponse, DeliverySummary, DeliveryDetail, DeliveryItemResponse,
-  CreateDeliveryRequest, ReceiveDeliveryItemRequest, PagedResponse,
+  SupplierResponse, SaveSupplierRequest, DeliverySummary, DeliveryDetail,
+  DeliveryItemResponse, CreateDeliveryRequest, ReceiveDeliveryItemRequest, PagedResponse,
 } from './types'
 
 export interface DeliveryQueryParams {
@@ -14,6 +14,21 @@ export interface DeliveryQueryParams {
 
 export const getSuppliers = () =>
   apiFetch<SupplierResponse[]>('/api/v1/admin/suppliers')
+
+export const createSupplier = (data: SaveSupplierRequest) =>
+  apiFetch<SupplierResponse>('/api/v1/admin/suppliers', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+
+export const updateSupplier = (id: number, data: SaveSupplierRequest) =>
+  apiFetch<SupplierResponse>(`/api/v1/admin/suppliers/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+
+export const deleteSupplier = (id: number) =>
+  apiFetch<void>(`/api/v1/admin/suppliers/${id}`, { method: 'DELETE' })
 
 export const getDeliveries = (params: DeliveryQueryParams = {}) => {
   const p = new URLSearchParams()

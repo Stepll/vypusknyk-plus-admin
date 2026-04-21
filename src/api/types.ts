@@ -260,8 +260,22 @@ export interface CreateStockProductRequest {
 export interface SupplierResponse {
   id: number
   name: string
+  contactPerson: string | null
   phone: string | null
+  email: string | null
+  taxId: string | null
   address: string | null
+  notes: string | null
+}
+
+export interface SaveSupplierRequest {
+  name: string
+  contactPerson: string | null
+  phone: string | null
+  email: string | null
+  taxId: string | null
+  address: string | null
+  notes: string | null
 }
 
 export type DeliveryStatus = 'pending' | 'partial' | 'received'
