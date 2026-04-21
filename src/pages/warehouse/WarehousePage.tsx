@@ -137,21 +137,24 @@ function TransactionListItem({ t, hasColor, hasMaterial }: {
 }) {
   const isIncome = t.type === 'income'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 12px', borderBottom: '1px solid #F9FAFB' }}>
-      <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{isIncome ? '📦' : '📤'}</span>
-      <span style={{ width: 86, color: '#6B7280', fontSize: 12, flexShrink: 0 }}>{t.date}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderBottom: '1px solid #F9FAFB' }}>
+      <span style={{ fontSize: 15, width: 20, textAlign: 'center', flexShrink: 0 }}>{isIncome ? '📦' : '📤'}</span>
+      <span style={{ width: 88, color: '#6B7280', fontSize: 12, flexShrink: 0 }}>{t.date}</span>
       {hasMaterial !== false && (
-        <span style={{ width: 46, fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>{MATERIAL_LABELS[t.material as StockMaterial] ?? t.material}</span>
+        <span style={{ width: 52, fontSize: 11, color: '#9CA3AF', flexShrink: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {MATERIAL_LABELS[t.material as StockMaterial] ?? t.material}
+        </span>
       )}
       {hasColor !== false && (
-        <span style={{ minWidth: 90, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <ColorDot color={t.color} /><span style={{ fontSize: 12 }}>{t.color}</span>
+        <span style={{ width: 130, display: 'flex', alignItems: 'center', flexShrink: 0, overflow: 'hidden' }}>
+          <ColorDot color={t.color} />
+          <span style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.color}</span>
         </span>
       )}
       <span style={{ width: 52, fontWeight: 700, fontSize: 13, flexShrink: 0, color: isIncome ? '#16A34A' : '#DC2626' }}>
         {isIncome ? '+' : '-'}{t.quantity}
       </span>
-      <span style={{ flex: 1, color: '#6B7280', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ flex: 1, color: '#6B7280', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
         {t.note}
       </span>
     </div>
@@ -363,8 +366,10 @@ function TransactionDrawer({
     }))
     .filter(g => g.options.length > 0)
 
-  const colorOptions = (activeProduct?.hasColor && watchMaterial)
-    ? COLORS_BY_MATERIAL[watchMaterial].map(colorOption)
+  const colorOptions = activeProduct?.hasColor
+    ? activeProduct.hasMaterial
+      ? (watchMaterial ? COLORS_BY_MATERIAL[watchMaterial].map(colorOption) : [])
+      : ALL_COLORS.map(colorOption)
     : []
 
   const handleSubmit = async () => {
@@ -426,7 +431,7 @@ function TransactionDrawer({
         {activeProduct?.hasColor !== false && (
           <Form.Item name="color" label="Колір" rules={[{ required: true, message: 'Оберіть колір' }]}>
             <Select showSearch options={colorOptions}
-              placeholder={watchMaterial ? 'Оберіть колір...' : 'Спочатку оберіть матеріал'}
+              placeholder={activeProduct?.hasMaterial !== false && !watchMaterial ? 'Спочатку оберіть матеріал' : 'Оберіть колір...'}
               disabled={activeProduct?.hasMaterial !== false && !watchMaterial}
             />
           </Form.Item>
