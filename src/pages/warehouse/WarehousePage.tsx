@@ -404,6 +404,8 @@ const CreateProductDrawer = observer(({ open, onClose }: { open: boolean; onClos
         hasColor: values.hasColor ?? false,
         hasMaterial: values.hasMaterial ?? false,
       })
+      form.resetFields()
+      setSelectedCategoryId(null)
       onClose()
     } catch (e) {
       form.setFields([{ name: 'name', errors: [e instanceof Error ? e.message : 'Помилка'] }])
@@ -426,7 +428,7 @@ const CreateProductDrawer = observer(({ open, onClose }: { open: boolean; onClos
         <Form.Item name="name" label="Назва товару" rules={[{ required: true, message: "Введіть назву" }]}>
           <Input placeholder="Наприклад: Дзвоник великий синій" />
         </Form.Item>
-        <Form.Item label="Категорія">
+        <Form.Item name="categoryId" label="Категорія" rules={[{ required: true, message: 'Оберіть категорію' }]}>
           <Select
             placeholder="Оберіть категорію..."
             allowClear
