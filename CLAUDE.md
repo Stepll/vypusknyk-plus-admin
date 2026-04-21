@@ -6,7 +6,7 @@
 
 - **React 19** + **TypeScript** + **Vite**
 - **Ant Design 6** — UI компоненти (таблиці, форми, drawer, layout)
-- **MobX 6** + **mobx-react-lite** — стейт менеджмент (Orders, Products, Users stores)
+- **MobX 6** + **mobx-react-lite** — стейт менеджмент
 - **React Router 7** — маршрутизація (BrowserRouter)
 - **Tailwind CSS 4** — утилітарні стилі (через `@tailwindcss/vite`)
 - **API base URL**: `http://localhost:5272` (env var `VITE_API_URL`)
@@ -16,54 +16,83 @@
 ```
 src/
 ├── api/
-│   ├── client.ts          # apiFetch утиліта (base URL, Content-Type, auth header)
+│   ├── client.ts          # apiFetch (base URL, Content-Type, auth header, 204 guard)
 │   ├── types.ts           # Shared TypeScript типи
 │   ├── orders.ts          # GET /admin/orders, GET /admin/orders/:id, PATCH status
-│   ├── products.ts        # GET /admin/products, DELETE, uploadImage, deleteImage, setPreview
-│   ├── users.ts           # GET /admin/users, GET /admin/users/:id (повні деталі)
-│   ├── designs.ts         # GET /admin/designs (всі збережені дизайни)
-│   └── admins.ts          # GET/POST /admin/admins, GET/DELETE /admin/admins/:id
+│   ├── products.ts        # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
+│   ├── users.ts           # GET /admin/users, GET /admin/users/:id
+│   ├── designs.ts         # GET /admin/designs
+│   ├── admins.ts          # GET/POST /admin/admins, GET/DELETE /admin/admins/:id
+│   ├── warehouse.ts       # GET stats/categories/products/products/:id, POST transactions, POST products
+│   └── deliveries.ts      # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
 ├── stores/
-│   ├── OrdersStore.ts     # MobX store — orders list, pagination, status filter
-│   ├── ProductsStore.ts   # MobX store — products list, pagination, delete
-│   ├── UsersStore.ts      # MobX store — users list, pagination
-│   └── AuthStore.ts       # MobX store — admin auth (JWT token)
+│   ├── OrdersStore.ts     # MobX — orders list, pagination, status filter
+│   ├── ProductsStore.ts   # MobX — products list, pagination, delete
+│   ├── UsersStore.ts      # MobX — users list, pagination
+│   ├── AuthStore.ts       # MobX — admin auth (JWT token)
+│   ├── WarehouseStore.ts  # MobX — warehouse products, stats, categories, transactions
+│   └── DeliveryStore.ts   # MobX — deliveries, suppliers, delivery details Map, filters
 ├── components/
 │   └── layout/
 │       └── AdminLayout.tsx  # Sider з вкладеним меню + Header + Content (Outlet)
 └── pages/
     ├── dashboard/DashboardPage.tsx
     ├── orders/
-    │   ├── OrdersPage.tsx        # Таблиця + фільтр статусу + inline зміна статусу
-    │   └── OrderDetailPage.tsx   # Деталі: позиції (колапс персоналізації), покупець, доставка, оплата
+    │   ├── OrdersPage.tsx
+    │   └── OrderDetailPage.tsx
     ├── products/
-    │   ├── ProductsPage.tsx      # Таблиця продуктів + soft delete
-    │   └── ProductEditPage.tsx   # Редагування/створення: хедер з кнопками, налаштування + фото
+    │   ├── ProductsPage.tsx
+    │   └── ProductEditPage.tsx
     ├── users/
-    │   ├── UsersPage.tsx         # Таблиця користувачів, клік → деталі
-    │   └── UserDetailPage.tsx    # Картка юзера + таблиця замовлень + збережені дизайни
+    │   ├── UsersPage.tsx
+    │   └── UserDetailPage.tsx
     ├── designs/
-    │   └── SavedDesignsPage.tsx  # Всі збережені дизайни, посилання на юзера
+    │   └── SavedDesignsPage.tsx
     ├── admins/
-    │   ├── AdminsPage.tsx        # Таблиця адмінів + drawer створення + видалення
-    │   └── AdminDetailPage.tsx   # Картка адміна (email, дата, lastLoginAt, пароль) + таблиця дій
+    │   ├── AdminsPage.tsx
+    │   └── AdminDetailPage.tsx
     ├── warehouse/
-    │   └── WarehousePage.tsx     # (порожньо)
+    │   └── WarehousePage.tsx    # Облік товарів: таблиця продуктів, статистика, прихід/видача
+    ├── deliveries/
+    │   ├── DeliveriesPage.tsx   # Таблиця поставок з фільтрами, прогрес-бар
+    │   ├── DeliveryDetailPage.tsx  # Деталі поставки: позиції, прийом товару, історія прийому (drawer)
+    │   └── NewDeliveryPage.tsx  # Повна сторінка створення поставки (dynamic item rows)
     ├── history/
-    │   └── HistoryPage.tsx       # (порожньо)
+    │   └── HistoryPage.tsx      # (порожньо)
     └── settings/
-        ├── CategoriesPage.tsx    # (порожньо)
+        ├── CategoriesPage.tsx
         ├── DeliveryMethodsPage.tsx
         ├── PaymentMethodsPage.tsx
         ├── OrderStatusesPage.tsx
         ├── RolesPage.tsx
+        ├── SuppliersPage.tsx    # CRUD постачальників (drawer форма + popconfirm delete)
         └── constructor/
-            └── ColorsPage.tsx    # (порожньо)
+            └── ColorsPage.tsx
+```
+
+## Маршрути (App.tsx)
+
+```
+/                   → DashboardPage
+/orders             → OrdersPage
+/orders/:id         → OrderDetailPage
+/products           → ProductsPage
+/products/:id       → ProductEditPage
+/users              → UsersPage
+/users/:id          → UserDetailPage
+/designs            → SavedDesignsPage
+/admins             → AdminsPage
+/admins/:id         → AdminDetailPage
+/warehouse          → WarehousePage
+/deliveries         → DeliveriesPage
+/deliveries/new     → NewDeliveryPage
+/deliveries/:id     → DeliveryDetailPage
+/settings/suppliers → SuppliersPage
+/settings/roles     → RolesPage
+... (інші settings)
 ```
 
 ## Меню (AdminLayout)
-
-Сайдбар з вкладеними підменю. Підменю `Налаштування` і `Конструктор` розкриваються стрілкою.
 
 ```
 Дашборд
@@ -72,70 +101,107 @@ src/
 Користувачі
 Збережені дизайни
 Адміни
-Складський облік
+Складський облік   (/warehouse)
+Поставки           (/deliveries)
 Історія змін
 Налаштування ▶
   Категорії товарів
   Методи доставки
   Методи оплати
   Статуси замовлень
+  Постачальники      (/settings/suppliers)
   Ролі
   Конструктор ▶
     Кольори
 ```
 
-`openKeys` обчислюються з `pathname` (settings/* → відкрито 'settings'; settings/constructor/* → відкрито і 'constructor').
-
 ## API ендпоінти (бекенд)
 
+### Замовлення / Продукти / Юзери / Адміни
 | Метод  | Шлях                                                  | Опис                                     |
 |--------|-------------------------------------------------------|------------------------------------------|
 | GET    | /api/v1/admin/orders                                  | Всі замовлення (paginated, фільтр status)|
-| GET    | /api/v1/admin/orders/{id}                             | Деталі замовлення                         |
-| PATCH  | /api/v1/admin/orders/{id}/status                      | Оновити статус                            |
+| GET    | /api/v1/admin/orders/{id}                             | Деталі замовлення                        |
+| PATCH  | /api/v1/admin/orders/{id}/status                      | Оновити статус                           |
 | GET    | /api/v1/admin/products                                | Всі продукти (з IsDeleted)               |
-| GET    | /api/v1/admin/products/{id}                           | Деталі продукту (включно з images[])     |
-| PUT    | /api/v1/admin/products/{id}                           | Зберегти продукт                          |
-| POST   | /api/v1/admin/products                                | Створити продукт                          |
-| DELETE | /api/v1/admin/products/{id}                           | Soft delete продукту                      |
-| POST   | /api/v1/admin/products/{id}/images                    | Завантажити фото (multipart, ліміт 10MB) |
-| DELETE | /api/v1/admin/products/{id}/images/{imageId}          | Видалити фото                             |
-| PATCH  | /api/v1/admin/products/{id}/images/{imageId}/preview  | Зробити фото превʼю                      |
-| GET    | /api/v1/admin/users                                   | Всі користувачі (paginated)              |
-| GET    | /api/v1/admin/users/{id}                              | Деталі юзера: info + orders[] + savedDesigns[] |
+| GET    | /api/v1/admin/products/{id}                           | Деталі + images[]                        |
+| POST   | /api/v1/admin/products                                | Створити продукт                         |
+| PUT    | /api/v1/admin/products/{id}                           | Оновити продукт                          |
+| DELETE | /api/v1/admin/products/{id}                           | Soft delete                              |
+| POST   | /api/v1/admin/products/{id}/images                    | Завантажити фото (multipart, 10MB)       |
+| DELETE | /api/v1/admin/products/{id}/images/{imageId}          | Видалити фото                            |
+| PATCH  | /api/v1/admin/products/{id}/images/{imageId}/preview  | Встановити превʼю                        |
+| GET    | /api/v1/admin/users                                   | Всі юзери (paginated)                    |
+| GET    | /api/v1/admin/users/{id}                              | Деталі + orders[] + savedDesigns[]       |
 | GET    | /api/v1/admin/designs                                 | Всі збережені дизайни (paginated)        |
 | GET    | /api/v1/admin/admins                                  | Список адмінів (paginated)               |
 | GET    | /api/v1/admin/admins/{id}                             | Деталі адміна (з lastLoginAt)            |
-| POST   | /api/v1/admin/admins                                  | Створити адміна                           |
-| DELETE | /api/v1/admin/admins/{id}                             | Soft delete адміна                        |
+| POST   | /api/v1/admin/admins                                  | Створити адміна                          |
+| DELETE | /api/v1/admin/admins/{id}                             | Soft delete адміна                       |
+
+### Складський облік
+| Метод  | Шлях                                        | Опис                                        |
+|--------|---------------------------------------------|---------------------------------------------|
+| GET    | /api/v1/admin/warehouse/stats               | Загальна статистика складу                  |
+| GET    | /api/v1/admin/warehouse/categories          | Категорії складських товарів                |
+| GET    | /api/v1/admin/warehouse/subcategories       | Підкатегорії складських товарів             |
+| GET    | /api/v1/admin/warehouse/products            | Список товарів (paginated, фільтри)         |
+| GET    | /api/v1/admin/warehouse/products/{id}       | Деталі: варіанти + транзакції               |
+| POST   | /api/v1/admin/warehouse/products            | Створити складський товар                   |
+| POST   | /api/v1/admin/warehouse/transactions        | Додати транзакцію (прихід/видача)           |
+
+### Поставки та Постачальники
+| Метод  | Шлях                                                          | Опис                                   |
+|--------|---------------------------------------------------------------|----------------------------------------|
+| GET    | /api/v1/admin/suppliers                                       | Список постачальників                  |
+| POST   | /api/v1/admin/suppliers                                       | Створити постачальника                 |
+| PUT    | /api/v1/admin/suppliers/{id}                                  | Оновити постачальника                  |
+| DELETE | /api/v1/admin/suppliers/{id}                                  | Soft delete постачальника              |
+| GET    | /api/v1/admin/deliveries                                      | Список поставок (paginated, фільтри)   |
+| GET    | /api/v1/admin/deliveries/{id}                                 | Деталі поставки (з позиціями + історією прийому) |
+| POST   | /api/v1/admin/deliveries                                      | Створити поставку                      |
+| POST   | /api/v1/admin/deliveries/{id}/items/{itemId}/receive          | Прийняти позицію (часткове)            |
+| POST   | /api/v1/admin/deliveries/{id}/receive-all                     | Прийняти всі позиції → 204             |
 
 ## Типи даних (api/types.ts)
 
 **OrderStatus**: `Accepted | Production | Shipped | Delivered`
 
-**AdminUser** — список юзерів: id, email, fullName, phone, createdAt, ordersCount
+**Warehouse:**
+- `StockMaterial`: `'Atlas' | 'Satin' | 'Silk'`
+- `StockStatus`: `'in_stock' | 'low_stock' | 'out_of_stock'`
+- `StockProductSummary` — subcategoryId/Name, categoryId/Name, hasColor, hasMaterial, totalStock, variantCount, status
+- `StockProductDetail` — variants[], transactions[]
+- `StockVariantResponse` — id, material, color, currentStock (обчислений)
+- `StockTransactionResponse` — deliveryItemId?, deliveryId?, orderId?, orderNumber?, orderCreatedAt?, type, quantity, date, note
+- `CreateStockTransactionRequest` — productId, material, color, type, quantity, date, note, orderId?
 
-**AdminUserDetail** — деталі юзера: + `orders: AdminUserOrderSummary[]` + `savedDesigns: AdminUserSavedDesign[]`
+**Deliveries:**
+- `DeliveryStatus`: `'pending' | 'partial' | 'received'`
+- `DeliverySummary` — number, supplierName?, expectedDate, status, itemCount, totalExpectedQty, totalReceivedQty
+- `DeliveryDetail` — + items: DeliveryItemResponse[]
+- `DeliveryItemResponse` — productName, subcategoryName, categoryName, hasColor, hasMaterial, material, color, expectedQty, receivedQty, receivedAt?, **receiveHistory: ReceiveTransactionInfo[]**
+- `ReceiveTransactionInfo` — id, quantity, date, note, createdAt
+- `SupplierResponse` — name, contactPerson?, phone?, email?, taxId?, address?, notes?
 
-**AdminSavedDesignItem** — глобальна таблиця дизайнів: id, designName, savedAt, userId, userFullName, userEmail
+## Особливості реалізації
 
-**AdminAdminItem** — список адмінів: id, email, fullName, createdAt
+**WarehousePage** — `TransactionListItem` має дві частини після кількості:
+- Колонка "Поставка/Замовлення" (ширина 120px): посилання на `/deliveries/:id` або `/orders/:id` з номером і датою
+- Колонка "Нотатка": залишок тексту
 
-**AdminAdminDetail** — деталі адміна: + `lastLoginAt: string | null`
+**DeliveryDetailPage** — кнопка "і" (InfoCircleOutlined) у діях кожної позиції відкриває Drawer з Timeline прийомів (дата, кількість, нотатка).
 
-**AdminProductDetail** — містить `images: ProductImageItem[]` (id, imageUrl, isPreview)
-
-**AdminOrderItem** — містить `namesData: NamesData | null` і `ribbonCustomization: RibbonCustomization | null`
+**TransactionDrawer** (outcome) — необов'язковий Select "Замовлення" внизу форми: завантажує 100 останніх замовлень, показує номер + дату (secondary style через `optionRender`).
 
 ## Правила ID
 
-**Всі ID завжди `bigint`**:
-- DB: `BIGINT` | Backend C#: `long` | Frontend TypeScript: `number`
+**Всі ID завжди `bigint`**: DB: `BIGINT` | Backend C#: `long` | Frontend TypeScript: `number`
 
 ## Команди
 
 ```bash
-npm run dev      # http://localhost:5174 (або наступний вільний порт)
+npm run dev      # http://localhost:5174
 npm run build    # TypeScript check + Vite build
 npm run lint     # ESLint
 ```
@@ -151,53 +217,27 @@ npm run lint     # ESLint
 
 ## Деплой бекенду (Docker)
 
-Бекенд на сервері `vmi3229320` в Docker. Флоу деплою:
-
 ```bash
-# 1. Локально — зібрати і запушити image (обов'язково --platform linux/amd64, сервер amd64)
+# 1. Локально
 cd /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend
 docker buildx build --platform linux/amd64 -t stepll/vypusknyk-plus:latest --push .
 
-# 2. На сервері
+# 2. На сервері vmi3229320
 cd ~/vypusknyk-plus/prod
 docker compose pull && docker compose up -d
-
-# Перевірити логи після запуску
 docker logs prod-api-1 --tail 50
 ```
 
-**Автоміграції** — `MigrateAsync()` в `Program.cs` запускається при старті.
-
-**Якщо треба скинути БД на сервері:**
-```bash
-docker stop prod-api-1
-docker exec prod-db-1 psql -U postgres -c "DROP DATABASE vypusknyk_plus;"
-docker exec prod-db-1 psql -U postgres -c "CREATE DATABASE vypusknyk_plus;"
-docker start prod-api-1
-```
-
-**Локальна БД** — `appsettings.Development.json`, `Host=localhost;Port=5432;Database=vypusknyk_plus;Username=postgres;Password=postgres`
-
-## Nginx (сервер)
-
-Конфіг: `/etc/nginx/sites-enabled/vypusknyk`
-
-- `client_max_body_size 15m;` — для завантаження фото
-- `location /storage/ { proxy_pass http://localhost:9000/; }` — проксі до MinIO
-
-**MinIO** — публічний endpoint: `https://75.119.152.4.sslip.io/storage`. Змінна `MINIO_PUBLIC_ENDPOINT` в docker-compose.
+**Автоміграції** — `MigrateAsync()` в `Program.cs` при старті.
 
 ## Бекенд — важливі патерни
 
-- **EF Core JSONB**: `OwnsOne(e => e.Field, b => { b.ToJson(); ... })` для value objects
-- **Global query filters**: `HasQueryFilter(e => !e.IsDeleted)` є на: User, Order, OrderItem, SavedDesign, CartItem, Product, Admin. В адмін-сервісах завжди використовувати `IgnoreQueryFilters()` + явний `.Where(!e.IsDeleted)` де потрібно
-- **Admin auth**: Super admin — через env vars `Admin:Email`/`Admin:Password` (не в БД, id=0). DB admins — BCrypt, `LastLoginAt` оновлюється при кожному логіні
+- **Global query filters** (`!e.IsDeleted`) на: User, Order, OrderItem, SavedDesign, CartItem, Product, Admin, **Supplier, Delivery**. При Include навігації з query filter — обов'язково завантажувати через окремий запит з `IgnoreQueryFilters()` щоб уникнути null.
+- **apiFetch** — перевіряє `res.status === 204` перед `res.json()`. Ендпоінти що повертають "порожній успіх" мусять повертати 204, не 200.
 
 ## TODO
 
 - [ ] Підключити реальні дані до Дашборду
-- [ ] CORS: додати admin URL до `Cors:AllowedOrigins` при деплої
-- [ ] Деплой бекенду з міграціями `AddProductImages`, `AddOrderItemPersonalization`, `AddAdminLastLoginAt`
-- [ ] Реалізувати зміну пароля адміна (кнопка є, логіки немає)
-- [ ] Наповнити сторінки налаштувань (категорії, доставка, оплата, статуси, ролі, кольори)
-- [ ] Складський облік та Історія змін
+- [ ] Реалізувати зміну пароля адміна
+- [ ] Наповнити сторінки налаштувань (категорії, доставка, оплата, статуси, кольори)
+- [ ] Історія змін
