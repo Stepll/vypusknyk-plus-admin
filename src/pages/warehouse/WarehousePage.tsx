@@ -81,6 +81,7 @@ function colorOption(c: string) {
 
 const ExpandedTransactions = observer(({ productId }: { productId: number }) => {
   const detail = warehouseStore.productDetails.get(productId)
+  const product = warehouseStore.products.find(p => p.id === productId)
   const isLoading = warehouseStore.productDetailsLoading.has(productId)
   const [colorFilter, setColorFilter] = useState('')
   const [materialFilter, setMaterialFilter] = useState('')
@@ -88,28 +89,35 @@ const ExpandedTransactions = observer(({ productId }: { productId: number }) => 
   if (isLoading) return <div style={{ padding: 16, textAlign: 'center' }}><Spin size="small" /></div>
   if (!detail) return null
 
+  const hasColor = product?.hasColor ?? detail.hasColor
+  const hasMaterial = product?.hasMaterial ?? detail.hasMaterial
+
   const transactions = detail.transactions.filter(t => {
     if (colorFilter && t.color !== colorFilter) return false
     if (materialFilter && t.material !== materialFilter) return false
     return true
   })
 
-  const availableColors = [...new Set(detail.transactions.map(t => t.color))]
-  const availableMaterials = [...new Set(detail.transactions.map(t => t.material))] as StockMaterial[]
+  const availableColors = hasColor ? [...new Set(detail.transactions.map(t => t.color).filter(Boolean))] : []
+  const availableMaterials = hasMaterial ? [...new Set(detail.transactions.map(t => t.material).filter(Boolean))] as StockMaterial[] : []
 
   return (
     <div style={{ padding: '12px 16px' }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-        <Select
-          value={colorFilter || undefined} placeholder="Всі кольори" allowClear size="small"
-          style={{ width: 160 }} onChange={v => setColorFilter(v ?? '')}
-          options={availableColors.map(colorOption)}
-        />
-        <Select
-          value={materialFilter || undefined} placeholder="Всі матеріали" allowClear size="small"
-          style={{ width: 130 }} onChange={v => setMaterialFilter(v ?? '')}
-          options={availableMaterials.map(m => ({ value: m, label: MATERIAL_LABELS[m] }))}
-        />
+        {hasColor && (
+          <Select
+            value={colorFilter || undefined} placeholder="Всі кольори" allowClear size="small"
+            style={{ width: 160 }} onChange={v => setColorFilter(v ?? '')}
+            options={availableColors.map(colorOption)}
+          />
+        )}
+        {hasMaterial && (
+          <Select
+            value={materialFilter || undefined} placeholder="Всі матеріали" allowClear size="small"
+            style={{ width: 130 }} onChange={v => setMaterialFilter(v ?? '')}
+            options={availableMaterials.map(m => ({ value: m, label: MATERIAL_LABELS[m] }))}
+          />
+        )}
         <span style={{ color: '#9CA3AF', fontSize: 12, lineHeight: '24px' }}>
           {transactions.length} записів
         </span>
@@ -117,23 +125,29 @@ const ExpandedTransactions = observer(({ productId }: { productId: number }) => 
       <div style={{ height: 280, overflowY: 'auto', border: '1px solid #F3F4F6', borderRadius: 6 }}>
         {transactions.length === 0
           ? <div style={{ padding: 24, textAlign: 'center', color: '#9CA3AF' }}>Немає транзакцій</div>
-          : transactions.map(t => <TransactionListItem key={t.id} t={t} />)
+          : transactions.map(t => <TransactionListItem key={t.id} t={t} hasColor={hasColor} hasMaterial={hasMaterial} />)
         }
       </div>
     </div>
   )
 })
 
-function TransactionListItem({ t }: { t: StockTransactionResponse }) {
+function TransactionListItem({ t, hasColor, hasMaterial }: {
+  t: StockTransactionResponse; hasColor?: boolean; hasMaterial?: boolean
+}) {
   const isIncome = t.type === 'income'
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 12px', borderBottom: '1px solid #F9FAFB' }}>
       <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{isIncome ? '📦' : '📤'}</span>
       <span style={{ width: 86, color: '#6B7280', fontSize: 12, flexShrink: 0 }}>{t.date}</span>
-      <span style={{ width: 46, fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>{MATERIAL_LABELS[t.material]}</span>
-      <span style={{ minWidth: 90, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-        <ColorDot color={t.color} /><span style={{ fontSize: 12 }}>{t.color}</span>
-      </span>
+      {hasMaterial !== false && (
+        <span style={{ width: 46, fontSize: 11, color: '#9CA3AF', flexShrink: 0 }}>{MATERIAL_LABELS[t.material as StockMaterial] ?? t.material}</span>
+      )}
+      {hasColor !== false && (
+        <span style={{ minWidth: 90, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <ColorDot color={t.color} /><span style={{ fontSize: 12 }}>{t.color}</span>
+        </span>
+      )}
       <span style={{ width: 52, fontWeight: 700, fontSize: 13, flexShrink: 0, color: isIncome ? '#16A34A' : '#DC2626' }}>
         {isIncome ? '+' : '-'}{t.quantity}
       </span>
@@ -155,8 +169,10 @@ const ProductDetailModal = observer(({
   const detail = productId ? warehouseStore.productDetails.get(productId) : null
   const isLoading = productId ? warehouseStore.productDetailsLoading.has(productId) : false
   const variants = detail?.variants ?? []
-  const allColors = [...new Set(variants.map(v => v.color))]
-  const allMaterials = MATERIALS.filter(m => variants.some(v => v.material === m))
+  const hasColor = detail?.hasColor ?? true
+  const hasMaterial = detail?.hasMaterial ?? true
+  const allColors = hasColor ? [...new Set(variants.map(v => v.color).filter(Boolean))] : []
+  const allMaterials = hasMaterial ? MATERIALS.filter(m => variants.some(v => v.material === m)) : []
   const stockMap = new Map(variants.map(v => [`${v.material}:${v.color}`, v.currentStock]))
 
   return (
@@ -180,41 +196,97 @@ const ProductDetailModal = observer(({
       <Tabs items={[
         {
           key: 'stock', label: 'Залишки',
-          children: allColors.length === 0
+          children: variants.length === 0
             ? <p style={{ color: '#9CA3AF' }}>Немає надходжень</p>
-            : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>Колір</th>
-                      {allMaterials.map(m => (
-                        <th key={m} style={{ padding: '6px 12px', textAlign: 'center', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>
-                          {MATERIAL_LABELS[m]}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allColors.map(color => (
-                      <tr key={color} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                        <td style={{ padding: '8px 12px' }}>
-                          <span style={{ display: 'flex', alignItems: 'center' }}><ColorDot color={color} />{color}</span>
-                        </td>
-                        {allMaterials.map(m => {
-                          const qty = stockMap.get(`${m}:${color}`) ?? 0
-                          return (
-                            <td key={m} style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: qty === 0 ? '#D1D5DB' : qty < 10 ? '#EF4444' : '#111827' }}>
+            : !hasColor && !hasMaterial
+              ? (
+                <div style={{ fontSize: 24, fontWeight: 700, color: '#111827', padding: '16px 0' }}>
+                  {variants[0]?.currentStock ?? 0} шт
+                </div>
+              )
+              : !hasColor && hasMaterial
+                ? (
+                  <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>Матеріал</th>
+                        <th style={{ padding: '6px 12px', textAlign: 'center', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>Кількість</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {allMaterials.map(m => {
+                        const qty = stockMap.get(`${m}:`) ?? 0
+                        return (
+                          <tr key={m} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                            <td style={{ padding: '8px 12px' }}>{MATERIAL_LABELS[m]}</td>
+                            <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: qty === 0 ? '#D1D5DB' : qty < 10 ? '#EF4444' : '#111827' }}>
                               {qty > 0 ? qty : '—'}
                             </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )
+                : hasColor && !hasMaterial
+                  ? (
+                    <table style={{ borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr>
+                          <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>Колір</th>
+                          <th style={{ padding: '6px 12px', textAlign: 'center', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>Кількість</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allColors.map(color => {
+                          const qty = stockMap.get(`:${color}`) ?? 0
+                          return (
+                            <tr key={color} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                              <td style={{ padding: '8px 12px' }}>
+                                <span style={{ display: 'flex', alignItems: 'center' }}><ColorDot color={color} />{color}</span>
+                              </td>
+                              <td style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: qty === 0 ? '#D1D5DB' : qty < 10 ? '#EF4444' : '#111827' }}>
+                                {qty > 0 ? qty : '—'}
+                              </td>
+                            </tr>
                           )
                         })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ),
+                      </tbody>
+                    </table>
+                  )
+                  : (
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: 13 }}>
+                        <thead>
+                          <tr>
+                            <th style={{ padding: '6px 12px', textAlign: 'left', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>Колір</th>
+                            {allMaterials.map(m => (
+                              <th key={m} style={{ padding: '6px 12px', textAlign: 'center', borderBottom: '1px solid #E5E7EB', color: '#6B7280' }}>
+                                {MATERIAL_LABELS[m]}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allColors.map(color => (
+                            <tr key={color} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                              <td style={{ padding: '8px 12px' }}>
+                                <span style={{ display: 'flex', alignItems: 'center' }}><ColorDot color={color} />{color}</span>
+                              </td>
+                              {allMaterials.map(m => {
+                                const qty = stockMap.get(`${m}:${color}`) ?? 0
+                                return (
+                                  <td key={m} style={{ padding: '8px 12px', textAlign: 'center', fontWeight: 600, color: qty === 0 ? '#D1D5DB' : qty < 10 ? '#EF4444' : '#111827' }}>
+                                    {qty > 0 ? qty : '—'}
+                                  </td>
+                                )
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ),
         },
         {
           key: 'history', label: `Історія (${detail?.transactions.length ?? 0})`,
@@ -222,7 +294,8 @@ const ProductDetailModal = observer(({
             <div style={{ height: 380, overflowY: 'auto' }}>
               {(detail?.transactions ?? []).length === 0
                 ? <p style={{ color: '#9CA3AF' }}>Немає транзакцій</p>
-                : (detail?.transactions ?? []).map(t => <TransactionListItem key={t.id} t={t} />)
+                : (detail?.transactions ?? []).map(t =>
+                    <TransactionListItem key={t.id} t={t} hasColor={hasColor} hasMaterial={hasMaterial} />)
               }
             </div>
           ),
@@ -268,8 +341,11 @@ function TransactionDrawer({
     : selectedProduct
 
   const currentVariant = watchProductId
-    ? warehouseStore.productDetails.get(watchProductId)?.variants.find(
-        v => v.material === watchMaterial && v.color === watchColor)
+    ? warehouseStore.productDetails.get(watchProductId)?.variants.find(v => {
+        const matOk = !activeProduct?.hasMaterial || v.material === watchMaterial
+        const colOk = !activeProduct?.hasColor || v.color === watchColor
+        return matOk && colOk
+      })
     : undefined
   const maxQty = type === 'outcome' ? (currentVariant?.currentStock ?? 0) : undefined
 
