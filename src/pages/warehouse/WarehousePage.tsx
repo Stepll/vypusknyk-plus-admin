@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { observer } from 'mobx-react-lite'
+import { useNavigate } from 'react-router-dom'
 import {
   Table, Button, Tag, Select, Input, Card, Row, Col, Modal, Tabs,
   Drawer, Form, InputNumber, DatePicker, Statistic, Space, Badge, Spin, Checkbox,
@@ -136,6 +137,7 @@ function TransactionListItem({ t, hasColor, hasMaterial }: {
   t: StockTransactionResponse; hasColor?: boolean; hasMaterial?: boolean
 }) {
   const isIncome = t.type === 'income'
+  const navigate = useNavigate()
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderBottom: '1px solid #F9FAFB' }}>
       <span style={{ fontSize: 15, width: 20, textAlign: 'center', flexShrink: 0 }}>{isIncome ? '📦' : '📤'}</span>
@@ -154,8 +156,17 @@ function TransactionListItem({ t, hasColor, hasMaterial }: {
       <span style={{ width: 52, fontWeight: 700, fontSize: 13, flexShrink: 0, color: isIncome ? '#16A34A' : '#DC2626' }}>
         {isIncome ? '+' : '-'}{t.quantity}
       </span>
-      <span style={{ flex: 1, color: '#6B7280', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-        {t.note}
+      <span style={{ flex: 1, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+        {t.deliveryId ? (
+          <a
+            style={{ color: '#4F46E5' }}
+            onClick={e => { e.stopPropagation(); navigate(`/deliveries/${t.deliveryId}`) }}
+          >
+            {t.note}
+          </a>
+        ) : (
+          <span style={{ color: '#6B7280' }}>{t.note}</span>
+        )}
       </span>
     </div>
   )

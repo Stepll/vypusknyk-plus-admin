@@ -207,6 +207,7 @@ export interface StockTransactionResponse {
   id: number
   variantId: number
   deliveryItemId: number | null
+  deliveryId: number | null
   material: StockMaterial
   color: string
   type: 'income' | 'outcome'
