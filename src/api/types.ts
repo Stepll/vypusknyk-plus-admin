@@ -208,6 +208,9 @@ export interface StockTransactionResponse {
   variantId: number
   deliveryItemId: number | null
   deliveryId: number | null
+  orderId: number | null
+  orderNumber: string | null
+  orderCreatedAt: string | null
   material: StockMaterial
   color: string
   type: 'income' | 'outcome'
@@ -246,6 +249,7 @@ export interface CreateStockTransactionRequest {
   quantity: number
   date: string
   note: string
+  orderId?: number | null
 }
 
 export interface CreateStockProductRequest {

@@ -11,6 +11,7 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { warehouseStore } from '../../stores/WarehouseStore'
+import { getOrders } from '../../api/orders'
 import type {
   StockProductSummary, StockMaterial, StockTransactionResponse,
 } from '../../api/types'
@@ -138,6 +139,22 @@ function TransactionListItem({ t, hasColor, hasMaterial }: {
 }) {
   const isIncome = t.type === 'income'
   const navigate = useNavigate()
+
+  const refCell = t.deliveryId ? (
+    <a style={{ color: '#4F46E5', fontSize: 12, whiteSpace: 'nowrap' }}
+      onClick={e => { e.stopPropagation(); navigate(`/deliveries/${t.deliveryId}`) }}>
+      Поставка
+    </a>
+  ) : t.orderId ? (
+    <a style={{ color: '#0891b2', fontSize: 12, whiteSpace: 'nowrap' }}
+      onClick={e => { e.stopPropagation(); navigate(`/orders/${t.orderId}`) }}>
+      <div style={{ fontWeight: 600 }}>{t.orderNumber}</div>
+      <div style={{ color: '#9CA3AF', fontSize: 11 }}>{t.orderCreatedAt}</div>
+    </a>
+  ) : (
+    <span style={{ color: '#D1D5DB', fontSize: 12 }}>—</span>
+  )
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderBottom: '1px solid #F9FAFB' }}>
       <span style={{ fontSize: 15, width: 20, textAlign: 'center', flexShrink: 0 }}>{isIncome ? '📦' : '📤'}</span>
@@ -156,17 +173,11 @@ function TransactionListItem({ t, hasColor, hasMaterial }: {
       <span style={{ width: 52, fontWeight: 700, fontSize: 13, flexShrink: 0, color: isIncome ? '#16A34A' : '#DC2626' }}>
         {isIncome ? '+' : '-'}{t.quantity}
       </span>
-      <span style={{ flex: 1, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
-        {t.deliveryId ? (
-          <a
-            style={{ color: '#4F46E5' }}
-            onClick={e => { e.stopPropagation(); navigate(`/deliveries/${t.deliveryId}`) }}
-          >
-            {t.note}
-          </a>
-        ) : (
-          <span style={{ color: '#6B7280' }}>{t.note}</span>
-        )}
+      <span style={{ width: 120, flexShrink: 0, overflow: 'hidden' }}>
+        {refCell}
+      </span>
+      <span style={{ flex: 1, color: '#6B7280', fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>
+        {t.note || <span style={{ color: '#D1D5DB' }}>—</span>}
       </span>
     </div>
   )
@@ -330,6 +341,15 @@ function TransactionDrawer({
 }) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
+  const [orders, setOrders] = useState<{ id: number; orderNumber: string; createdAt: string }[]>([])
+
+  useEffect(() => {
+    if (open && type === 'outcome') {
+      getOrders(1, 100).then(r =>
+        setOrders(r.items.map(o => ({ id: o.id, orderNumber: o.orderNumber, createdAt: o.createdAt })))
+      ).catch(() => {})
+    }
+  }, [open, type])
 
   const selectedProduct = productId
     ? warehouseStore.products.find(p => p.id === productId)
@@ -395,6 +415,7 @@ function TransactionDrawer({
         quantity: values.quantity,
         date: (values.date as dayjs.Dayjs).format('YYYY-MM-DD'),
         note: values.note ?? '',
+        orderId: values.orderId ?? null,
       })
       form.resetFields()
       onSuccess()
@@ -465,6 +486,20 @@ function TransactionDrawer({
         <Form.Item name="note" label={type === 'income' ? 'Примітка' : 'Кому / замовлення'}>
           <Input placeholder={type === 'income' ? "Необов'язково..." : 'Наприклад: школа №5, Одеса'} />
         </Form.Item>
+        {type === 'outcome' && (
+          <Form.Item name="orderId" label="Замовлення">
+            <Select
+              allowClear
+              showSearch
+              placeholder="Необов'язково — прив'язати до замовлення"
+              optionFilterProp="label"
+              options={orders.map(o => ({
+                value: o.id,
+                label: `${o.orderNumber} · ${dayjs(o.createdAt).format('DD.MM.YYYY')}`,
+              }))}
+            />
+          </Form.Item>
+        )}
       </Form>
     </Drawer>
   )
