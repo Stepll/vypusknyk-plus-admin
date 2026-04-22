@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Card, Col, Descriptions, Drawer, Form, Input, Row, Select, Spin, Table, Tag, message } from 'antd'
-import { ArrowLeftOutlined, CrownOutlined, LockOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, CrownOutlined, EditOutlined, LockOutlined } from '@ant-design/icons'
 import { getAdmin, changeAdminPassword, changeAdminRole } from '../../api/admins'
 import { getRoles } from '../../api/roles'
 import type { AdminAdminDetail, RoleResponse } from '../../api/types'
@@ -23,6 +23,8 @@ const AdminDetailPage = observer(() => {
   const [passwordDrawerOpen, setPasswordDrawerOpen] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
   const [changingRole, setChangingRole] = useState(false)
+  const [editingRole, setEditingRole] = useState(false)
+  const [roleSelectOpen, setRoleSelectOpen] = useState(false)
   const [form] = Form.useForm()
 
   const adminId = Number(id)
@@ -56,8 +58,15 @@ const AdminDetailPage = observer(() => {
     }
   }
 
+  const startEditRole = () => {
+    setEditingRole(true)
+    setRoleSelectOpen(true)
+  }
+
   const handleRoleChange = async (roleId: number | null) => {
     if (!admin) return
+    setEditingRole(false)
+    setRoleSelectOpen(false)
     setChangingRole(true)
     try {
       const updated = await changeAdminRole(adminId, roleId)
@@ -111,25 +120,44 @@ const AdminDetailPage = observer(() => {
             <Descriptions column={1} size="small" styles={{ label: { color: '#8c8c8c' } }}>
               <Descriptions.Item label="Email">{admin.email}</Descriptions.Item>
               <Descriptions.Item label="Роль">
-                {canChangeRole ? (
-                  <Select
-                    size="small"
-                    value={admin.role?.id ?? null}
-                    onChange={handleRoleChange}
-                    loading={changingRole}
-                    allowClear
-                    placeholder="Без ролі"
-                    style={{ minWidth: 140 }}
-                    options={roles.map(r => ({
-                      value: r.id,
-                      label: <Tag color={r.color} style={{ margin: 0 }}>{r.name}</Tag>,
-                    }))}
-                  />
-                ) : admin.role ? (
-                  <Tag color={admin.role.color}>{admin.role.name}</Tag>
-                ) : (
-                  <span style={{ color: '#bfbfbf' }}>Не призначено</span>
-                )}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {editingRole && canChangeRole ? (
+                    <Select
+                      variant="borderless"
+                      size="small"
+                      open={roleSelectOpen}
+                      onDropdownVisibleChange={open => {
+                        setRoleSelectOpen(open)
+                        if (!open) setEditingRole(false)
+                      }}
+                      value={admin.role?.id ?? null}
+                      onChange={handleRoleChange}
+                      loading={changingRole}
+                      allowClear
+                      placeholder="Без ролі"
+                      style={{ minWidth: 140, marginLeft: -7 }}
+                      options={roles.map(r => ({
+                        value: r.id,
+                        label: <Tag color={r.color} style={{ margin: 0 }}>{r.name}</Tag>,
+                      }))}
+                    />
+                  ) : (
+                    <>
+                      {admin.role
+                        ? <Tag color={admin.role.color}>{admin.role.name}</Tag>
+                        : <span style={{ color: '#bfbfbf' }}>Не призначено</span>}
+                      {canChangeRole && (
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined style={{ fontSize: 12, color: '#bfbfbf' }} />}
+                          onClick={startEditRole}
+                          style={{ padding: 0, width: 18, height: 18, minWidth: 0 }}
+                        />
+                      )}
+                    </>
+                  )}
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="Зареєстрований">{fmt(admin.createdAt)}</Descriptions.Item>
               <Descriptions.Item label="Останній логін">{fmt(admin.lastLoginAt)}</Descriptions.Item>
