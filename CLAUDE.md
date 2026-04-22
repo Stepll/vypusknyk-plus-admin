@@ -17,24 +17,28 @@
 src/
 ├── api/
 │   ├── client.ts          # apiFetch (base URL, Content-Type, auth header, 204 guard)
-│   ├── types.ts           # Shared TypeScript типи
+│   ├── types.ts           # Shared TypeScript типи (включно з RoleInfo, RoleResponse)
+│   ├── auth.ts            # login → AdminAuthResponse (включає role?: RoleInfo)
 │   ├── orders.ts          # GET /admin/orders, GET /admin/orders/:id, PATCH status
 │   ├── products.ts        # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
 │   ├── users.ts           # GET /admin/users, GET /admin/users/:id
 │   ├── designs.ts         # GET /admin/designs
-│   ├── admins.ts          # GET/POST /admin/admins, GET/DELETE /admin/admins/:id
+│   ├── admins.ts          # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
+│   ├── roles.ts           # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
 │   ├── warehouse.ts       # GET stats/categories/products/products/:id, POST transactions, POST products
 │   └── deliveries.ts      # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
 ├── stores/
 │   ├── OrdersStore.ts     # MobX — orders list, pagination, status filter
 │   ├── ProductsStore.ts   # MobX — products list, pagination, delete
 │   ├── UsersStore.ts      # MobX — users list, pagination
-│   ├── AuthStore.ts       # MobX — admin auth (JWT token)
+│   ├── AuthStore.ts       # MobX — admin auth (JWT token + role info); getters: isSuperAdmin, allowedPages
 │   ├── WarehouseStore.ts  # MobX — warehouse products, stats, categories, transactions
 │   └── DeliveryStore.ts   # MobX — deliveries, suppliers, delivery details Map, filters
 ├── components/
 │   └── layout/
 │       └── AdminLayout.tsx  # Sider з вкладеним меню + Header + Content (Outlet)
+│                            # Меню фільтрується за role.pages (SuperAdmin бачить все)
+│                            # Header показує тег ролі поруч з ім'ям адміна
 └── pages/
     ├── dashboard/DashboardPage.tsx
     ├── orders/
@@ -49,8 +53,9 @@ src/
     ├── designs/
     │   └── SavedDesignsPage.tsx
     ├── admins/
-    │   ├── AdminsPage.tsx
-    │   └── AdminDetailPage.tsx
+    │   ├── AdminsPage.tsx         # Таблиця з колонкою "Роль" (кольоровий тег); select ролі при створенні
+    │   └── AdminDetailPage.tsx    # Inline role select (SuperAdmin: іконка олівця → borderless select)
+    │                              # Password drawer (SuperAdmin → будь-хто; інші → тільки своя сторінка)
     ├── warehouse/
     │   └── WarehousePage.tsx    # Облік товарів: таблиця продуктів, статистика, прихід/видача
     ├── deliveries/
@@ -64,7 +69,7 @@ src/
         ├── DeliveryMethodsPage.tsx
         ├── PaymentMethodsPage.tsx
         ├── OrderStatusesPage.tsx
-        ├── RolesPage.tsx
+        ├── RolesPage.tsx        # CRUD ролей: таблиця, drawer з color picker (10 кольорів) + чекбокси сторінок
         ├── SuppliersPage.tsx    # CRUD постачальників (drawer форма + popconfirm delete)
         └── constructor/
             └── ColorsPage.tsx
@@ -134,10 +139,16 @@ src/
 | GET    | /api/v1/admin/users                                   | Всі юзери (paginated)                    |
 | GET    | /api/v1/admin/users/{id}                              | Деталі + orders[] + savedDesigns[]       |
 | GET    | /api/v1/admin/designs                                 | Всі збережені дизайни (paginated)        |
-| GET    | /api/v1/admin/admins                                  | Список адмінів (paginated)               |
-| GET    | /api/v1/admin/admins/{id}                             | Деталі адміна (з lastLoginAt)            |
-| POST   | /api/v1/admin/admins                                  | Створити адміна                          |
+| GET    | /api/v1/admin/admins                                  | Список адмінів (paginated, з role)       |
+| GET    | /api/v1/admin/admins/{id}                             | Деталі адміна (з lastLoginAt + role)     |
+| POST   | /api/v1/admin/admins                                  | Створити адміна (з roleId?)              |
 | DELETE | /api/v1/admin/admins/{id}                             | Soft delete адміна                       |
+| PATCH  | /api/v1/admin/admins/{id}/password                    | Змінити пароль → 204                     |
+| PATCH  | /api/v1/admin/admins/{id}/role                        | Змінити роль → AdminAdminDetailResponse  |
+| GET    | /api/v1/admin/roles                                   | Список ролей                             |
+| POST   | /api/v1/admin/roles                                   | Створити роль                            |
+| PUT    | /api/v1/admin/roles/{id}                              | Оновити роль (SuperAdmin — заборонено)   |
+| DELETE | /api/v1/admin/roles/{id}                              | Soft delete ролі (SuperAdmin — заборонено)|
 
 ### Складський облік
 | Метод  | Шлях                                        | Опис                                        |
@@ -164,6 +175,20 @@ src/
 | POST   | /api/v1/admin/deliveries/{id}/receive-all                     | Прийняти всі позиції → 204             |
 
 ## Типи даних (api/types.ts)
+
+**Roles:**
+- `RoleInfo` — id, name, color, isSuperAdmin, pages[]
+- `RoleResponse` — + createdAt
+- `CreateRoleRequest` / `UpdateRoleRequest` — name, color, pages[]
+- `AdminAdminItem` / `AdminAdminDetail` — тепер мають `role?: RoleInfo`
+- `CreateAdminRequest` — тепер має `roleId?: number | null`
+
+**Система ролей:**
+- 3 дефолтних ролі: **SuperAdmin** (isSuperAdmin=true, повний доступ), **Manager**, **Warehouse**
+- `pages[]` — масив ключів сторінок: `dashboard`, `orders`, `products`, `users`, `designs`, `admins`, `warehouse`, `deliveries`, `history`, `settings.categories`, `settings.delivery-methods`, `settings.payment-methods`, `settings.order-statuses`, `settings.suppliers`, `settings.roles`, `settings.colors`
+- SuperAdmin захищений від зміни/видалення на бекенді
+- JWT містить claims: `roleId`, `roleName`, `roleColor`, `isSuperAdmin`, `pages` (JSON)
+- `AuthStore` зберігає role в localStorage разом з JWT
 
 **OrderStatus**: `Accepted | Production | Shipped | Delivered`
 
@@ -238,6 +263,5 @@ docker logs prod-api-1 --tail 50
 ## TODO
 
 - [ ] Підключити реальні дані до Дашборду
-- [ ] Реалізувати зміну пароля адміна
 - [ ] Наповнити сторінки налаштувань (категорії, доставка, оплата, статуси, кольори)
 - [ ] Історія змін
