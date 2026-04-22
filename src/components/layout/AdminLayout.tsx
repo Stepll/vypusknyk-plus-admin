@@ -5,7 +5,7 @@ import {
   LogoutOutlined, HeartOutlined, CrownOutlined, InboxOutlined, HistoryOutlined,
   SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined,
   CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
-  TruckOutlined, ShopOutlined,
+  TruckOutlined, ShopOutlined, FileTextOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
@@ -15,6 +15,10 @@ const { Header, Sider, Content } = Layout
 
 const ROUTE_KEYS = [
   '/settings/constructor/colors',
+  '/settings/info-pages/privacy',
+  '/settings/info-pages/terms',
+  '/settings/info-pages/delivery',
+  '/settings/info-pages',
   '/settings/categories',
   '/settings/delivery',
   '/settings/payment',
@@ -55,6 +59,17 @@ const ALL_MENU_ITEMS: MenuItem[] = [
       { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники', pageKey: 'settings.suppliers' },
       { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі', pageKey: 'settings.roles' },
       {
+        key: 'info-pages',
+        icon: <FileTextOutlined />,
+        label: 'Інформаційні сторінки',
+        pageKey: 'settings.info-pages',
+        children: [
+          { key: '/settings/info-pages/privacy', icon: <FileTextOutlined />, label: 'Політика конфіденційності', pageKey: 'settings.info-pages' },
+          { key: '/settings/info-pages/terms', icon: <FileTextOutlined />, label: 'Умови використання', pageKey: 'settings.info-pages' },
+          { key: '/settings/info-pages/delivery', icon: <FileTextOutlined />, label: 'Доставка та оплата', pageKey: 'settings.info-pages' },
+        ],
+      },
+      {
         key: 'constructor',
         icon: <ToolOutlined />,
         label: 'Конструктор',
@@ -87,6 +102,7 @@ const AdminLayout = observer(() => {
 
   const [openKeys, setOpenKeys] = useState<string[]>(() => {
     if (pathname.startsWith('/settings/constructor')) return ['settings', 'constructor']
+    if (pathname.startsWith('/settings/info-pages')) return ['settings', 'info-pages']
     if (pathname.startsWith('/settings')) return ['settings']
     return []
   })
@@ -121,7 +137,7 @@ const AdminLayout = observer(() => {
           openKeys={openKeys}
           onOpenChange={keys => setOpenKeys(keys as string[])}
           items={menuItems}
-          onClick={({ key }) => { if (!key.startsWith('settings') && key !== 'constructor') navigate(key) }}
+          onClick={({ key }) => { if (!['settings', 'constructor', 'info-pages'].includes(key)) navigate(key) }}
           style={{ background: 'transparent', border: 'none' }}
         />
       </Sider>

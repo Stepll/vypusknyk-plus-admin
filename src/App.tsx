@@ -24,6 +24,7 @@ import OrderStatusesPage from './pages/settings/OrderStatusesPage'
 import ColorsPage from './pages/settings/constructor/ColorsPage'
 import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
+import InfoPageEditPage from './pages/settings/InfoPageEditPage'
 
 export default function App() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="settings/constructor/colors" element={<ColorsPage />} />
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
+            <Route path="settings/info-pages/:slug" element={<InfoPageEditPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Route>

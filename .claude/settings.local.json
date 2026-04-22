@@ -39,7 +39,9 @@
       "Bash(MINIO__ENDPOINT=localhost dotnet ef database update --project ../VypusknykPlus.Application)",
       "Bash(MINIO__ENDPOINT=localhost dotnet ef migrations add AddDeliveriesAndSuppliers --project ../VypusknykPlus.Application)",
       "Bash(MINIO__ENDPOINT=localhost dotnet ef migrations add AddSupplierExtraFields --project ../VypusknykPlus.Application)",
-      "Bash(find /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src -type f -name \"*.cs\" -exec grep -l \"Role\\\\|Permission\" {} \\\\;)"
+      "Bash(find /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src -type f -name \"*.cs\" -exec grep -l \"Role\\\\|Permission\" {} \\\\;)",
+      "Bash(xargs -I {} basename {} .tsx)",
+      "Bash(npm install *)"
     ]
   }
 }

@@ -387,3 +387,18 @@ export interface ReceiveDeliveryItemRequest {
   date: string
   note: string | null
 }
+
+
+export interface InfoPageResponse {
+  id: number
+  slug: string
+  title: string
+  content: string
+  order: number
+  updatedAt: string
+}
+
+export interface UpdateInfoPageRequest {
+  title: string
+  content: string
+}
