@@ -14,3 +14,15 @@ export const createAdmin = (data: CreateAdminRequest) =>
 
 export const deleteAdmin = (id: number) =>
   apiFetch<void>(`/api/v1/admin/admins/${id}`, { method: 'DELETE' })
+
+export const changeAdminPassword = (id: number, newPassword: string) =>
+  apiFetch<void>(`/api/v1/admin/admins/${id}/password`, {
+    method: 'PATCH',
+    body: JSON.stringify({ newPassword }),
+  })
+
+export const changeAdminRole = (id: number, roleId: number | null) =>
+  apiFetch<AdminAdminDetail>(`/api/v1/admin/admins/${id}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ roleId }),
+  })
