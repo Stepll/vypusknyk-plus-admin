@@ -21,6 +21,14 @@ class AuthStore {
     return !!this.token
   }
 
+  get isSuperAdmin() {
+    return this.admin?.isSuperAdmin ?? false
+  }
+
+  get allowedPages() {
+    return this.admin?.role?.pages ?? []
+  }
+
   async login(email: string, password: string) {
     this.loading = true
     this.error = null
@@ -28,7 +36,7 @@ class AuthStore {
       const res = await login(email, password)
       runInAction(() => {
         this.token = res.token
-        this.admin = { id: res.id, email: res.email, fullName: res.fullName, isSuperAdmin: res.isSuperAdmin }
+        this.admin = { id: res.id, email: res.email, fullName: res.fullName, isSuperAdmin: res.isSuperAdmin, role: res.role }
         localStorage.setItem(TOKEN_KEY, res.token)
         localStorage.setItem(ADMIN_KEY, JSON.stringify(this.admin))
       })

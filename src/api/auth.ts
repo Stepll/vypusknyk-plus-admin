@@ -1,4 +1,5 @@
 import { apiFetch } from './client'
+import type { RoleInfo } from './types'
 
 export interface AdminAuthResponse {
   id: number
@@ -6,6 +7,7 @@ export interface AdminAuthResponse {
   fullName: string
   isSuperAdmin: boolean
   token: string
+  role?: RoleInfo
 }
 
 export const login = (email: string, password: string) =>

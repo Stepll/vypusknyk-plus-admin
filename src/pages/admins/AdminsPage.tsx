@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Button, Drawer, Form, Input, Popconfirm, Table, message } from 'antd'
+import { Button, Drawer, Form, Input, Popconfirm, Select, Table, Tag, message } from 'antd'
 import { CrownOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { createAdmin, deleteAdmin, getAdmins } from '../../api/admins'
-import type { AdminAdminItem } from '../../api/types'
+import { getRoles } from '../../api/roles'
+import type { AdminAdminItem, RoleResponse } from '../../api/types'
 
 export default function AdminsPage() {
   const navigate = useNavigate()
@@ -13,6 +14,7 @@ export default function AdminsPage() {
   const [loading, setLoading] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [roles, setRoles] = useState<RoleResponse[]>([])
   const [form] = Form.useForm()
   const pageSize = 20
 
@@ -25,10 +27,15 @@ export default function AdminsPage() {
 
   useEffect(() => { load() }, [page])
 
-  const handleCreate = async (values: { email: string; fullName: string; password: string }) => {
+  const openDrawer = () => {
+    getRoles().then(setRoles)
+    setDrawerOpen(true)
+  }
+
+  const handleCreate = async (values: { email: string; fullName: string; password: string; roleId?: number }) => {
     setSaving(true)
     try {
-      await createAdmin(values)
+      await createAdmin({ ...values, roleId: values.roleId ?? null })
       message.success('Адміна додано')
       setDrawerOpen(false)
       form.resetFields()
@@ -65,6 +72,14 @@ export default function AdminsPage() {
     },
     { title: 'Email', dataIndex: 'email', key: 'email' },
     { title: "Ім'я", dataIndex: 'fullName', key: 'fullName' },
+    {
+      title: 'Роль',
+      key: 'role',
+      render: (_: unknown, row: AdminAdminItem) =>
+        row.role
+          ? <Tag color={row.role.color}>{row.role.name}</Tag>
+          : <span style={{ color: '#bfbfbf' }}>—</span>,
+    },
     {
       title: 'Доданий',
       dataIndex: 'createdAt',
@@ -111,7 +126,7 @@ export default function AdminsPage() {
             <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>Список адміністраторів платформи</p>
           </div>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openDrawer}>
           Додати адміна
         </Button>
       </div>
@@ -158,6 +173,16 @@ export default function AdminsPage() {
             rules={[{ required: true, min: 6, message: 'Мінімум 6 символів' }]}
           >
             <Input.Password placeholder="••••••••" />
+          </Form.Item>
+          <Form.Item label="Роль" name="roleId">
+            <Select
+              placeholder="Оберіть роль"
+              allowClear
+              options={roles.map(r => ({
+                value: r.id,
+                label: <Tag color={r.color} style={{ margin: 0 }}>{r.name}</Tag>,
+              }))}
+            />
           </Form.Item>
         </Form>
       </Drawer>

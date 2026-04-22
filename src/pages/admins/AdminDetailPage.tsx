@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Card, Col, Descriptions, Row, Spin, Table, message } from 'antd'
+import { Button, Card, Col, Descriptions, Row, Spin, Table, Tag, message } from 'antd'
 import { ArrowLeftOutlined, CrownOutlined, LockOutlined } from '@ant-design/icons'
 import { getAdmin } from '../../api/admins'
 import type { AdminAdminDetail } from '../../api/types'
@@ -47,7 +47,10 @@ export default function AdminDetailPage() {
             <CrownOutlined />
           </div>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>{admin.fullName}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>{admin.fullName}</h2>
+              {admin.role && <Tag color={admin.role.color}>{admin.role.name}</Tag>}
+            </div>
             <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>{admin.email}</p>
           </div>
         </div>
@@ -61,6 +64,11 @@ export default function AdminDetailPage() {
           >
             <Descriptions column={1} size="small" styles={{ label: { color: '#8c8c8c' } }}>
               <Descriptions.Item label="Email">{admin.email}</Descriptions.Item>
+              <Descriptions.Item label="Роль">
+                {admin.role
+                  ? <Tag color={admin.role.color}>{admin.role.name}</Tag>
+                  : <span style={{ color: '#bfbfbf' }}>Не призначено</span>}
+              </Descriptions.Item>
               <Descriptions.Item label="Зареєстрований">{fmt(admin.createdAt)}</Descriptions.Item>
               <Descriptions.Item label="Останній логін">{fmt(admin.lastLoginAt)}</Descriptions.Item>
               <Descriptions.Item label="Пароль">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Layout, Menu, Button, Avatar } from 'antd'
+import { Layout, Menu, Button, Avatar, Tag } from 'antd'
 import {
   DashboardOutlined, ShoppingCartOutlined, AppstoreOutlined, TeamOutlined,
   LogoutOutlined, HeartOutlined, CrownOutlined, InboxOutlined, HistoryOutlined,
@@ -25,38 +25,59 @@ const ROUTE_KEYS = [
   '/orders', '/products', '/users',
 ]
 
-const menuItems = [
-  { key: '/', icon: <DashboardOutlined />, label: 'Дашборд' },
-  { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Замовлення' },
-  { key: '/products', icon: <AppstoreOutlined />, label: 'Продукти' },
-  { key: '/users', icon: <TeamOutlined />, label: 'Користувачі' },
-  { key: '/designs', icon: <HeartOutlined />, label: 'Збережені дизайни' },
-  { key: '/admins', icon: <CrownOutlined />, label: 'Адміни' },
-  { key: '/warehouse', icon: <InboxOutlined />, label: 'Складський облік' },
-  { key: '/deliveries', icon: <TruckOutlined />, label: 'Поставки' },
-  { key: '/history', icon: <HistoryOutlined />, label: 'Історія змін' },
+type MenuItem = {
+  key: string
+  icon?: React.ReactNode
+  label: string
+  pageKey?: string
+  children?: MenuItem[]
+}
+
+const ALL_MENU_ITEMS: MenuItem[] = [
+  { key: '/', icon: <DashboardOutlined />, label: 'Дашборд', pageKey: 'dashboard' },
+  { key: '/orders', icon: <ShoppingCartOutlined />, label: 'Замовлення', pageKey: 'orders' },
+  { key: '/products', icon: <AppstoreOutlined />, label: 'Продукти', pageKey: 'products' },
+  { key: '/users', icon: <TeamOutlined />, label: 'Користувачі', pageKey: 'users' },
+  { key: '/designs', icon: <HeartOutlined />, label: 'Збережені дизайни', pageKey: 'designs' },
+  { key: '/admins', icon: <CrownOutlined />, label: 'Адміни', pageKey: 'admins' },
+  { key: '/warehouse', icon: <InboxOutlined />, label: 'Складський облік', pageKey: 'warehouse' },
+  { key: '/deliveries', icon: <TruckOutlined />, label: 'Поставки', pageKey: 'deliveries' },
+  { key: '/history', icon: <HistoryOutlined />, label: 'Історія змін', pageKey: 'history' },
   {
     key: 'settings',
     icon: <SettingOutlined />,
     label: 'Налаштування',
     children: [
-      { key: '/settings/categories', icon: <TagsOutlined />, label: 'Категорії товарів' },
-      { key: '/settings/delivery', icon: <CarOutlined />, label: 'Методи доставки' },
-      { key: '/settings/payment', icon: <CreditCardOutlined />, label: 'Методи оплати' },
-      { key: '/settings/order-statuses', icon: <CheckCircleOutlined />, label: 'Статуси замовлень' },
-      { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники' },
-      { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі' },
+      { key: '/settings/categories', icon: <TagsOutlined />, label: 'Категорії товарів', pageKey: 'settings.categories' },
+      { key: '/settings/delivery', icon: <CarOutlined />, label: 'Методи доставки', pageKey: 'settings.delivery-methods' },
+      { key: '/settings/payment', icon: <CreditCardOutlined />, label: 'Методи оплати', pageKey: 'settings.payment-methods' },
+      { key: '/settings/order-statuses', icon: <CheckCircleOutlined />, label: 'Статуси замовлень', pageKey: 'settings.order-statuses' },
+      { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники', pageKey: 'settings.suppliers' },
+      { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі', pageKey: 'settings.roles' },
       {
         key: 'constructor',
         icon: <ToolOutlined />,
         label: 'Конструктор',
         children: [
-          { key: '/settings/constructor/colors', icon: <BgColorsOutlined />, label: 'Кольори' },
+          { key: '/settings/constructor/colors', icon: <BgColorsOutlined />, label: 'Кольори', pageKey: 'settings.colors' },
         ],
       },
     ],
   },
 ]
+
+function filterMenuItems(items: MenuItem[], pages: string[], isSuperAdmin: boolean): MenuItem[] {
+  if (isSuperAdmin) return items
+  return items.reduce<MenuItem[]>((acc, item) => {
+    if (item.children) {
+      const filtered = filterMenuItems(item.children, pages, false)
+      if (filtered.length > 0) acc.push({ ...item, children: filtered })
+    } else if (item.pageKey && pages.includes(item.pageKey)) {
+      acc.push(item)
+    }
+    return acc
+  }, [])
+}
 
 const AdminLayout = observer(() => {
   const navigate = useNavigate()
@@ -71,6 +92,8 @@ const AdminLayout = observer(() => {
   })
 
   const initials = authStore.admin?.fullName?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) ?? 'A'
+
+  const menuItems = filterMenuItems(ALL_MENU_ITEMS, authStore.allowedPages, authStore.isSuperAdmin)
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -114,6 +137,11 @@ const AdminLayout = observer(() => {
         }}>
           <span style={{ color: '#8c8c8c', fontSize: 13 }}>
             Вітаємо, <strong style={{ color: '#262626' }}>{authStore.admin?.fullName}</strong>
+            {authStore.admin?.role && (
+              <Tag color={authStore.admin.role.color} style={{ marginLeft: 8, fontSize: 11 }}>
+                {authStore.admin.role.name}
+              </Tag>
+            )}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <Avatar size={32} style={{ background: '#4f46e5', fontSize: 13, fontWeight: 600, cursor: 'default' }}>

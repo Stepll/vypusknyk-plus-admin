@@ -134,11 +134,41 @@ export interface AdminSavedDesignItem {
   userEmail: string
 }
 
+export interface RoleInfo {
+  id: number
+  name: string
+  color: string
+  isSuperAdmin: boolean
+  pages: string[]
+}
+
+export interface RoleResponse {
+  id: number
+  name: string
+  color: string
+  pages: string[]
+  isSuperAdmin: boolean
+  createdAt: string
+}
+
+export interface CreateRoleRequest {
+  name: string
+  color: string
+  pages: string[]
+}
+
+export interface UpdateRoleRequest {
+  name: string
+  color: string
+  pages: string[]
+}
+
 export interface AdminAdminItem {
   id: number
   email: string
   fullName: string
   createdAt: string
+  role?: RoleInfo
 }
 
 export interface AdminAdminDetail {
@@ -147,12 +177,14 @@ export interface AdminAdminDetail {
   fullName: string
   createdAt: string
   lastLoginAt: string | null
+  role?: RoleInfo
 }
 
 export interface CreateAdminRequest {
   email: string
   fullName: string
   password: string
+  roleId?: number | null
 }
 
 export interface AdminUserDetail {
