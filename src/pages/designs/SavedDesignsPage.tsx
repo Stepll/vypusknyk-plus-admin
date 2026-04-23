@@ -4,6 +4,8 @@ import { HeartOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { getSavedDesigns } from '../../api/designs'
 import type { AdminSavedDesignItem } from '../../api/types'
+import RibbonEditorPreview from '../../components/RibbonEditorPreview'
+import type { RibbonColor, TextColor, ExtraTextColor, Font } from '../../constants/ribbonRules'
 
 export default function SavedDesignsPage() {
   const navigate = useNavigate()
@@ -30,14 +32,40 @@ export default function SavedDesignsPage() {
     : items
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
-    { title: 'Назва дизайну', dataIndex: 'designName', key: 'designName' },
-    { title: 'Користувач', dataIndex: 'userFullName', key: 'userFullName' },
-    { title: 'Email', dataIndex: 'userEmail', key: 'userEmail' },
+    {
+      title: 'Превью',
+      key: 'preview',
+      width: 300,
+      render: (_: unknown, row: AdminSavedDesignItem) => (
+        <div style={{ width: 280, pointerEvents: 'none' }}>
+          <RibbonEditorPreview
+            mainText={row.state.mainText || undefined}
+            school={row.state.school || undefined}
+            color={row.state.color as RibbonColor}
+            textColor={row.state.textColor as TextColor}
+            extraTextColor={row.state.extraTextColor as ExtraTextColor}
+            font={row.state.font as Font}
+            emblemKey={row.state.emblemKey}
+          />
+        </div>
+      ),
+    },
+    {
+      title: 'Назва',
+      key: 'info',
+      render: (_: unknown, row: AdminSavedDesignItem) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{row.designName}</div>
+          <div style={{ color: '#8c8c8c', fontSize: 12 }}>{row.userFullName}</div>
+          <div style={{ color: '#8c8c8c', fontSize: 12 }}>{row.userEmail}</div>
+        </div>
+      ),
+    },
     {
       title: 'Збережено',
       dataIndex: 'savedAt',
       key: 'savedAt',
+      width: 130,
       render: (v: string) => new Date(v).toLocaleString('uk-UA', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
@@ -79,6 +107,13 @@ export default function SavedDesignsPage() {
         onRow={record => ({ onClick: () => navigate(`/designs/${record.id}`) })}
         rowClassName={() => 'clickable-row'}
         style={{ cursor: 'pointer' }}
+        components={{
+          body: {
+            row: (props: React.HTMLAttributes<HTMLTableRowElement>) => (
+              <tr {...props} style={{ ...props.style, height: 200 }} />
+            ),
+          },
+        }}
       />
     </div>
   )

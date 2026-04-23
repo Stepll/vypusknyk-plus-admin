@@ -132,6 +132,12 @@ export interface AdminSavedDesignItem {
   userId: number
   userFullName: string
   userEmail: string
+  state: RibbonState
+}
+
+export interface RibbonClassGroup {
+  className: string
+  names: string
 }
 
 export interface RibbonState {
@@ -145,6 +151,7 @@ export interface RibbonState {
   extraTextColor: string
   font: string
   emblemKey: number
+  classes: RibbonClassGroup[]
 }
 
 export interface AdminSavedDesignDetail extends AdminSavedDesignItem {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Button, Card, Descriptions, Spin, Tag } from 'antd'
-import { ArrowLeftOutlined, HeartOutlined, UserOutlined } from '@ant-design/icons'
-import { getSavedDesign } from '../../api/designs'
+import { Button, Card, Descriptions, Popconfirm, Spin, Tag, Table } from 'antd'
+import { ArrowLeftOutlined, DeleteOutlined, HeartOutlined, UserOutlined } from '@ant-design/icons'
+import { getSavedDesign, deleteSavedDesign } from '../../api/designs'
 import type { AdminSavedDesignDetail } from '../../api/types'
 import RibbonEditorPreview from '../../components/RibbonEditorPreview'
 import {
@@ -26,6 +26,7 @@ export default function DesignDetailPage() {
   const navigate = useNavigate()
   const [design, setDesign] = useState<AdminSavedDesignDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -35,11 +36,26 @@ export default function DesignDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+  async function handleDelete() {
+    if (!design) return
+    setDeleting(true)
+    try {
+      await deleteSavedDesign(design.id)
+      navigate('/designs')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}><Spin size="large" /></div>
   if (!design) return <div style={{ padding: 40, color: '#888' }}>Дизайн не знайдено</div>
 
   const { state } = design
   const colorInfo = RIBBON_COLORS.find(c => c.value === state.color)
+  const allNames = (state.classes ?? []).flatMap(g =>
+    g.names.split('\n').map(s => s.trim()).filter(Boolean)
+  )
+  const firstClass = state.classes?.[0]?.className?.trim() || undefined
 
   return (
     <div style={{ maxWidth: 860, margin: '0 auto' }}>
@@ -52,7 +68,7 @@ export default function DesignDetailPage() {
         }}>
           <HeartOutlined />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>{design.designName}</h2>
           <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>
             Збережено: {new Date(design.savedAt).toLocaleString('uk-UA', {
@@ -61,6 +77,18 @@ export default function DesignDetailPage() {
             })}
           </p>
         </div>
+        <Popconfirm
+          title="Видалити дизайн?"
+          description="Дію не можна скасувати."
+          okText="Так, видалити"
+          cancelText="Скасувати"
+          okButtonProps={{ danger: true }}
+          onConfirm={handleDelete}
+        >
+          <Button danger icon={<DeleteOutlined />} loading={deleting}>
+            Видалити
+          </Button>
+        </Popconfirm>
       </div>
 
       {/* Preview */}
@@ -68,6 +96,8 @@ export default function DesignDetailPage() {
         <RibbonEditorPreview
           mainText={state.mainText || undefined}
           school={state.school || undefined}
+          className={firstClass}
+          names={allNames}
           color={state.color as RibbonColor}
           textColor={state.textColor as TextColor}
           extraTextColor={state.extraTextColor as ExtraTextColor}
@@ -77,23 +107,24 @@ export default function DesignDetailPage() {
       </Card>
 
       {/* User info */}
-      <Card
-        style={{ marginBottom: 20 }}
-        styles={{ body: { padding: '16px 20px' } }}
-      >
+      <Card style={{ marginBottom: 20 }} styles={{ body: { padding: '16px 20px' } }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <UserOutlined style={{ fontSize: 18, color: '#8b5cf6' }} />
           <div>
             <Link to={`/users/${design.userId}`} style={{ fontWeight: 600, fontSize: 15 }}>
               {design.userFullName}
             </Link>
-            <div style={{ color: '#8c8c8c', fontSize: 13 }}>{design.userEmail}</div>
+            <div style={{ fontSize: 13 }}>
+              <Link to={`/users/${design.userId}`} style={{ color: '#8c8c8c' }}>
+                {design.userEmail}
+              </Link>
+            </div>
           </div>
         </div>
       </Card>
 
       {/* Design params */}
-      <Card title="Параметри дизайну">
+      <Card title="Параметри дизайну" style={{ marginBottom: 20 }}>
         <Descriptions column={2} bordered size="small">
           <Descriptions.Item label="Основний текст">{state.mainText || '—'}</Descriptions.Item>
           <Descriptions.Item label="Школа">{state.school || '—'}</Descriptions.Item>
@@ -124,6 +155,33 @@ export default function DesignDetailPage() {
           )}
         </Descriptions>
       </Card>
+
+      {/* Classes & names */}
+      {(state.classes ?? []).length > 0 && (
+        <Card title={`Класи та імена (${allNames.length} учнів)`}>
+          {state.classes.map((group, i) => {
+            const names = group.names.split('\n').map(s => s.trim()).filter(Boolean)
+            return (
+              <div key={i} style={{ marginBottom: i < state.classes.length - 1 ? 20 : 0 }}>
+                <div style={{ fontWeight: 600, marginBottom: 8, color: '#1a1a2e' }}>
+                  {group.className || `Клас ${i + 1}`}
+                  <Tag style={{ marginLeft: 8 }}>{names.length} учнів</Tag>
+                </div>
+                <Table
+                  size="small"
+                  dataSource={names.map((name, j) => ({ key: j, name }))}
+                  columns={[
+                    { title: '#', dataIndex: 'key', width: 50, render: (v: number) => v + 1 },
+                    { title: "Ім'я", dataIndex: 'name' },
+                  ]}
+                  pagination={false}
+                  showHeader={false}
+                />
+              </div>
+            )
+          })}
+        </Card>
+      )}
     </div>
   )
 }
