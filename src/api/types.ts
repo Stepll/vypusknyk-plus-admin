@@ -134,6 +134,23 @@ export interface AdminSavedDesignItem {
   userEmail: string
 }
 
+export interface RibbonState {
+  mainText: string
+  school: string
+  comment: string
+  printType: string
+  color: string
+  material: string
+  textColor: string
+  extraTextColor: string
+  font: string
+  emblemKey: number
+}
+
+export interface AdminSavedDesignDetail extends AdminSavedDesignItem {
+  state: RibbonState
+}
+
 export interface RoleInfo {
   id: number
   name: string

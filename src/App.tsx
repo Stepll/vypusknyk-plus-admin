@@ -10,6 +10,7 @@ import ProductEditPage from './pages/products/ProductEditPage'
 import UsersPage from './pages/users/UsersPage'
 import UserDetailPage from './pages/users/UserDetailPage'
 import SavedDesignsPage from './pages/designs/SavedDesignsPage'
+import DesignDetailPage from './pages/designs/DesignDetailPage'
 import AdminsPage from './pages/admins/AdminsPage'
 import AdminDetailPage from './pages/admins/AdminDetailPage'
 import WarehousePage from './pages/warehouse/WarehousePage'
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="users" element={<UsersPage />} />
             <Route path="users/:id" element={<UserDetailPage />} />
             <Route path="designs" element={<SavedDesignsPage />} />
+            <Route path="designs/:id" element={<DesignDetailPage />} />
             <Route path="admins" element={<AdminsPage />} />
             <Route path="admins/:id" element={<AdminDetailPage />} />
             <Route path="warehouse" element={<WarehousePage />} />

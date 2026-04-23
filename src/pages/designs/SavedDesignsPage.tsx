@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Button, Table } from 'antd'
-import { HeartOutlined } from '@ant-design/icons'
+import { Input, Table } from 'antd'
+import { HeartOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { getSavedDesigns } from '../../api/designs'
 import type { AdminSavedDesignItem } from '../../api/types'
@@ -11,6 +11,7 @@ export default function SavedDesignsPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [search, setSearch] = useState('')
   const pageSize = 20
 
   useEffect(() => {
@@ -20,18 +21,18 @@ export default function SavedDesignsPage() {
       .finally(() => setLoading(false))
   }, [page])
 
+  const filtered = search.trim()
+    ? items.filter(d =>
+        d.userFullName.toLowerCase().includes(search.toLowerCase()) ||
+        d.userEmail.toLowerCase().includes(search.toLowerCase()) ||
+        d.designName.toLowerCase().includes(search.toLowerCase())
+      )
+    : items
+
   const columns = [
     { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     { title: 'Назва дизайну', dataIndex: 'designName', key: 'designName' },
-    {
-      title: 'Користувач',
-      key: 'user',
-      render: (_: unknown, row: AdminSavedDesignItem) => (
-        <Button type="link" style={{ padding: 0 }} onClick={() => navigate(`/users/${row.userId}`)}>
-          {row.userFullName}
-        </Button>
-      ),
-    },
+    { title: 'Користувач', dataIndex: 'userFullName', key: 'userFullName' },
     { title: 'Email', dataIndex: 'userEmail', key: 'userEmail' },
     {
       title: 'Збережено',
@@ -59,12 +60,25 @@ export default function SavedDesignsPage() {
           <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>Всі збережені дизайни користувачів</p>
         </div>
       </div>
+
+      <Input
+        prefix={<SearchOutlined />}
+        placeholder="Пошук по імені, email або назві дизайну"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        style={{ maxWidth: 400, marginBottom: 16 }}
+        allowClear
+      />
+
       <Table
         rowKey="id"
-        dataSource={items}
+        dataSource={filtered}
         columns={columns}
         loading={loading}
         pagination={{ current: page, pageSize, total, onChange: setPage }}
+        onRow={record => ({ onClick: () => navigate(`/designs/${record.id}`) })}
+        rowClassName={() => 'clickable-row'}
+        style={{ cursor: 'pointer' }}
       />
     </div>
   )
