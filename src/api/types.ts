@@ -413,6 +413,83 @@ export interface ReceiveDeliveryItemRequest {
 }
 
 
+// ─── Dashboard types ──────────────────────────────────────────────────────────
+
+export interface DashboardRevenueBlock {
+  currentMonth: number
+  previousMonth: number
+  changePercent: number
+  avgProductionDays: number
+}
+
+export interface DashboardOrdersBlock {
+  accepted: number
+  production: number
+  shipped: number
+  delivered: number
+  newThisWeek: number
+  stuck: number
+}
+
+export interface DashboardChartPoint {
+  date: string
+  orders: number
+  visits: number
+}
+
+export interface DashboardAwaitingDelivery {
+  id: number
+  number: string
+  supplierName: string | null
+  status: string
+  totalExpected: number
+  totalReceived: number
+}
+
+export interface DashboardUpcomingDelivery {
+  id: number
+  number: string
+  supplierName: string | null
+  expectedDate: string
+}
+
+export interface DashboardDeliveriesBlock {
+  awaiting: DashboardAwaitingDelivery[]
+  upcoming: DashboardUpcomingDelivery[]
+}
+
+export interface DashboardTopItem {
+  key: string
+  count: number
+}
+
+export interface DashboardDesignsBlock {
+  savedThisWeek: number
+  topColors: DashboardTopItem[]
+  topEmblems: DashboardTopItem[]
+  topFonts: DashboardTopItem[]
+}
+
+export interface DashboardTopProduct {
+  name: string
+  quantity: number
+}
+
+export interface DashboardTopCategoryBlock {
+  category: string
+  totalSold: number
+  products: DashboardTopProduct[]
+}
+
+export interface DashboardResponse {
+  revenue: DashboardRevenueBlock
+  orders: DashboardOrdersBlock
+  chart: DashboardChartPoint[]
+  deliveries: DashboardDeliveriesBlock
+  designs: DashboardDesignsBlock
+  topProducts: DashboardTopCategoryBlock[]
+}
+
 export interface InfoPageResponse {
   id: number
   slug: string
