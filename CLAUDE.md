@@ -22,7 +22,7 @@ src/
 │   ├── orders.ts          # GET /admin/orders, GET /admin/orders/:id, PATCH status
 │   ├── products.ts        # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
 │   ├── users.ts           # GET /admin/users, GET /admin/users/:id
-│   ├── designs.ts         # GET /admin/designs
+│   ├── designs.ts         # GET /admin/designs, GET /admin/designs/:id, DELETE /admin/designs/:id
 │   ├── admins.ts          # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
 │   ├── roles.ts           # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
 │   ├── warehouse.ts       # GET stats/categories/products/products/:id, POST transactions, POST products
@@ -36,10 +36,14 @@ src/
 │   ├── WarehouseStore.ts  # MobX — warehouse products, stats, categories, transactions
 │   └── DeliveryStore.ts   # MobX — deliveries, suppliers, delivery details Map, filters
 ├── components/
+│   ├── RibbonEditorPreview.tsx  # SVG-превью стрічки (скопійовано з frontend); пропси: mainText, school, className, names, color, textColor, extraTextColor, font, emblemKey
+│   ├── RibbonEditorPreview.css
 │   └── layout/
 │       └── AdminLayout.tsx  # Sider з вкладеним меню + Header + Content (Outlet)
 │                            # Меню фільтрується за role.pages (SuperAdmin бачить все)
 │                            # Header показує тег ролі поруч з ім'ям адміна
+├── constants/
+│   └── ribbonRules.ts       # RibbonColor, Font, RIBBON_COLORS, FONTS, PRINT_TYPES, MATERIALS, EMBLEMS
 └── pages/
     ├── dashboard/DashboardPage.tsx
     ├── orders/
@@ -52,7 +56,8 @@ src/
     │   ├── UsersPage.tsx
     │   └── UserDetailPage.tsx
     ├── designs/
-    │   └── SavedDesignsPage.tsx
+    │   ├── SavedDesignsPage.tsx   # Таблиця з SVG-превью стрічки в кожному рядку (h=200px), пошук
+    │   └── DesignDetailPage.tsx   # Превью, параметри, класи+імена, delete (Popconfirm)
     ├── admins/
     │   ├── AdminsPage.tsx         # Таблиця з колонкою "Роль" (кольоровий тег); select ролі при створенні
     │   └── AdminDetailPage.tsx    # Inline role select (SuperAdmin: іконка олівця → borderless select)
@@ -88,6 +93,7 @@ src/
 /users              → UsersPage
 /users/:id          → UserDetailPage
 /designs            → SavedDesignsPage
+/designs/:id        → DesignDetailPage
 /admins             → AdminsPage
 /admins/:id         → AdminDetailPage
 /warehouse          → WarehousePage
@@ -144,7 +150,9 @@ src/
 | PATCH  | /api/v1/admin/products/{id}/images/{imageId}/preview  | Встановити превʼю                        |
 | GET    | /api/v1/admin/users                                   | Всі юзери (paginated)                    |
 | GET    | /api/v1/admin/users/{id}                              | Деталі + orders[] + savedDesigns[]       |
-| GET    | /api/v1/admin/designs                                 | Всі збережені дизайни (paginated)        |
+| GET    | /api/v1/admin/designs                                 | Всі збережені дизайни (paginated, з state) |
+| GET    | /api/v1/admin/designs/{id}                            | Деталі дизайну (з state + classes)       |
+| DELETE | /api/v1/admin/designs/{id}                            | Soft delete дизайну → 204               |
 | GET    | /api/v1/admin/admins                                  | Список адмінів (paginated, з role)       |
 | GET    | /api/v1/admin/admins/{id}                             | Деталі адміна (з lastLoginAt + role)     |
 | POST   | /api/v1/admin/admins                                  | Створити адміна (з roleId?)              |
@@ -222,6 +230,14 @@ src/
 - `ReceiveTransactionInfo` — id, quantity, date, note, createdAt
 - `SupplierResponse` — name, contactPerson?, phone?, email?, taxId?, address?, notes?
 
+**Designs:**
+- `RibbonClassGroup` — className, names (імена через `\n`)
+- `RibbonState` — mainText, school, comment, printType, color, material, textColor, extraTextColor, font, emblemKey, **classes: RibbonClassGroup[]**
+- `AdminSavedDesignItem` — id, designName, savedAt, userId, userFullName, userEmail, **state: RibbonState**
+- `AdminSavedDesignDetail` extends Item (повертається з GET /:id)
+- `RibbonState.classes` зберігається як JSON-масив у полі `State` таблиці `SavedDesigns`
+- Відображення: `RibbonEditorPreview` отримує `names` як `string[]` (flatMap по classes)
+
 **InfoPage:**
 - `InfoPageResponse` — id, slug, title, content (markdown), order, updatedAt
 - `UpdateInfoPageRequest` — title, content
@@ -230,6 +246,8 @@ src/
 - Контент — Markdown; рендериться через `react-markdown` на клієнтському фронті
 
 ## Особливості реалізації
+
+**DesignDetailPage** — превью `RibbonEditorPreview` отримує всі імена через `flatMap` по `state.classes`, перший клас передається як `className`. Email користувача — `Link` на `/users/:id`.
 
 **WarehousePage** — `TransactionListItem` має дві частини після кількості:
 - Колонка "Поставка/Замовлення" (ширина 120px): посилання на `/deliveries/:id` або `/orders/:id` з номером і датою
