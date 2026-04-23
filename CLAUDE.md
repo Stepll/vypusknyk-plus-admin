@@ -26,7 +26,8 @@ src/
 │   ├── admins.ts          # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
 │   ├── roles.ts           # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
 │   ├── warehouse.ts       # GET stats/categories/products/products/:id, POST transactions, POST products
-│   └── deliveries.ts      # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
+│   ├── deliveries.ts      # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
+│   └── info-pages.ts      # GET /admin/info-pages, PUT /admin/info-pages/:slug
 ├── stores/
 │   ├── OrdersStore.ts     # MobX — orders list, pagination, status filter
 │   ├── ProductsStore.ts   # MobX — products list, pagination, delete
@@ -71,6 +72,7 @@ src/
         ├── OrderStatusesPage.tsx
         ├── RolesPage.tsx        # CRUD ролей: таблиця, drawer з color picker (10 кольорів) + чекбокси сторінок
         ├── SuppliersPage.tsx    # CRUD постачальників (drawer форма + popconfirm delete)
+        ├── InfoPageEditPage.tsx # Редактор інформаційних сторінок (markdown textarea + save)
         └── constructor/
             └── ColorsPage.tsx
 ```
@@ -92,9 +94,9 @@ src/
 /deliveries         → DeliveriesPage
 /deliveries/new     → NewDeliveryPage
 /deliveries/:id     → DeliveryDetailPage
-/settings/suppliers → SuppliersPage
-/settings/roles     → RolesPage
-... (інші settings)
+/settings/suppliers          → SuppliersPage
+/settings/roles              → RolesPage
+/settings/info-pages/:slug   → InfoPageEditPage  (slug: privacy | terms | delivery)
 ```
 
 ## Меню (AdminLayout)
@@ -114,8 +116,12 @@ src/
   Методи доставки
   Методи оплати
   Статуси замовлень
-  Постачальники      (/settings/suppliers)
+  Постачальники           (/settings/suppliers)
   Ролі
+  Інформаційні сторінки ▶
+    Політика конфіденційності  (/settings/info-pages/privacy)
+    Умови використання          (/settings/info-pages/terms)
+    Доставка та оплата          (/settings/info-pages/delivery)
   Конструктор ▶
     Кольори
 ```
@@ -161,6 +167,13 @@ src/
 | POST   | /api/v1/admin/warehouse/products            | Створити складський товар                   |
 | POST   | /api/v1/admin/warehouse/transactions        | Додати транзакцію (прихід/видача)           |
 
+### Інформаційні сторінки
+| Метод  | Шлях                                   | Опис                                          |
+|--------|----------------------------------------|-----------------------------------------------|
+| GET    | /api/v1/info/{slug}                    | Публічний — отримати сторінку за slug         |
+| GET    | /api/v1/admin/info-pages               | Список всіх сторінок (адмін)                  |
+| PUT    | /api/v1/admin/info-pages/{slug}        | Оновити вміст сторінки (адмін)                |
+
 ### Поставки та Постачальники
 | Метод  | Шлях                                                          | Опис                                   |
 |--------|---------------------------------------------------------------|----------------------------------------|
@@ -185,7 +198,7 @@ src/
 
 **Система ролей:**
 - 3 дефолтних ролі: **SuperAdmin** (isSuperAdmin=true, повний доступ), **Manager**, **Warehouse**
-- `pages[]` — масив ключів сторінок: `dashboard`, `orders`, `products`, `users`, `designs`, `admins`, `warehouse`, `deliveries`, `history`, `settings.categories`, `settings.delivery-methods`, `settings.payment-methods`, `settings.order-statuses`, `settings.suppliers`, `settings.roles`, `settings.colors`
+- `pages[]` — масив ключів сторінок: `dashboard`, `orders`, `products`, `users`, `designs`, `admins`, `warehouse`, `deliveries`, `history`, `settings.categories`, `settings.delivery-methods`, `settings.payment-methods`, `settings.order-statuses`, `settings.suppliers`, `settings.roles`, `settings.info-pages`, `settings.colors`
 - SuperAdmin захищений від зміни/видалення на бекенді
 - JWT містить claims: `roleId`, `roleName`, `roleColor`, `isSuperAdmin`, `pages` (JSON)
 - `AuthStore` зберігає role в localStorage разом з JWT
@@ -208,6 +221,13 @@ src/
 - `DeliveryItemResponse` — productName, subcategoryName, categoryName, hasColor, hasMaterial, material, color, expectedQty, receivedQty, receivedAt?, **receiveHistory: ReceiveTransactionInfo[]**
 - `ReceiveTransactionInfo` — id, quantity, date, note, createdAt
 - `SupplierResponse` — name, contactPerson?, phone?, email?, taxId?, address?, notes?
+
+**InfoPage:**
+- `InfoPageResponse` — id, slug, title, content (markdown), order, updatedAt
+- `UpdateInfoPageRequest` — title, content
+- Фіксовані slug: `privacy`, `terms`, `delivery`
+- Сторінки засіваються `InfoPageSeeder` при першому старті бекенду (якщо таблиця порожня)
+- Контент — Markdown; рендериться через `react-markdown` на клієнтському фронті
 
 ## Особливості реалізації
 
