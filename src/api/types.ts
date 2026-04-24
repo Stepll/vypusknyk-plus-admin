@@ -413,6 +413,23 @@ export interface ReceiveDeliveryItemRequest {
 }
 
 
+// ─── Dashboard stats (block 1) ────────────────────────────────────────────────
+
+export type DashboardPeriod = 'day' | 'week' | 'month' | 'year'
+
+export interface DashboardStatMetric {
+  current: number
+  previous: number
+  changePercent: number
+  sparkline: number[]
+}
+
+export interface DashboardStatsResponse {
+  revenue: DashboardStatMetric
+  ordersCount: DashboardStatMetric
+  avgCheck: DashboardStatMetric
+}
+
 // ─── Dashboard types ──────────────────────────────────────────────────────────
 
 export interface DashboardRevenueBlock {

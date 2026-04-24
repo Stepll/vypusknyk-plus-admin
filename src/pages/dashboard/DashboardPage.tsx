@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, Col, Row, Statistic, Table, Tag, Progress, Spin, Typography } from 'antd'
+import { Card, Col, Row, Table, Tag, Progress, Spin, Segmented, Typography } from 'antd'
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -17,11 +17,105 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { getDashboard } from '../../api/dashboard'
+import { getDashboard, getDashboardStats } from '../../api/dashboard'
+import type { DashboardPeriod, DashboardStatMetric } from '../../api/types'
 import type { DashboardResponse } from '../../api/types'
 import { RIBBON_COLORS, EMBLEMS, FONTS } from '../../constants/ribbonRules'
 
 const { Text } = Typography
+
+const PERIOD_OPTIONS = [
+  { label: 'День', value: 'day' },
+  { label: 'Тиждень', value: 'week' },
+  { label: 'Місяць', value: 'month' },
+  { label: 'Рік', value: 'year' },
+]
+
+function MiniSparkline({ data, positive }: { data: number[]; positive: boolean }) {
+  const points = data.map((v, i) => ({ i, v }))
+  const color = positive ? '#10b981' : '#ef4444'
+  return (
+    <LineChart width={90} height={48} data={points}>
+      <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2} dot={{ r: 2.5, fill: color, strokeWidth: 0 }} isAnimationActive={false} />
+    </LineChart>
+  )
+}
+
+function MetricCard({ label, metric, format }: { label: string; metric: DashboardStatMetric; format: (v: number) => string }) {
+  const positive = metric.changePercent >= 0
+  const changeColor = positive ? '#10b981' : '#ef4444'
+  const ChangeIcon = positive ? ArrowUpOutlined : ArrowDownOutlined
+  return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRight: '1px solid #f0f0f0' }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>{label}</div>
+        <div style={{ fontSize: 28, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1 }}>{format(metric.current)}</div>
+      </div>
+      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: changeColor, marginBottom: 2 }}>
+          <ChangeIcon style={{ marginRight: 2 }} />{Math.abs(metric.changePercent)}%
+        </div>
+        <div style={{ fontSize: 11, color: '#b0b0b0' }}>{format(metric.previous)}</div>
+      </div>
+      <div style={{ flexShrink: 0 }}>
+        <MiniSparkline data={metric.sparkline} positive={positive} />
+      </div>
+    </div>
+  )
+}
+
+function StatsBlock() {
+  const [period, setPeriod] = useState<DashboardPeriod>('month')
+  const [stats, setStats] = useState<{ revenue: DashboardStatMetric; ordersCount: DashboardStatMetric; avgCheck: DashboardStatMetric } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    getDashboardStats(period)
+      .then(setStats)
+      .finally(() => setLoading(false))
+  }, [period])
+
+  const fmtCurrency = (v: number) => `₴${Math.round(v).toLocaleString('uk-UA')}`
+  const fmtCount = (v: number) => Math.round(v).toString()
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0' }}>
+        <Segmented
+          options={PERIOD_OPTIONS}
+          value={period}
+          onChange={v => setPeriod(v as DashboardPeriod)}
+          size="small"
+        />
+      </div>
+      {loading || !stats ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spin /></div>
+      ) : (
+        <div style={{ display: 'flex' }}>
+          <MetricCard label="Дохід" metric={stats.revenue} format={fmtCurrency} />
+          <MetricCard label="Замовлення" metric={stats.ordersCount} format={fmtCount} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>Середній чек</div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1 }}>{fmtCurrency(stats.avgCheck.current)}</div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: stats.avgCheck.changePercent >= 0 ? '#10b981' : '#ef4444', marginBottom: 2 }}>
+                {stats.avgCheck.changePercent >= 0 ? <ArrowUpOutlined style={{ marginRight: 2 }} /> : <ArrowDownOutlined style={{ marginRight: 2 }} />}
+                {Math.abs(stats.avgCheck.changePercent)}%
+              </div>
+              <div style={{ fontSize: 11, color: '#b0b0b0' }}>{fmtCurrency(stats.avgCheck.previous)}</div>
+            </div>
+            <div style={{ flexShrink: 0 }}>
+              <MiniSparkline data={stats.avgCheck.sparkline} positive={stats.avgCheck.changePercent >= 0} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const CATEGORY_LABELS: Record<string, string> = {
   Ribbon: 'Стрічки',
@@ -50,7 +144,7 @@ export default function DashboardPage() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Spin size="large" /></div>
   if (!data) return null
 
-  const { revenue, orders, chart, deliveries, designs, topProducts } = data
+  const { orders, chart, deliveries, designs, topProducts } = data
 
   const emblemLabel = (key: string) => EMBLEMS.find(e => e.key === Number(key))?.label ?? `Емблема ${key}`
   const colorLabel = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.label ?? key
@@ -70,50 +164,8 @@ export default function DashboardPage() {
         <p style={{ color: '#8c8c8c', fontSize: 13, marginTop: 4, marginBottom: 0 }}>Загальна статистика платформи</p>
       </div>
 
-      {/* Block 1 — Revenue */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={8}>
-          <Card style={{ borderLeft: '4px solid #6366f1' }}>
-            <Statistic
-              title="Виручка цього місяця"
-              value={revenue.currentMonth}
-              precision={0}
-              suffix="₴"
-              valueStyle={{ color: '#1a1a2e', fontSize: 28 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 13 }}>
-              {revenue.changePercent >= 0 ? (
-                <Text type="success"><ArrowUpOutlined /> +{revenue.changePercent}% до минулого місяця</Text>
-              ) : (
-                <Text type="danger"><ArrowDownOutlined /> {revenue.changePercent}% до минулого місяця</Text>
-              )}
-            </div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card style={{ borderLeft: '4px solid #94a3b8' }}>
-            <Statistic
-              title="Виручка минулого місяця"
-              value={revenue.previousMonth}
-              precision={0}
-              suffix="₴"
-              valueStyle={{ color: '#64748b', fontSize: 28 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card style={{ borderLeft: '4px solid #10b981' }}>
-            <Statistic
-              title="Середній час виробництва"
-              value={revenue.avgProductionDays}
-              precision={1}
-              suffix="дн."
-              valueStyle={{ color: '#1a1a2e', fontSize: 28 }}
-            />
-            <div style={{ marginTop: 8, fontSize: 13, color: '#8c8c8c' }}>від прийому до відправки</div>
-          </Card>
-        </Col>
-      </Row>
+      {/* Block 1 — Stats with period switcher */}
+      <StatsBlock />
 
       {/* Block 2 — Orders */}
       <Row gutter={[12, 12]}>
