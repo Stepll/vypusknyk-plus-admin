@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, Col, Row, Table, Tag, Progress, Spin, Typography } from 'antd'
+import { Card, Checkbox, Col, Row, Table, Tag, Progress, Spin, Typography } from 'antd'
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -11,8 +11,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts'
-import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistributions, getDashboardTopItems, getDashboardLowStock } from '../../api/dashboard'
-import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem, DashboardTopPeriod, DashboardTopMetric, DashboardTopItemsResponse, DashboardLowStockResponse } from '../../api/types'
+import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistributions, getDashboardTopItems, getDashboardLowStock, getDashboardDesigns } from '../../api/dashboard'
+import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem, DashboardTopPeriod, DashboardTopMetric, DashboardTopItemsResponse, DashboardLowStockResponse, DashboardDesignsBlock, DesignsPeriod } from '../../api/types'
 import type { DashboardResponse } from '../../api/types'
 import { RIBBON_COLORS, EMBLEMS, FONTS, MATERIALS } from '../../constants/ribbonRules'
 
@@ -381,6 +381,7 @@ function TopItemsBlock() {
 function LowStockBlock() {
   const [data, setData] = useState<DashboardLowStockResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showZero, setShowZero] = useState(false)
 
   useEffect(() => {
     getDashboardLowStock().then(setData).finally(() => setLoading(false))
@@ -388,21 +389,28 @@ function LowStockBlock() {
 
   const stockColor = (n: number) => n === 0 ? '#ef4444' : n <= 3 ? '#f59e0b' : '#f97316'
 
+  const visible = data?.items.filter(i => showZero || i.stock > 0) ?? []
+
   return (
     <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', paddingLeft: 2 }}>Товари що закінчуються</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Товари що закінчуються</div>
+        <Checkbox checked={showZero} onChange={e => setShowZero(e.target.checked)} style={{ fontSize: 12, color: '#6b7280' }}>
+          Нульові
+        </Checkbox>
+      </div>
       {loading || !data ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spin /></div>
       ) : (
         <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
-          {data.items.length === 0 ? (
+          {visible.length === 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 0', gap: 6 }}>
               <div style={{ fontSize: 22 }}>✓</div>
               <div style={{ fontSize: 13, color: '#10b981', fontWeight: 500 }}>Всі товари в нормі</div>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {data.items.map(item => (
+              {visible.map(item => (
                 <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{item.name}</span>
                   <span style={{ fontSize: 15, fontWeight: 700, color: stockColor(item.stock) }}>{item.stock}</span>
@@ -411,6 +419,103 @@ function LowStockBlock() {
               ))}
             </div>
           )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const DESIGNS_PERIOD_OPTIONS = [
+  { label: 'Тиждень', value: 'week' },
+  { label: 'Місяць', value: 'month' },
+  { label: 'Рік', value: 'year' },
+]
+const DESIGNS_PERIOD_LABEL: Record<string, string> = {
+  week: 'За тиждень',
+  month: 'За місяць',
+  year: 'За рік',
+}
+
+function DesignsBlock() {
+  const [period, setPeriod] = useState<DesignsPeriod>('week')
+  const [data, setData] = useState<DashboardDesignsBlock | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    getDashboardDesigns(period).then(setData).finally(() => setLoading(false))
+  }, [period])
+
+  const emblemLabel = (key: string) => EMBLEMS.find(e => e.key === Number(key))?.label ?? `Емблема ${key}`
+  const colorLabel = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.label ?? key
+  const colorHex = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.hex ?? '#8c8c8c'
+  const fontLabel = (key: string) => FONTS.find(f => f.value === key)?.label ?? key
+
+  return (
+    <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <PeriodSwitcher value={period} onChange={v => setPeriod(v as DesignsPeriod)} options={DESIGNS_PERIOD_OPTIONS} />
+      </div>
+      {loading || !data ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spin /></div>
+      ) : (
+        <div style={{ display: 'flex', gap: 10 }}>
+          {/* Count card */}
+          <div style={{
+            width: 120, flexShrink: 0, background: '#fff', borderRadius: 14,
+            padding: '16px 12px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 8,
+          }}>
+            <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, textAlign: 'center', lineHeight: 1.4, letterSpacing: '0.3px' }}>НОВИХ ДИЗАЙНІВ</div>
+            <div style={{ fontSize: 38, fontWeight: 700, color: '#6366f1', lineHeight: 1 }}>{data.savedThisWeek}</div>
+            <div style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>{DESIGNS_PERIOD_LABEL[period]}</div>
+          </div>
+          {/* Top colors */}
+          <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 10 }}>ТОП КОЛЬОРІВ</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {data.topColors.length === 0
+                ? <span style={{ fontSize: 13, color: '#d1d5db' }}>Немає даних</span>
+                : data.topColors.map((item, i) => (
+                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 11, color: '#d1d5db', width: 14, flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: colorHex(item.key), border: '1px solid #e5e7eb', flexShrink: 0 }} />
+                    <span style={{ flex: 1, fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{colorLabel(item.key)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.count}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+          {/* Top emblems */}
+          <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 10 }}>ТОП ЕМБЛЕМ</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {data.topEmblems.length === 0
+                ? <span style={{ fontSize: 13, color: '#d1d5db' }}>Немає даних</span>
+                : data.topEmblems.map((item, i) => (
+                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 11, color: '#d1d5db', width: 14, flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emblemLabel(item.key)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.count}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+          {/* Top fonts */}
+          <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 10 }}>ТОП ШРИФТІВ</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {data.topFonts.length === 0
+                ? <span style={{ fontSize: 13, color: '#d1d5db' }}>Немає даних</span>
+                : data.topFonts.map((item, i) => (
+                  <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontSize: 11, color: '#d1d5db', width: 14, flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fontLabel(item.key)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.count}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -438,12 +543,7 @@ export default function DashboardPage() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Spin size="large" /></div>
   if (!data) return null
 
-  const { orders, deliveries, designs, topProducts, recentOrders } = data
-
-  const emblemLabel = (key: string) => EMBLEMS.find(e => e.key === Number(key))?.label ?? `Емблема ${key}`
-  const colorLabel = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.label ?? key
-  const colorHex = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.hex ?? '#8c8c8c'
-  const fontLabel = (key: string) => FONTS.find(f => f.value === key)?.label ?? key
+  const { orders, deliveries, topProducts, recentOrders } = data
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -607,48 +707,7 @@ export default function DashboardPage() {
       </Row>
 
       {/* Block 7 — Designs */}
-      <Card title="Збережені дизайни">
-        <Row gutter={[16, 16]}>
-          <Col xs={24} sm={6}>
-            <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <div style={{ fontSize: 11, color: '#8c8c8c', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>За тиждень</div>
-              <div style={{ fontSize: 48, fontWeight: 700, color: '#6366f1', lineHeight: 1 }}>{designs.savedThisWeek}</div>
-              <div style={{ color: '#8c8c8c', fontSize: 12, marginTop: 4 }}>нових дизайнів</div>
-            </div>
-          </Col>
-          <Col xs={24} sm={6}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#5c5c5c', marginBottom: 8 }}>Топ кольорів</div>
-            {designs.topColors.map((item, i) => (
-              <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: '#8c8c8c', width: 14 }}>{i + 1}</span>
-                <span style={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: colorHex(item.key), border: '1px solid #e0e0e0', flexShrink: 0 }} />
-                <span style={{ flex: 1, fontSize: 13 }}>{colorLabel(item.key)}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{item.count}</span>
-              </div>
-            ))}
-          </Col>
-          <Col xs={24} sm={6}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#5c5c5c', marginBottom: 8 }}>Топ емблем</div>
-            {designs.topEmblems.map((item, i) => (
-              <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: '#8c8c8c', width: 14 }}>{i + 1}</span>
-                <span style={{ flex: 1, fontSize: 13 }}>{emblemLabel(item.key)}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{item.count}</span>
-              </div>
-            ))}
-          </Col>
-          <Col xs={24} sm={6}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#5c5c5c', marginBottom: 8 }}>Топ шрифтів</div>
-            {designs.topFonts.map((item, i) => (
-              <div key={item.key} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 11, color: '#8c8c8c', width: 14 }}>{i + 1}</span>
-                <span style={{ flex: 1, fontSize: 13 }}>{fontLabel(item.key)}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a2e' }}>{item.count}</span>
-              </div>
-            ))}
-          </Col>
-        </Row>
-      </Card>
+      <DesignsBlock />
 
       {/* Block 8 — Top Products */}
       {topProducts.length > 0 && (

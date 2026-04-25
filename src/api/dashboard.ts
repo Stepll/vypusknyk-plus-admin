@@ -10,6 +10,8 @@ import type {
   DashboardTopMetric,
   DashboardTopItemsResponse,
   DashboardLowStockResponse,
+  DashboardDesignsBlock,
+  DesignsPeriod,
 } from './types'
 
 export function getDashboard(): Promise<DashboardResponse> {
@@ -34,4 +36,8 @@ export function getDashboardTopItems(period: DashboardTopPeriod, metric: Dashboa
 
 export function getDashboardLowStock(): Promise<DashboardLowStockResponse> {
   return apiFetch('/api/v1/admin/dashboard/low-stock')
+}
+
+export function getDashboardDesigns(period: DesignsPeriod): Promise<DashboardDesignsBlock> {
+  return apiFetch(`/api/v1/admin/dashboard/designs?period=${period}`)
 }

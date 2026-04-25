@@ -549,6 +549,7 @@ export interface DashboardResponse {
   recentOrders: DashboardRecentOrder[]
 }
 
+export type DesignsPeriod = 'week' | 'month' | 'year'
 export type DashboardTopPeriod = 'week' | 'month' | 'all'
 export type DashboardTopMetric = 'orders' | 'quantity'
 
