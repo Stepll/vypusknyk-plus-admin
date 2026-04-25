@@ -8,19 +8,13 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons'
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts'
-import { getDashboard, getDashboardStats } from '../../api/dashboard'
-import type { DashboardPeriod, DashboardStatMetric } from '../../api/types'
+import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistributions } from '../../api/dashboard'
+import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem } from '../../api/types'
 import type { DashboardResponse } from '../../api/types'
-import { RIBBON_COLORS, EMBLEMS, FONTS } from '../../constants/ribbonRules'
+import { RIBBON_COLORS, EMBLEMS, FONTS, MATERIALS } from '../../constants/ribbonRules'
 
 const { Text } = Typography
 
@@ -73,7 +67,11 @@ function MetricCard({ label, metric, format }: { label: string; metric: Dashboar
   )
 }
 
-function PeriodSwitcher({ value, onChange }: { value: DashboardPeriod; onChange: (v: DashboardPeriod) => void }) {
+function PeriodSwitcher({ value, onChange, options = PERIOD_OPTIONS }: {
+  value: string
+  onChange: (v: string) => void
+  options?: { label: string; value: string }[]
+}) {
   return (
     <div style={{
       display: 'inline-flex',
@@ -82,10 +80,10 @@ function PeriodSwitcher({ value, onChange }: { value: DashboardPeriod; onChange:
       padding: 3,
       gap: 2,
     }}>
-      {PERIOD_OPTIONS.map(opt => (
+      {options.map(opt => (
         <button
           key={opt.value}
-          onClick={() => onChange(opt.value as DashboardPeriod)}
+          onClick={() => onChange(opt.value)}
           style={{
             padding: '5px 14px',
             borderRadius: 17,
@@ -132,7 +130,7 @@ function StatsBlock() {
       gap: 12,
     }}>
       <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <PeriodSwitcher value={period} onChange={setPeriod} />
+        <PeriodSwitcher value={period} onChange={v => setPeriod(v as DashboardPeriod)} />
       </div>
       {loading || !stats ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spin /></div>
@@ -141,6 +139,178 @@ function StatsBlock() {
           <MetricCard label="Дохід" metric={stats.revenue} format={fmtCurrency} />
           <MetricCard label="Замовлення" metric={stats.ordersCount} format={fmtCount} />
           <MetricCard label="Середній чек" metric={stats.avgCheck} format={fmtCurrency} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+const CHART_PERIOD_OPTIONS = [
+  { label: 'Місяць', value: 'month' },
+  { label: 'Рік', value: 'year' },
+]
+
+const DELIVERY_LABELS: Record<string, string> = {
+  NovaPoshta: 'Нова Пошта',
+  Ukrposhta: 'Укрпошта',
+}
+const DELIVERY_COLORS: Record<string, string> = {
+  NovaPoshta: '#ef4444',
+  Ukrposhta: '#3b82f6',
+}
+const MATERIAL_COLORS: Record<string, string> = {
+  atlas: '#8b5cf6',
+  silk: '#ec4899',
+  satin: '#f59e0b',
+}
+
+function DonutChart({ data, colorMap, labelMap }: {
+  data: DashboardDistributionItem[]
+  colorMap: (key: string) => string
+  labelMap: (key: string) => string
+}) {
+  const total = data.reduce((s, d) => s + d.count, 0)
+  if (data.length === 0 || total === 0) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120, color: '#9ca3af', fontSize: 13 }}>Немає даних</div>
+  }
+  const chartData = data.map(d => ({ name: labelMap(d.key), value: d.count, key: d.key }))
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <PieChart width={110} height={110}>
+        <Pie data={chartData} cx={50} cy={50} innerRadius={30} outerRadius={50} dataKey="value" isAnimationActive={false}>
+          {chartData.map(entry => (
+            <Cell key={entry.key} fill={colorMap(entry.key)} />
+          ))}
+        </Pie>
+      </PieChart>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {chartData.map(entry => (
+          <div key={entry.key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: colorMap(entry.key), flexShrink: 0 }} />
+            <span style={{ flex: 1, color: '#374151' }}>{entry.name}</span>
+            <span style={{ fontWeight: 600, color: '#111827' }}>{Math.round(entry.value / total * 100)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DistributionsBlock() {
+  const [period, setPeriod] = useState<DashboardChartPeriod>('month')
+  const [data, setData] = useState<{ deliveryMethods: DashboardDistributionItem[]; materials: DashboardDistributionItem[]; colors: DashboardDistributionItem[] } | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    getDashboardDistributions(period).then(setData).finally(() => setLoading(false))
+  }, [period])
+
+  const colorLabel = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.label ?? key
+  const colorHex = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.hex ?? '#8c8c8c'
+  const materialLabel = (key: string) => MATERIALS.find(m => m.value === key)?.label ?? key
+
+  const subBlocks = [
+    {
+      title: 'Метод доставки',
+      items: data?.deliveryMethods ?? [],
+      colorMap: (k: string) => DELIVERY_COLORS[k] ?? '#94a3b8',
+      labelMap: (k: string) => DELIVERY_LABELS[k] ?? k,
+    },
+    {
+      title: 'Матеріал',
+      items: data?.materials ?? [],
+      colorMap: (k: string) => MATERIAL_COLORS[k] ?? '#94a3b8',
+      labelMap: materialLabel,
+    },
+    {
+      title: 'Колір стрічки',
+      items: data?.colors ?? [],
+      colorMap: colorHex,
+      labelMap: colorLabel,
+    },
+  ]
+
+  return (
+    <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <PeriodSwitcher value={period} onChange={p => setPeriod(p as DashboardChartPeriod)} options={CHART_PERIOD_OPTIONS} />
+      </div>
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spin /></div>
+      ) : (
+        <div style={{ display: 'flex', gap: 10 }}>
+          {subBlocks.map(block => (
+            <div key={block.title} style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 10 }}>{block.title.toUpperCase()}</div>
+              <DonutChart data={block.items} colorMap={block.colorMap} labelMap={block.labelMap} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ChartsBlock() {
+  const [period, setPeriod] = useState<DashboardChartPeriod>('month')
+  const [chartData, setChartData] = useState<{ date: string; Замовлення: number; Виручка: number }[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    getDashboardChart(period)
+      .then(r => setChartData(r.points.map(p => ({ date: p.date, Замовлення: p.orders, Виручка: p.revenue }))))
+      .finally(() => setLoading(false))
+  }, [period])
+
+  const chartStyle = { background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }
+
+  return (
+    <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <PeriodSwitcher value={period} onChange={p => setPeriod(p as DashboardChartPeriod)} options={CHART_PERIOD_OPTIONS} />
+      </div>
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spin /></div>
+      ) : (
+        <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ ...chartStyle, flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 8 }}>ЗАМОВЛЕННЯ</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" hide />
+                <YAxis hide />
+                <Tooltip formatter={(v) => [v, 'Замовлення']} labelFormatter={() => ''} />
+                <Area type="monotone" dataKey="Замовлення" stroke="#6366f1" strokeWidth={2} fill="url(#ordersGrad)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ ...chartStyle, flex: 1 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 8 }}>ВИРУЧКА</div>
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="date" hide />
+                <YAxis hide />
+                <Tooltip formatter={(v) => [`₴${Number(v).toLocaleString('uk-UA')}`, 'Виручка']} labelFormatter={() => ''} />
+                <Area type="monotone" dataKey="Виручка" stroke="#10b981" strokeWidth={2} fill="url(#revenueGrad)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
     </div>
@@ -168,18 +338,12 @@ export default function DashboardPage() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Spin size="large" /></div>
   if (!data) return null
 
-  const { orders, chart, deliveries, designs, topProducts, recentOrders } = data
+  const { orders, deliveries, designs, topProducts, recentOrders } = data
 
   const emblemLabel = (key: string) => EMBLEMS.find(e => e.key === Number(key))?.label ?? `Емблема ${key}`
   const colorLabel = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.label ?? key
   const colorHex = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.hex ?? '#8c8c8c'
   const fontLabel = (key: string) => FONTS.find(f => f.value === key)?.label ?? key
-
-  const chartData = chart.map(p => ({
-    date: p.date.slice(5),
-    'Замовлення': p.orders,
-    'Відвідування': p.visits,
-  }))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -274,22 +438,13 @@ export default function DashboardPage() {
         </Col>
       </Row>
 
-      {/* Block 3 — Chart */}
-      <Card title="Замовлення за останні 30 днів">
-        <ResponsiveContainer width="100%" height={280}>
-          <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
-            <Tooltip />
-            <Legend />
-            <Line type="monotone" dataKey="Замовлення" stroke="#6366f1" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-            <Line type="monotone" dataKey="Відвідування" stroke="#94a3b8" strokeWidth={1.5} dot={false} strokeDasharray="4 4" />
-          </LineChart>
-        </ResponsiveContainer>
-      </Card>
+      {/* Block 3 — Distributions */}
+      <DistributionsBlock />
 
-      {/* Block 4 — Deliveries */}
+      {/* Block 4 — Charts */}
+      <ChartsBlock />
+
+      {/* Block 6 — Deliveries */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
           <Card title={<><ClockCircleOutlined style={{ marginRight: 8, color: '#f59e0b' }} />Чекають прийняття</>}>
@@ -341,7 +496,7 @@ export default function DashboardPage() {
         </Col>
       </Row>
 
-      {/* Block 5 — Designs */}
+      {/* Block 7 — Designs */}
       <Card title="Збережені дизайни">
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={6}>
@@ -385,7 +540,7 @@ export default function DashboardPage() {
         </Row>
       </Card>
 
-      {/* Block 6 — Top Products */}
+      {/* Block 8 — Top Products */}
       {topProducts.length > 0 && (
         <Row gutter={[16, 16]}>
           {topProducts.map(cat => (

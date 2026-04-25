@@ -413,6 +413,31 @@ export interface ReceiveDeliveryItemRequest {
 }
 
 
+// ─── Dashboard chart + distributions ─────────────────────────────────────────
+
+export type DashboardChartPeriod = 'month' | 'year'
+
+export interface DashboardChartPoint2 {
+  date: string
+  orders: number
+  revenue: number
+}
+
+export interface DashboardChartResponse {
+  points: DashboardChartPoint2[]
+}
+
+export interface DashboardDistributionItem {
+  key: string
+  count: number
+}
+
+export interface DashboardDistributionsResponse {
+  deliveryMethods: DashboardDistributionItem[]
+  materials: DashboardDistributionItem[]
+  colors: DashboardDistributionItem[]
+}
+
 // ─── Dashboard stats (block 1) ────────────────────────────────────────────────
 
 export type DashboardPeriod = 'day' | 'week' | 'month' | 'year'
