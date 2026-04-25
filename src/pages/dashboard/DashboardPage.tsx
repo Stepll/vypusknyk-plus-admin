@@ -11,8 +11,9 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts'
-import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistributions, getDashboardTopItems, getDashboardLowStock, getDashboardDesigns } from '../../api/dashboard'
-import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem, DashboardTopPeriod, DashboardTopMetric, DashboardTopItemsResponse, DashboardLowStockResponse, DashboardDesignsBlock, DesignsPeriod } from '../../api/types'
+import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistributions, getDashboardTopItems, getDashboardLowStock, getDashboardDesigns, getDashboardSalesByCategory } from '../../api/dashboard'
+import type { SalesCategoryPeriod } from '../../api/dashboard'
+import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem, DashboardTopPeriod, DashboardTopMetric, DashboardTopItemsResponse, DashboardLowStockResponse, DashboardDesignsBlock, DesignsPeriod, SalesByCategoryResponse, SalesProductEntry } from '../../api/types'
 import type { DashboardResponse } from '../../api/types'
 import { RIBBON_COLORS, EMBLEMS, FONTS, MATERIALS } from '../../constants/ribbonRules'
 
@@ -525,6 +526,221 @@ function DesignsBlock() {
   )
 }
 
+const SALES_PERIOD_OPTIONS = [
+  { label: 'Тиждень', value: 'week' },
+  { label: 'Місяць', value: 'month' },
+  { label: 'Рік', value: 'year' },
+  { label: 'Весь час', value: 'all' },
+]
+
+const CAT_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6']
+const CAT_COLORS_LIGHT = ['#a5b4fc', '#fde68a', '#a7f3d0', '#bfdbfe', '#fbcfe8', '#ddd6fe']
+
+type HoverState = { type: 'category'; id: number } | { type: 'subcategory'; id: number } | null
+
+function SalesByCategoryBlock() {
+  const [period, setPeriod] = useState<SalesCategoryPeriod>('month')
+  const [data, setData] = useState<SalesByCategoryResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [hovered, setHovered] = useState<HoverState>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    setHovered(null)
+    getDashboardSalesByCategory(period)
+      .then(setData)
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [period])
+
+  const cats = data?.categories ?? []
+  const total = cats.reduce((s, c) => s + c.totalSold, 0)
+
+  const innerData = cats.map((cat, i) => ({
+    name: cat.name,
+    value: cat.totalSold,
+    fill: CAT_COLORS[i % CAT_COLORS.length],
+    catId: cat.id,
+  }))
+
+  const outerData = cats.flatMap((cat, i) => {
+    const hasSubs = cat.subcategories.some(s => s.totalSold > 0)
+    if (!hasSubs) {
+      return [{ name: cat.name, value: cat.totalSold, fill: CAT_COLORS_LIGHT[i % CAT_COLORS_LIGHT.length], catId: cat.id, subId: null as number | null }]
+    }
+    const subTotal = cat.subcategories.reduce((s, sub) => s + sub.totalSold, 0)
+    const unassigned = cat.totalSold - subTotal
+    return [
+      ...cat.subcategories.filter(s => s.totalSold > 0).map(sub => ({
+        name: sub.name, value: sub.totalSold,
+        fill: CAT_COLORS_LIGHT[i % CAT_COLORS_LIGHT.length],
+        catId: cat.id, subId: sub.id as number | null,
+      })),
+      ...(unassigned > 0 ? [{
+        name: `${cat.name} (інше)`, value: unassigned,
+        fill: CAT_COLORS_LIGHT[i % CAT_COLORS_LIGHT.length],
+        catId: cat.id, subId: null as number | null,
+      }] : [])
+    ]
+  })
+
+  let leftHeader: { name: string; total: number } | null = null
+  let leftProducts: SalesProductEntry[] = []
+  let leftList: { name: string; total: number }[] = []
+
+  if (hovered) {
+    if (hovered.type === 'category') {
+      const cat = cats.find(c => c.id === hovered.id)
+      if (cat) { leftHeader = { name: cat.name, total: cat.totalSold }; leftProducts = cat.topProducts }
+    } else {
+      const sub = cats.flatMap(c => c.subcategories).find(s => s.id === hovered.id)
+      if (sub) { leftHeader = { name: sub.name, total: sub.totalSold }; leftProducts = sub.topProducts }
+    }
+  } else {
+    const allSubs = cats.flatMap(c => c.subcategories).filter(s => s.totalSold > 0)
+    if (allSubs.length > 0) {
+      leftList = [...allSubs].sort((a, b) => b.totalSold - a.totalSold).slice(0, 10).map(s => ({ name: s.name, total: s.totalSold }))
+    } else {
+      leftList = cats.slice(0, 10).map(c => ({ name: c.name, total: c.totalSold }))
+    }
+  }
+
+  const maxLeft = leftList.length > 0 ? Math.max(...leftList.map(i => i.total), 1) : 1
+
+  return (
+    <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Продажі за категоріями</span>
+        <PeriodSwitcher value={period} onChange={v => setPeriod(v as SalesCategoryPeriod)} options={SALES_PERIOD_OPTIONS} />
+      </div>
+
+      {loading || !data ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Spin /></div>
+      ) : total === 0 ? (
+        <div style={{ background: '#fff', borderRadius: 14, padding: '40px 20px', textAlign: 'center', color: '#9ca3af', fontSize: 13 }}>
+          Немає даних про продажі за цей період
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 12 }}>
+          {/* Left panel */}
+          <div style={{ width: 230, flexShrink: 0, background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', minHeight: 360 }}>
+            {hovered ? (
+              <>
+                {leftHeader && (
+                  <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid #f3f4f6' }}>
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4, fontWeight: 500 }}>
+                      {hovered.type === 'category' ? 'КАТЕГОРІЯ' : 'ПІДКАТЕГОРІЯ'}
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 4 }}>{leftHeader.name}</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#6366f1', lineHeight: 1 }}>
+                      {leftHeader.total.toLocaleString('uk-UA')}
+                      <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: 400, marginLeft: 4 }}>шт.</span>
+                    </div>
+                  </div>
+                )}
+                <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 8, fontWeight: 500 }}>ТОП 10 ПРОДУКТІВ</div>
+                {leftProducts.length === 0 ? (
+                  <div style={{ fontSize: 13, color: '#d1d5db' }}>Немає даних</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    {leftProducts.map((p, i) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 12, color: '#374151', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#111827', flexShrink: 0 }}>{p.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontWeight: 500 }}>
+                  {cats.flatMap(c => c.subcategories).some(s => s.totalSold > 0) ? 'ТОП ПІДКАТЕГОРІЙ' : 'ТОП КАТЕГОРІЙ'}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {leftList.map((item, i) => (
+                    <div key={i}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: '#374151', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: '#111827', flexShrink: 0, marginLeft: 8 }}>{item.total}</span>
+                      </div>
+                      <div style={{ height: 3, background: '#f3f4f6', borderRadius: 2 }}>
+                        <div style={{ height: 3, background: '#6366f1', borderRadius: 2, width: `${Math.round((item.total / maxLeft) * 100)}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Right panel — chart */}
+          <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.07)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <PieChart width={420} height={380}>
+              <Pie
+                data={innerData}
+                cx={210} cy={190}
+                innerRadius={85} outerRadius={135}
+                dataKey="value"
+                stroke="none"
+                onMouseEnter={(_: unknown, idx: number) => setHovered({ type: 'category', id: innerData[idx].catId })}
+                onMouseLeave={() => setHovered(null)}
+              >
+                {innerData.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={entry.fill}
+                    opacity={hovered?.type === 'category' && hovered.id !== entry.catId ? 0.35 : 1}
+                    style={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Pie>
+              <Pie
+                data={outerData}
+                cx={210} cy={190}
+                innerRadius={145} outerRadius={180}
+                dataKey="value"
+                stroke="#f3f4f6"
+                strokeWidth={2}
+                onMouseEnter={(_: unknown, idx: number) => {
+                  const entry = outerData[idx]
+                  if (entry.subId != null) setHovered({ type: 'subcategory', id: entry.subId })
+                  else setHovered({ type: 'category', id: entry.catId })
+                }}
+                onMouseLeave={() => setHovered(null)}
+              >
+                {outerData.map((entry, i) => (
+                  <Cell
+                    key={i}
+                    fill={entry.fill}
+                    opacity={
+                      hovered?.type === 'category' && hovered.id !== entry.catId ? 0.25 :
+                      hovered?.type === 'subcategory' && entry.subId !== hovered.id ? 0.35 : 1
+                    }
+                    style={{ cursor: 'pointer' }}
+                  />
+                ))}
+              </Pie>
+              <Tooltip formatter={(value, name) => [`${Number(value).toLocaleString('uk-UA')} шт.`, String(name)]} />
+            </PieChart>
+
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center', marginTop: -8 }}>
+              {cats.map((cat, i) => (
+                <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#374151' }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: CAT_COLORS[i % CAT_COLORS.length], flexShrink: 0 }} />
+                  {cat.name}
+                  <span style={{ color: '#9ca3af' }}>({cat.totalSold})</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   Ribbon: 'Стрічки',
   Medal: 'Медалі',
@@ -753,6 +969,9 @@ export default function DashboardPage() {
           ))}
         </Row>
       )}
+
+      {/* Block 9 — Sales by Category */}
+      <SalesByCategoryBlock />
     </div>
   )
 }
