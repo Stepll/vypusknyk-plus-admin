@@ -43,7 +43,8 @@
       "Bash(xargs -I {} basename {} .tsx)",
       "Bash(npm install *)",
       "Bash(ssh -o ConnectTimeout=30 root@75.119.152.4 \"cd ~/vypusknyk-plus/prod && docker compose pull && docker compose up -d && docker logs prod-api-1 --tail 30\")",
-      "WebFetch(domain:monobank.ua)"
+      "WebFetch(domain:monobank.ua)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")"
     ]
   }
 }

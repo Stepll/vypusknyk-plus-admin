@@ -19,7 +19,13 @@ const buildColumns = (navigate: ReturnType<typeof useNavigate>) => [
         : <span style={{ color: '#bfbfbf' }}>—</span>,
   },
   { title: 'Назва', dataIndex: 'name', key: 'name' },
-  { title: 'Категорія', dataIndex: 'category', key: 'category' },
+  {
+    title: 'Категорія',
+    key: 'category',
+    render: (_: unknown, r: AdminProduct) => (
+      <span>{r.categoryName}{r.subcategoryName ? ` / ${r.subcategoryName}` : ''}</span>
+    ),
+  },
   { title: 'Ціна', dataIndex: 'price', key: 'price', render: (v: number) => <strong>{v} грн</strong> },
   {
     title: 'Статус',

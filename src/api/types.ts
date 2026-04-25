@@ -54,12 +54,39 @@ export interface AdminOrder {
   items: AdminOrderItem[]
 }
 
+export interface ProductCategoryResponse {
+  id: number
+  name: string
+  order: number
+  subcategories: ProductSubcategoryResponse[]
+}
+
+export interface ProductSubcategoryResponse {
+  id: number
+  categoryId: number
+  name: string
+  order: number
+}
+
+export interface SaveProductCategoryRequest {
+  name: string
+  order: number
+}
+
+export interface SaveProductSubcategoryRequest {
+  name: string
+  order: number
+}
+
 export interface AdminProduct {
   id: number
   name: string
   description: string
   price: number
-  category: string
+  categoryId: number
+  categoryName: string
+  subcategoryId: number | null
+  subcategoryName: string | null
   imageUrl: string | null
   isDeleted: boolean
 }
@@ -76,7 +103,10 @@ export interface AdminProductDetail {
   description: string
   price: number
   minOrder: number
-  category: string
+  categoryId: number
+  categoryName: string
+  subcategoryId: number | null
+  subcategoryName: string | null
   color: string | null
   tags: string[]
   popular: boolean
@@ -93,7 +123,8 @@ export interface SaveProductRequest {
   description: string
   price: number
   minOrder: number
-  category: string
+  categoryId: number
+  subcategoryId: number | null
   color: string | null
   tags: string[]
   popular: boolean

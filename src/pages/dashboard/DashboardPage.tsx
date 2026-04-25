@@ -408,12 +408,6 @@ function LowStockBlock() {
             </div>
           ) : (
             <div>
-              <div style={{ display: 'flex', gap: 8, paddingBottom: 8, borderBottom: '1px solid #f0f0f0', marginBottom: 4 }}>
-                <span style={{ flex: 1, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px' }}>НАЗВА</span>
-                <span style={{ width: 64, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px' }}>МАТЕРІАЛ</span>
-                <span style={{ width: 52, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px' }}>КОЛІР</span>
-                <span style={{ width: 36, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px', textAlign: 'right' }}>КІЛ-ТЬ</span>
-              </div>
               {visible.map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: i < visible.length - 1 ? '1px solid #f9fafb' : 'none' }}>
                   <span style={{ flex: 1, fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>

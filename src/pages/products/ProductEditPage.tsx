@@ -12,15 +12,9 @@ import {
   getAdminProduct, createAdminProduct, updateAdminProduct,
   uploadProductImage, deleteProductImage, setPreviewImage,
 } from '../../api/adminProducts'
+import { getProductCategories } from '../../api/productCategories'
 import { productsStore } from '../../stores/ProductsStore'
-import type { ProductImageItem, SaveProductRequest } from '../../api/types'
-
-const CATEGORY_OPTIONS = [
-  { value: 'Ribbon', label: 'Стрічки' },
-  { value: 'Medal', label: 'Медалі' },
-  { value: 'Certificate', label: 'Грамоти' },
-  { value: 'Accessory', label: 'Аксесуари' },
-]
+import type { ProductCategoryResponse, ProductImageItem, SaveProductRequest } from '../../api/types'
 
 const COLOR_OPTIONS = [
   { value: 'coral', label: 'Корал' },
@@ -46,6 +40,12 @@ export default function ProductEditPage() {
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [savedId, setSavedId] = useState<number | null>(null)
+  const [categories, setCategories] = useState<ProductCategoryResponse[]>([])
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+
+  useEffect(() => {
+    getProductCategories().then(setCategories).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (isNew) return
@@ -57,12 +57,14 @@ export default function ProductEditPage() {
           description: p.description,
           price: p.price,
           minOrder: p.minOrder,
-          category: p.category,
+          categoryId: p.categoryId,
+          subcategoryId: p.subcategoryId ?? undefined,
           color: p.color ?? undefined,
           popular: p.popular,
           isNew: p.isNew,
           isDeleted: p.isDeleted,
         })
+        setSelectedCategoryId(p.categoryId)
         setTags(p.tags)
         setImages(p.images ?? [])
         setSavedId(p.id)
@@ -71,6 +73,15 @@ export default function ProductEditPage() {
       .finally(() => setLoading(false))
   }, [id, isNew, form, navigate])
 
+  const subcategoryOptions = categories
+    .find(c => c.id === selectedCategoryId)
+    ?.subcategories.map(s => ({ value: s.id, label: s.name })) ?? []
+
+  const handleCategoryChange = (val: number) => {
+    setSelectedCategoryId(val)
+    form.setFieldValue('subcategoryId', undefined)
+  }
+
   const handleSave = async () => {
     const values = await form.validateFields()
     const request: SaveProductRequest = {
@@ -78,7 +89,8 @@ export default function ProductEditPage() {
       description: values.description ?? '',
       price: values.price,
       minOrder: values.minOrder,
-      category: values.category,
+      categoryId: values.categoryId,
+      subcategoryId: values.subcategoryId ?? null,
       color: values.color ?? null,
       tags,
       popular: values.popular ?? false,
@@ -151,11 +163,19 @@ export default function ProductEditPage() {
   }
 
   const handleDelete = async () => {
+    const values = form.getFieldsValue()
     try {
       await updateAdminProduct(Number(id), {
-        ...form.getFieldsValue(),
+        name: values.name,
+        description: values.description ?? '',
+        price: values.price,
+        minOrder: values.minOrder,
+        categoryId: values.categoryId,
+        subcategoryId: values.subcategoryId ?? null,
+        color: values.color ?? null,
         tags,
-        color: form.getFieldValue('color') ?? null,
+        popular: values.popular ?? false,
+        isNew: values.isNew ?? false,
         isDeleted: true,
       })
       message.success('Продукт видалено')
@@ -228,23 +248,42 @@ export default function ProductEditPage() {
 
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item label="Категорія" name="category" rules={[{ required: true, message: 'Виберіть категорію' }]}>
-                    <Select size="large" options={CATEGORY_OPTIONS} placeholder="Виберіть категорію" />
+                  <Form.Item label="Категорія" name="categoryId" rules={[{ required: true, message: 'Виберіть категорію' }]}>
+                    <Select
+                      size="large"
+                      placeholder="Виберіть категорію"
+                      options={categories.map(c => ({ value: c.id, label: c.name }))}
+                      onChange={handleCategoryChange}
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="Колір" name="color">
-                    <Select size="large" options={COLOR_OPTIONS} allowClear placeholder="Без кольору" />
+                  <Form.Item label="Підкатегорія" name="subcategoryId">
+                    <Select
+                      size="large"
+                      placeholder="Без підкатегорії"
+                      options={subcategoryOptions}
+                      allowClear
+                      disabled={!selectedCategoryId || subcategoryOptions.length === 0}
+                    />
                   </Form.Item>
                 </Col>
               </Row>
 
               <Row gutter={16}>
                 <Col span={12}>
+                  <Form.Item label="Колір" name="color">
+                    <Select size="large" options={COLOR_OPTIONS} allowClear placeholder="Без кольору" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
                   <Form.Item label="Ціна (грн)" name="price" rules={[{ required: true, message: 'Введіть ціну' }]}>
                     <InputNumber size="large" min={0} style={{ width: '100%' }} placeholder="65" />
                   </Form.Item>
                 </Col>
+              </Row>
+
+              <Row gutter={16}>
                 <Col span={12}>
                   <Form.Item label="Мін. замовлення (шт)" name="minOrder" rules={[{ required: true }]}>
                     <InputNumber size="large" min={1} style={{ width: '100%' }} />
