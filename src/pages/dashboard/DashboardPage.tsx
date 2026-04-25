@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, Col, Row, Table, Tag, Progress, Spin, Segmented, Typography } from 'antd'
+import { Card, Col, Row, Table, Tag, Progress, Spin, Typography } from 'antd'
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -35,8 +35,8 @@ function MiniSparkline({ data, positive }: { data: number[]; positive: boolean }
   const points = data.map((v, i) => ({ i, v }))
   const color = positive ? '#10b981' : '#ef4444'
   return (
-    <LineChart width={90} height={48} data={points}>
-      <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2} dot={{ r: 2.5, fill: color, strokeWidth: 0 }} isAnimationActive={false} />
+    <LineChart width={80} height={44} data={points}>
+      <Line type="monotone" dataKey="v" stroke={color} strokeWidth={2} dot={{ r: 3, fill: color, strokeWidth: 0 }} isAnimationActive={false} />
     </LineChart>
   )
 }
@@ -46,20 +46,63 @@ function MetricCard({ label, metric, format }: { label: string; metric: Dashboar
   const changeColor = positive ? '#10b981' : '#ef4444'
   const ChangeIcon = positive ? ArrowUpOutlined : ArrowDownOutlined
   return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderRight: '1px solid #f0f0f0' }}>
+    <div style={{
+      flex: 1,
+      background: '#fff',
+      borderRadius: 14,
+      padding: '16px 18px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+    }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: 28, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1 }}>{format(metric.current)}</div>
+        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6, fontWeight: 500 }}>{label}</div>
+        <div style={{ fontSize: 24, fontWeight: 700, color: '#111827', lineHeight: 1 }}>{format(metric.current)}</div>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: changeColor, marginBottom: 2 }}>
-          <ChangeIcon style={{ marginRight: 2 }} />{Math.abs(metric.changePercent)}%
+        <div style={{ fontSize: 12, fontWeight: 600, color: changeColor, marginBottom: 3 }}>
+          <ChangeIcon style={{ fontSize: 10, marginRight: 2 }} />{Math.abs(metric.changePercent)}%
         </div>
-        <div style={{ fontSize: 11, color: '#b0b0b0' }}>{format(metric.previous)}</div>
+        <div style={{ fontSize: 11, color: '#9ca3af' }}>{format(metric.previous)}</div>
       </div>
       <div style={{ flexShrink: 0 }}>
         <MiniSparkline data={metric.sparkline} positive={positive} />
       </div>
+    </div>
+  )
+}
+
+function PeriodSwitcher({ value, onChange }: { value: DashboardPeriod; onChange: (v: DashboardPeriod) => void }) {
+  return (
+    <div style={{
+      display: 'inline-flex',
+      background: '#e9eaec',
+      borderRadius: 20,
+      padding: 3,
+      gap: 2,
+    }}>
+      {PERIOD_OPTIONS.map(opt => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value as DashboardPeriod)}
+          style={{
+            padding: '5px 14px',
+            borderRadius: 17,
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 13,
+            fontWeight: value === opt.value ? 600 : 400,
+            background: value === opt.value ? '#fff' : 'transparent',
+            color: value === opt.value ? '#111827' : '#6b7280',
+            boxShadow: value === opt.value ? '0 1px 4px rgba(0,0,0,0.13)' : 'none',
+            transition: 'all 0.15s ease',
+            lineHeight: 1.4,
+          }}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -80,37 +123,24 @@ function StatsBlock() {
   const fmtCount = (v: number) => Math.round(v).toString()
 
   return (
-    <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.06)', overflow: 'hidden' }}>
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0' }}>
-        <Segmented
-          options={PERIOD_OPTIONS}
-          value={period}
-          onChange={v => setPeriod(v as DashboardPeriod)}
-          size="small"
-        />
+    <div style={{
+      background: '#f3f4f6',
+      borderRadius: 16,
+      padding: 14,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'center' }}>
+        <PeriodSwitcher value={period} onChange={setPeriod} />
       </div>
       {loading || !stats ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}><Spin /></div>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spin /></div>
       ) : (
-        <div style={{ display: 'flex' }}>
+        <div style={{ display: 'flex', gap: 10 }}>
           <MetricCard label="Дохід" metric={stats.revenue} format={fmtCurrency} />
           <MetricCard label="Замовлення" metric={stats.ordersCount} format={fmtCount} />
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px' }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>Середній чек</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#1a1a2e', lineHeight: 1.1 }}>{fmtCurrency(stats.avgCheck.current)}</div>
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: stats.avgCheck.changePercent >= 0 ? '#10b981' : '#ef4444', marginBottom: 2 }}>
-                {stats.avgCheck.changePercent >= 0 ? <ArrowUpOutlined style={{ marginRight: 2 }} /> : <ArrowDownOutlined style={{ marginRight: 2 }} />}
-                {Math.abs(stats.avgCheck.changePercent)}%
-              </div>
-              <div style={{ fontSize: 11, color: '#b0b0b0' }}>{fmtCurrency(stats.avgCheck.previous)}</div>
-            </div>
-            <div style={{ flexShrink: 0 }}>
-              <MiniSparkline data={stats.avgCheck.sparkline} positive={stats.avgCheck.changePercent >= 0} />
-            </div>
-          </div>
+          <MetricCard label="Середній чек" metric={stats.avgCheck} format={fmtCurrency} />
         </div>
       )}
     </div>

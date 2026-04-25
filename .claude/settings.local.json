@@ -42,7 +42,8 @@
       "Bash(find /Users/stepankobrii/Documents/Projects/vypusknyk-plus-backend/src -type f -name \"*.cs\" -exec grep -l \"Role\\\\|Permission\" {} \\\\;)",
       "Bash(xargs -I {} basename {} .tsx)",
       "Bash(npm install *)",
-      "Bash(ssh -o ConnectTimeout=30 root@75.119.152.4 \"cd ~/vypusknyk-plus/prod && docker compose pull && docker compose up -d && docker logs prod-api-1 --tail 30\")"
+      "Bash(ssh -o ConnectTimeout=30 root@75.119.152.4 \"cd ~/vypusknyk-plus/prod && docker compose pull && docker compose up -d && docker logs prod-api-1 --tail 30\")",
+      "WebFetch(domain:monobank.ua)"
     ]
   }
 }
