@@ -605,6 +605,31 @@ export interface DashboardLowStockResponse {
   items: DashboardLowStockItem[]
 }
 
+export interface SalesProductEntry {
+  name: string
+  quantity: number
+}
+
+export interface SalesSubcategoryEntry {
+  id: number
+  categoryId: number
+  name: string
+  totalSold: number
+  topProducts: SalesProductEntry[]
+}
+
+export interface SalesCategoryEntry {
+  id: number
+  name: string
+  totalSold: number
+  topProducts: SalesProductEntry[]
+  subcategories: SalesSubcategoryEntry[]
+}
+
+export interface SalesByCategoryResponse {
+  categories: SalesCategoryEntry[]
+}
+
 export interface InfoPageResponse {
   id: number
   slug: string

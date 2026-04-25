@@ -12,6 +12,7 @@ import type {
   DashboardLowStockResponse,
   DashboardDesignsBlock,
   DesignsPeriod,
+  SalesByCategoryResponse,
 } from './types'
 
 export function getDashboard(): Promise<DashboardResponse> {
@@ -40,4 +41,10 @@ export function getDashboardLowStock(): Promise<DashboardLowStockResponse> {
 
 export function getDashboardDesigns(period: DesignsPeriod): Promise<DashboardDesignsBlock> {
   return apiFetch(`/api/v1/admin/dashboard/designs?period=${period}`)
+}
+
+export type SalesCategoryPeriod = 'week' | 'month' | 'year' | 'all'
+
+export function getDashboardSalesByCategory(period: SalesCategoryPeriod): Promise<SalesByCategoryResponse> {
+  return apiFetch(`/api/v1/admin/dashboard/sales-by-category?period=${period}`)
 }
