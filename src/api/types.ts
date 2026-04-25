@@ -549,6 +549,28 @@ export interface DashboardResponse {
   recentOrders: DashboardRecentOrder[]
 }
 
+export type DashboardTopPeriod = 'week' | 'month' | 'all'
+export type DashboardTopMetric = 'orders' | 'quantity'
+
+export interface DashboardTopItemEntry {
+  name: string
+  value: number
+}
+
+export interface DashboardTopItemsResponse {
+  activeCount: number
+  items: DashboardTopItemEntry[]
+}
+
+export interface DashboardLowStockItem {
+  name: string
+  stock: number
+}
+
+export interface DashboardLowStockResponse {
+  items: DashboardLowStockItem[]
+}
+
 export interface InfoPageResponse {
   id: number
   slug: string

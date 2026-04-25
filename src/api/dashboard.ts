@@ -6,6 +6,10 @@ import type {
   DashboardChartPeriod,
   DashboardChartResponse,
   DashboardDistributionsResponse,
+  DashboardTopPeriod,
+  DashboardTopMetric,
+  DashboardTopItemsResponse,
+  DashboardLowStockResponse,
 } from './types'
 
 export function getDashboard(): Promise<DashboardResponse> {
@@ -22,4 +26,12 @@ export function getDashboardChart(period: DashboardChartPeriod): Promise<Dashboa
 
 export function getDashboardDistributions(period: DashboardChartPeriod): Promise<DashboardDistributionsResponse> {
   return apiFetch(`/api/v1/admin/dashboard/distributions?period=${period}`)
+}
+
+export function getDashboardTopItems(period: DashboardTopPeriod, metric: DashboardTopMetric): Promise<DashboardTopItemsResponse> {
+  return apiFetch(`/api/v1/admin/dashboard/top-items?period=${period}&metric=${metric}`)
+}
+
+export function getDashboardLowStock(): Promise<DashboardLowStockResponse> {
+  return apiFetch('/api/v1/admin/dashboard/low-stock')
 }

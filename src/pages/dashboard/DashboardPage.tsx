@@ -11,8 +11,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
 } from 'recharts'
-import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistributions } from '../../api/dashboard'
-import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem } from '../../api/types'
+import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistributions, getDashboardTopItems, getDashboardLowStock } from '../../api/dashboard'
+import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem, DashboardTopPeriod, DashboardTopMetric, DashboardTopItemsResponse, DashboardLowStockResponse } from '../../api/types'
 import type { DashboardResponse } from '../../api/types'
 import { RIBBON_COLORS, EMBLEMS, FONTS, MATERIALS } from '../../constants/ribbonRules'
 
@@ -317,6 +317,106 @@ function ChartsBlock() {
   )
 }
 
+const TOP_PERIOD_OPTIONS = [
+  { label: 'Тиждень', value: 'week' },
+  { label: 'Місяць', value: 'month' },
+  { label: 'Весь час', value: 'all' },
+]
+const TOP_METRIC_OPTIONS = [
+  { label: 'Замовлення', value: 'orders' },
+  { label: 'Штуки', value: 'quantity' },
+]
+
+function TopItemsBlock() {
+  const [period, setPeriod] = useState<DashboardTopPeriod>('month')
+  const [metric, setMetric] = useState<DashboardTopMetric>('orders')
+  const [data, setData] = useState<DashboardTopItemsResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    getDashboardTopItems(period, metric).then(setData).finally(() => setLoading(false))
+  }, [period, metric])
+
+  return (
+    <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+        <PeriodSwitcher value={period} onChange={v => setPeriod(v as DashboardTopPeriod)} options={TOP_PERIOD_OPTIONS} />
+        <PeriodSwitcher value={metric} onChange={v => setMetric(v as DashboardTopMetric)} options={TOP_METRIC_OPTIONS} />
+      </div>
+      {loading || !data ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spin /></div>
+      ) : (
+        <div style={{ display: 'flex', gap: 10, flex: 1 }}>
+          <div style={{
+            width: 110, flexShrink: 0, background: '#fff', borderRadius: 14,
+            padding: '16px 10px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 8,
+          }}>
+            <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, textAlign: 'center', lineHeight: 1.4, letterSpacing: '0.3px' }}>АКТИВНИХ ПОЗИЦІЙ</div>
+            <div style={{ fontSize: 38, fontWeight: 700, color: '#6366f1', lineHeight: 1 }}>{data.activeCount}</div>
+          </div>
+          <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', marginBottom: 10 }}>ТОП 5 ПОЗИЦІЙ</div>
+            {data.items.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#9ca3af' }}>Немає даних за цей період</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {data.items.map((item, i) => (
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 11, color: '#d1d5db', width: 16, flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ flex: 1, fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#111827', flexShrink: 0 }}>{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function LowStockBlock() {
+  const [data, setData] = useState<DashboardLowStockResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getDashboardLowStock().then(setData).finally(() => setLoading(false))
+  }, [])
+
+  const stockColor = (n: number) => n === 0 ? '#ef4444' : n <= 3 ? '#f59e0b' : '#f97316'
+
+  return (
+    <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 12, height: '100%' }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', paddingLeft: 2 }}>Товари що закінчуються</div>
+      {loading || !data ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: 32 }}><Spin /></div>
+      ) : (
+        <div style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+          {data.items.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px 0', gap: 6 }}>
+              <div style={{ fontSize: 22 }}>✓</div>
+              <div style={{ fontSize: 13, color: '#10b981', fontWeight: 500 }}>Всі товари в нормі</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {data.items.map(item => (
+                <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{item.name}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: stockColor(item.stock) }}>{item.stock}</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af' }}>шт.</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const CATEGORY_LABELS: Record<string, string> = {
   Ribbon: 'Стрічки',
   Medal: 'Медалі',
@@ -443,6 +543,16 @@ export default function DashboardPage() {
 
       {/* Block 4 — Charts */}
       <ChartsBlock />
+
+      {/* Block 5 — Top Items + Low Stock */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={14}>
+          <TopItemsBlock />
+        </Col>
+        <Col xs={24} lg={10}>
+          <LowStockBlock />
+        </Col>
+      </Row>
 
       {/* Block 6 — Deliveries */}
       <Row gutter={[16, 16]}>
