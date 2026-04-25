@@ -565,6 +565,8 @@ export interface DashboardTopItemsResponse {
 
 export interface DashboardLowStockItem {
   name: string
+  material: string
+  color: string
   stock: number
 }
 

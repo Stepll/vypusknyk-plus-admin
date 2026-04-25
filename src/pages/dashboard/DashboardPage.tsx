@@ -409,14 +409,20 @@ function LowStockBlock() {
               <div style={{ fontSize: 13, color: '#10b981', fontWeight: 500 }}>Всі товари в нормі</div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {visible.map(item => (
-                <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{item.name}</span>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: stockColor(item.stock) }}>{item.stock}</span>
-                  <span style={{ fontSize: 11, color: '#9ca3af' }}>шт.</span>
-                </div>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {visible.map((item, i) => {
+                const attrs = [item.material, item.color].filter(Boolean).join(', ')
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+                      {attrs && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{attrs}</div>}
+                    </div>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: stockColor(item.stock), flexShrink: 0 }}>{item.stock}</span>
+                    <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0 }}>шт.</span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
