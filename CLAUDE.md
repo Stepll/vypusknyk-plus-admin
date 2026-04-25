@@ -16,18 +16,20 @@
 ```
 src/
 ├── api/
-│   ├── client.ts          # apiFetch (base URL, Content-Type, auth header, 204 guard)
-│   ├── types.ts           # Shared TypeScript типи (включно з RoleInfo, RoleResponse)
-│   ├── auth.ts            # login → AdminAuthResponse (включає role?: RoleInfo)
-│   ├── orders.ts          # GET /admin/orders, GET /admin/orders/:id, PATCH status
-│   ├── products.ts        # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
-│   ├── users.ts           # GET /admin/users, GET /admin/users/:id
-│   ├── designs.ts         # GET /admin/designs, GET /admin/designs/:id, DELETE /admin/designs/:id
-│   ├── admins.ts          # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
-│   ├── roles.ts           # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
-│   ├── warehouse.ts       # GET stats/categories/products/products/:id, POST transactions, POST products
-│   ├── deliveries.ts      # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
-│   └── info-pages.ts      # GET /admin/info-pages, PUT /admin/info-pages/:slug
+│   ├── client.ts              # apiFetch (base URL, Content-Type, auth header, 204 guard)
+│   ├── types.ts               # Shared TypeScript типи (RoleInfo, Sales*, ProductCategory*, Dashboard*)
+│   ├── auth.ts                # login → AdminAuthResponse (включає role?: RoleInfo)
+│   ├── orders.ts              # GET /admin/orders, GET /admin/orders/:id, PATCH status
+│   ├── products.ts            # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
+│   ├── productCategories.ts   # CRUD /admin/product-categories + subcategories
+│   ├── users.ts               # GET /admin/users, GET /admin/users/:id
+│   ├── designs.ts             # GET /admin/designs, GET /admin/designs/:id, DELETE /admin/designs/:id
+│   ├── admins.ts              # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
+│   ├── roles.ts               # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
+│   ├── warehouse.ts           # GET stats/categories/products/products/:id, POST transactions, POST products
+│   ├── deliveries.ts          # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
+│   ├── dashboard.ts           # getDashboard*, getDashboardSalesByCategory(period); SalesCategoryPeriod type
+│   └── info-pages.ts          # GET /admin/info-pages, PUT /admin/info-pages/:slug
 ├── stores/
 │   ├── OrdersStore.ts     # MobX — orders list, pagination, status filter
 │   ├── ProductsStore.ts   # MobX — products list, pagination, delete
@@ -45,7 +47,8 @@ src/
 ├── constants/
 │   └── ribbonRules.ts       # RibbonColor, Font, RIBBON_COLORS, FONTS, PRINT_TYPES, MATERIALS, EMBLEMS
 └── pages/
-    ├── dashboard/DashboardPage.tsx
+    ├── dashboard/DashboardPage.tsx  # 9 блоків: Stats, Статуси+Recent, Distributions, Charts,
+    │                                # TopItems+LowStock, Deliveries, Designs, TopProducts, SalesByCategory
     ├── orders/
     │   ├── OrdersPage.tsx
     │   └── OrderDetailPage.tsx
@@ -71,7 +74,7 @@ src/
     ├── history/
     │   └── HistoryPage.tsx      # (порожньо)
     └── settings/
-        ├── CategoriesPage.tsx
+        ├── CategoriesPage.tsx   # CRUD категорій товарів: ліва панель (категорії) + права (підкатегорії), drawer форми
         ├── DeliveryMethodsPage.tsx
         ├── PaymentMethodsPage.tsx
         ├── OrderStatusesPage.tsx
@@ -164,6 +167,18 @@ src/
 | PUT    | /api/v1/admin/roles/{id}                              | Оновити роль (SuperAdmin — заборонено)   |
 | DELETE | /api/v1/admin/roles/{id}                              | Soft delete ролі (SuperAdmin — заборонено)|
 
+### Категорії продуктів (новий модуль)
+| Метод  | Шлях                                                            | Опис                                   |
+|--------|-----------------------------------------------------------------|----------------------------------------|
+| GET    | /api/v1/product-categories                                      | Публічний список категорій + підкатегорій |
+| GET    | /api/v1/admin/product-categories                                | Адмін список                           |
+| POST   | /api/v1/admin/product-categories                                | Створити категорію                     |
+| PUT    | /api/v1/admin/product-categories/{id}                           | Оновити категорію                      |
+| DELETE | /api/v1/admin/product-categories/{id}                           | Видалити категорію                     |
+| POST   | /api/v1/admin/product-categories/{id}/subcategories             | Створити підкатегорію                  |
+| PUT    | /api/v1/admin/product-categories/{catId}/subcategories/{id}     | Оновити підкатегорію                   |
+| DELETE | /api/v1/admin/product-categories/{catId}/subcategories/{id}     | Видалити підкатегорію                  |
+
 ### Складський облік
 | Метод  | Шлях                                        | Опис                                        |
 |--------|---------------------------------------------|---------------------------------------------|
@@ -194,6 +209,11 @@ src/
 | POST   | /api/v1/admin/deliveries                                      | Створити поставку                      |
 | POST   | /api/v1/admin/deliveries/{id}/items/{itemId}/receive          | Прийняти позицію (часткове)            |
 | POST   | /api/v1/admin/deliveries/{id}/receive-all                     | Прийняти всі позиції → 204             |
+
+### Дашборд
+| Метод  | Шлях                                               | Опис                                          |
+|--------|----------------------------------------------------|-----------------------------------------------|
+| GET    | /api/v1/admin/dashboard/sales-by-category?period=  | Продажі за категоріями (week/month/year/all)  |
 
 ## Типи даних (api/types.ts)
 
@@ -238,6 +258,21 @@ src/
 - `RibbonState.classes` зберігається як JSON-масив у полі `State` таблиці `SavedDesigns`
 - Відображення: `RibbonEditorPreview` отримує `names` як `string[]` (flatMap по classes)
 
+**Product Categories (нова система):**
+- `ProductCategoryResponse` — id, name, order, subcategories[]
+- `ProductSubcategoryResponse` — id, categoryId, name, order
+- `SaveProductCategoryRequest` / `SaveProductSubcategoryRequest` — name, order
+- `AdminProduct.categoryId/categoryName/subcategoryId?/subcategoryName?` — замінили старий enum `Category`
+- `SaveProductRequest.categoryId` + `subcategoryId?` (замість string category)
+- Чотири дефолтних категорії засіяні в міграції: Стрічки (1), Медалі (2), Грамоти (3), Аксесуари (4)
+
+**Sales by Category (дашборд):**
+- `SalesByCategoryResponse` — categories: SalesCategoryEntry[]
+- `SalesCategoryEntry` — id, name, totalSold, topProducts[], subcategories[]
+- `SalesSubcategoryEntry` — id, categoryId, name, totalSold, topProducts[]
+- `SalesProductEntry` — name, quantity
+- `SalesCategoryPeriod` = `'week' | 'month' | 'year' | 'all'` (в api/dashboard.ts)
+
 **InfoPage:**
 - `InfoPageResponse` — id, slug, title, content (markdown), order, updatedAt
 - `UpdateInfoPageRequest` — title, content
@@ -246,6 +281,16 @@ src/
 - Контент — Markdown; рендериться через `react-markdown` на клієнтському фронті
 
 ## Особливості реалізації
+
+**SalesByCategoryBlock (Block 9 дашборду)** — двоярусна кругова діаграма Recharts:
+- Внутрішнє кільце = категорії, зовнішнє = підкатегорії (вирівняні за кутом до батьківської категорії)
+- При наведенні на сектор — ліва панель показує заголовок (назва + кількість шт.) + топ 10 продуктів
+- За замовчуванням ліва панель показує топ підкатегорій з progress-bar
+- Перемикач періоду: Тиждень / Місяць / Рік / Весь час
+- `CAT_COLORS` / `CAT_COLORS_LIGHT` — 6 кольорів для внутр/зовн кілець
+- `HoverState` = `{ type: 'category' | 'subcategory'; id: number } | null`
+
+**ProductEditPage** — категорія завантажується з API (`getProductCategories`), при зміні категорії — cascading reset підкатегорії.
 
 **DesignDetailPage** — превью `RibbonEditorPreview` отримує всі імена через `flatMap` по `state.classes`, перший клас передається як `className`. Email користувача — `Link` на `/users/:id`.
 
@@ -300,6 +345,5 @@ docker logs prod-api-1 --tail 50
 
 ## TODO
 
-- [ ] Підключити реальні дані до Дашборду
-- [ ] Наповнити сторінки налаштувань (категорії, доставка, оплата, статуси, кольори)
+- [ ] Наповнити сторінки налаштувань (доставка, оплата, статуси, кольори)
 - [ ] Історія змін
