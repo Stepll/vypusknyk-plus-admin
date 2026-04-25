@@ -439,13 +439,29 @@ export interface DashboardRevenueBlock {
   avgProductionDays: number
 }
 
+export interface DashboardStatusCount {
+  statusId: number
+  statusName: string
+  statusColor: string
+  sortOrder: number
+  isFinal: boolean
+  count: number
+}
+
 export interface DashboardOrdersBlock {
-  accepted: number
-  production: number
-  shipped: number
-  delivered: number
+  statusCounts: DashboardStatusCount[]
   newThisWeek: number
   stuck: number
+}
+
+export interface DashboardRecentOrder {
+  id: number
+  orderNumber: string
+  clientName: string | null
+  total: number
+  statusName: string
+  statusColor: string
+  createdAt: string
 }
 
 export interface DashboardChartPoint {
@@ -505,6 +521,7 @@ export interface DashboardResponse {
   deliveries: DashboardDeliveriesBlock
   designs: DashboardDesignsBlock
   topProducts: DashboardTopCategoryBlock[]
+  recentOrders: DashboardRecentOrder[]
 }
 
 export interface InfoPageResponse {

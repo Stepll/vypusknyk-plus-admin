@@ -154,12 +154,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   Accessory: 'Аксесуари',
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  Accepted: '#6366f1',
-  Production: '#f59e0b',
-  Shipped: '#3b82f6',
-  Delivered: '#10b981',
-}
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null)
@@ -174,7 +168,7 @@ export default function DashboardPage() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Spin size="large" /></div>
   if (!data) return null
 
-  const { orders, chart, deliveries, designs, topProducts } = data
+  const { orders, chart, deliveries, designs, topProducts, recentOrders } = data
 
   const emblemLabel = (key: string) => EMBLEMS.find(e => e.key === Number(key))?.label ?? `Емблема ${key}`
   const colorLabel = (key: string) => RIBBON_COLORS.find(c => c.value === key)?.label ?? key
@@ -197,27 +191,87 @@ export default function DashboardPage() {
       {/* Block 1 — Stats with period switcher */}
       <StatsBlock />
 
-      {/* Block 2 — Orders */}
-      <Row gutter={[12, 12]}>
-        {[
-          { label: 'Прийнято', value: orders.accepted, color: STATUS_COLORS.Accepted },
-          { label: 'Виробництво', value: orders.production, color: STATUS_COLORS.Production },
-          { label: 'Відправлено', value: orders.shipped, color: STATUS_COLORS.Shipped },
-          { label: 'Доставлено', value: orders.delivered, color: STATUS_COLORS.Delivered },
-          { label: 'Нові за тиждень', value: orders.newThisWeek, color: '#8b5cf6' },
-          { label: 'Застряглі >3д', value: orders.stuck, color: '#ef4444', icon: <WarningOutlined /> },
-        ].map(s => (
-          <Col xs={12} sm={8} lg={4} key={s.label}>
-            <Card bodyStyle={{ padding: '16px 20px' }} style={{ borderLeft: `4px solid ${s.color}`, height: '100%' }}>
-              <div style={{ fontSize: 11, color: '#8c8c8c', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6 }}>
-                {s.icon && <span style={{ marginRight: 4 }}>{s.icon}</span>}{s.label}
+      {/* Block 2 — Statuses + Recent Orders */}
+      <Row gutter={[16, 0]}>
+        <Col xs={24} lg={12}>
+          <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {orders.statusCounts.map(s => (
+                <div
+                  key={s.statusId}
+                  style={{
+                    flex: '1 1 calc(50% - 5px)',
+                    background: '#fff',
+                    borderRadius: 14,
+                    padding: '14px 16px',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+                    borderTop: `3px solid ${s.statusColor}`,
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500, marginBottom: 6 }}>{s.statusName}</div>
+                  <div style={{ fontSize: 28, fontWeight: 700, color: '#111827', lineHeight: 1 }}>{s.count}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{
+              background: orders.stuck > 0 ? '#fef2f2' : '#fff',
+              borderRadius: 14,
+              padding: '14px 18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              boxShadow: '0 1px 4px rgba(0,0,0,0.07)',
+              borderTop: `3px solid ${orders.stuck > 0 ? '#ef4444' : '#e5e7eb'}`,
+            }}>
+              <div>
+                <div style={{ fontSize: 11, color: orders.stuck > 0 ? '#ef4444' : '#9ca3af', fontWeight: 500, marginBottom: 4 }}>
+                  <WarningOutlined style={{ marginRight: 5 }} />Застряглі {'>'} 3 днів
+                </div>
+                <div style={{ fontSize: 13, color: '#6b7280' }}>Нові за тиждень: <strong>{orders.newThisWeek}</strong></div>
               </div>
-              <div style={{ fontSize: 32, fontWeight: 700, color: s.value > 0 && s.label.includes('Застряглі') ? '#ef4444' : '#1a1a2e', lineHeight: 1 }}>
-                {s.value}
-              </div>
-            </Card>
-          </Col>
-        ))}
+              <div style={{ fontSize: 40, fontWeight: 700, color: orders.stuck > 0 ? '#ef4444' : '#111827' }}>{orders.stuck}</div>
+            </div>
+          </div>
+        </Col>
+        <Col xs={24} lg={12}>
+          <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, height: '100%' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 12 }}>Останні замовлення</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {recentOrders.map(o => (
+                <div key={o.id} style={{
+                  background: '#fff',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                      <Link to={`/orders/${o.id}`} style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>#{o.orderNumber}</Link>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          padding: '1px 8px',
+                          borderRadius: 20,
+                          background: o.statusColor + '20',
+                          color: o.statusColor,
+                          fontWeight: 500,
+                        }}
+                      >{o.statusName}</span>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{o.clientName ?? 'Анонім'}</div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>₴{o.total.toLocaleString('uk-UA')}</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>{new Date(o.createdAt).toLocaleDateString('uk-UA')}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Col>
       </Row>
 
       {/* Block 3 — Chart */}
