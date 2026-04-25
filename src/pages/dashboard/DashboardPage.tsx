@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, Checkbox, Col, Row, Table, Tag, Progress, Spin, Typography } from 'antd'
+import { Card, Checkbox, Col, Row, Table, Tag, Progress, Spin } from 'antd'
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -15,8 +15,6 @@ import { getDashboard, getDashboardStats, getDashboardChart, getDashboardDistrib
 import type { DashboardPeriod, DashboardStatMetric, DashboardChartPeriod, DashboardDistributionItem, DashboardTopPeriod, DashboardTopMetric, DashboardTopItemsResponse, DashboardLowStockResponse, DashboardDesignsBlock, DesignsPeriod } from '../../api/types'
 import type { DashboardResponse } from '../../api/types'
 import { RIBBON_COLORS, EMBLEMS, FONTS, MATERIALS } from '../../constants/ribbonRules'
-
-const { Text } = Typography
 
 const PERIOD_OPTIONS = [
   { label: 'День', value: 'day' },
@@ -409,20 +407,25 @@ function LowStockBlock() {
               <div style={{ fontSize: 13, color: '#10b981', fontWeight: 500 }}>Всі товари в нормі</div>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {visible.map((item, i) => {
-                const attrs = [item.material, item.color].filter(Boolean).join(', ')
-                return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-                      {attrs && <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{attrs}</div>}
-                    </div>
-                    <span style={{ fontSize: 15, fontWeight: 700, color: stockColor(item.stock), flexShrink: 0 }}>{item.stock}</span>
-                    <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0 }}>шт.</span>
+            <div>
+              <div style={{ display: 'flex', gap: 8, paddingBottom: 8, borderBottom: '1px solid #f0f0f0', marginBottom: 4 }}>
+                <span style={{ flex: 1, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px' }}>НАЗВА</span>
+                <span style={{ width: 64, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px' }}>МАТЕРІАЛ</span>
+                <span style={{ width: 52, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px' }}>КОЛІР</span>
+                <span style={{ width: 36, fontSize: 10, color: '#9ca3af', fontWeight: 600, letterSpacing: '0.3px', textAlign: 'right' }}>КІЛ-ТЬ</span>
+              </div>
+              {visible.map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: i < visible.length - 1 ? '1px solid #f9fafb' : 'none' }}>
+                  <span style={{ flex: 1, fontSize: 13, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</span>
+                  <div style={{ width: 64, flexShrink: 0 }}>
+                    {item.material && <Tag color="purple" style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>{item.material}</Tag>}
                   </div>
-                )
-              })}
+                  <div style={{ width: 52, flexShrink: 0 }}>
+                    {item.color && <Tag color="blue" style={{ margin: 0, fontSize: 11, lineHeight: '18px' }}>{item.color}</Tag>}
+                  </div>
+                  <span style={{ width: 36, fontSize: 14, fontWeight: 700, color: stockColor(item.stock), textAlign: 'right', flexShrink: 0 }}>{item.stock}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -663,52 +666,64 @@ export default function DashboardPage() {
       {/* Block 6 — Deliveries */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={14}>
-          <Card title={<><ClockCircleOutlined style={{ marginRight: 8, color: '#f59e0b' }} />Чекають прийняття</>}>
+          <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ClockCircleOutlined style={{ color: '#f59e0b' }} /> Чекають прийняття
+            </div>
             {deliveries.awaiting.length === 0 ? (
-              <Text type="secondary">Немає поставок для прийняття</Text>
+              <div style={{ background: '#fff', borderRadius: 14, padding: '20px 16px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', color: '#9ca3af', fontSize: 13 }}>
+                Немає поставок для прийняття
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {deliveries.awaiting.map(d => (
-                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Link to={`/deliveries/${d.id}`} style={{ fontWeight: 600 }}>#{d.number}</Link>
-                      {d.supplierName && <span style={{ color: '#8c8c8c', fontSize: 12, marginLeft: 8 }}>{d.supplierName}</span>}
+                  <div key={d.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <Link to={`/deliveries/${d.id}`} style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>#{d.number}</Link>
+                      {d.supplierName && <span style={{ fontSize: 12, color: '#9ca3af', flex: 1 }}>{d.supplierName}</span>}
+                      <span style={{
+                        fontSize: 11, padding: '2px 8px', borderRadius: 20, flexShrink: 0, fontWeight: 500,
+                        background: d.status === 'partial' ? '#fef3c7' : '#f3f4f6',
+                        color: d.status === 'partial' ? '#d97706' : '#6b7280',
+                      }}>
+                        {d.status === 'partial' ? 'Частково' : 'Очікується'}
+                      </span>
                     </div>
-                    <div style={{ width: 120, flexShrink: 0 }}>
-                      <Progress
-                        percent={d.totalExpected > 0 ? Math.round(d.totalReceived / d.totalExpected * 100) : 0}
-                        size="small"
-                        format={() => `${d.totalReceived}/${d.totalExpected}`}
-                        strokeColor={d.status === 'partial' ? '#f59e0b' : '#94a3b8'}
-                      />
-                    </div>
-                    <Tag color={d.status === 'partial' ? 'orange' : 'default'} style={{ flexShrink: 0 }}>
-                      {d.status === 'partial' ? 'Частково' : 'Очікується'}
-                    </Tag>
+                    <Progress
+                      percent={d.totalExpected > 0 ? Math.round(d.totalReceived / d.totalExpected * 100) : 0}
+                      size="small"
+                      format={() => `${d.totalReceived}/${d.totalExpected} шт.`}
+                      strokeColor={d.status === 'partial' ? '#f59e0b' : '#94a3b8'}
+                    />
                   </div>
                 ))}
               </div>
             )}
-          </Card>
+          </div>
         </Col>
         <Col xs={24} lg={10}>
-          <Card title="Майбутні поставки">
+          <div style={{ background: '#f3f4f6', borderRadius: 16, padding: 14, display: 'flex', flexDirection: 'column', gap: 10, height: '100%' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Майбутні поставки</div>
             {deliveries.upcoming.length === 0 ? (
-              <Text type="secondary">Немає запланованих поставок</Text>
+              <div style={{ background: '#fff', borderRadius: 14, padding: '20px 16px', textAlign: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', color: '#9ca3af', fontSize: 13 }}>
+                Немає запланованих поставок
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {deliveries.upcoming.map(d => (
-                  <div key={d.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
-                    <div>
-                      <Link to={`/deliveries/${d.id}`} style={{ fontWeight: 600 }}>#{d.number}</Link>
-                      {d.supplierName && <div style={{ color: '#8c8c8c', fontSize: 12 }}>{d.supplierName}</div>}
+                  <div key={d.id} style={{ background: '#fff', borderRadius: 14, padding: '12px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <Link to={`/deliveries/${d.id}`} style={{ fontWeight: 600, fontSize: 13, color: '#111827' }}>#{d.number}</Link>
+                      {d.supplierName && <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{d.supplierName}</div>}
                     </div>
-                    <Tag color="blue">{d.expectedDate}</Tag>
+                    <div style={{ fontSize: 12, fontWeight: 500, color: '#3b82f6', background: '#eff6ff', borderRadius: 8, padding: '3px 10px', flexShrink: 0 }}>
+                      {new Date(d.expectedDate).toLocaleDateString('uk-UA')}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
-          </Card>
+          </div>
         </Col>
       </Row>
 
