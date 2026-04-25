@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, Checkbox, Col, Row, Table, Tag, Progress, Spin } from 'antd'
+import { Checkbox, Col, Row, Tag, Progress, Spin } from 'antd'
 import {
   ArrowUpOutlined,
   ArrowDownOutlined,
@@ -741,13 +741,6 @@ function SalesByCategoryBlock() {
   )
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  Ribbon: 'Стрічки',
-  Medal: 'Медалі',
-  Certificate: 'Грамоти',
-  Accessory: 'Аксесуари',
-}
-
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardResponse | null>(null)
@@ -762,7 +755,7 @@ export default function DashboardPage() {
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><Spin size="large" /></div>
   if (!data) return null
 
-  const { orders, deliveries, topProducts, recentOrders } = data
+  const { orders, deliveries, recentOrders } = data
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -940,37 +933,7 @@ export default function DashboardPage() {
       {/* Block 7 — Designs */}
       <DesignsBlock />
 
-      {/* Block 8 — Top Products */}
-      {topProducts.length > 0 && (
-        <Row gutter={[16, 16]}>
-          {topProducts.map(cat => (
-            <Col xs={24} md={8} key={cat.category}>
-              <Card
-                title={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{CATEGORY_LABELS[cat.category] ?? cat.category}</span>
-                    <Tag color="purple">{cat.totalSold} шт.</Tag>
-                  </div>
-                }
-                bodyStyle={{ padding: 0 }}
-              >
-                <Table
-                  dataSource={cat.products}
-                  rowKey="name"
-                  pagination={false}
-                  size="small"
-                  columns={[
-                    { title: 'Продукт', dataIndex: 'name', ellipsis: true },
-                    { title: 'Шт.', dataIndex: 'quantity', width: 60, align: 'right' as const },
-                  ]}
-                />
-              </Card>
-            </Col>
-          ))}
-        </Row>
-      )}
-
-      {/* Block 9 — Sales by Category */}
+      {/* Block 8 — Sales by Category */}
       <SalesByCategoryBlock />
     </div>
   )
