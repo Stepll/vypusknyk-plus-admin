@@ -20,6 +20,7 @@ import NewDeliveryPage from './pages/deliveries/NewDeliveryPage'
 import HistoryPage from './pages/history/HistoryPage'
 import CategoriesPage from './pages/settings/CategoriesPage'
 import DeliveryMethodsPage from './pages/settings/DeliveryMethodsPage'
+import DeliveryMethodDetailPage from './pages/settings/DeliveryMethodDetailPage'
 import PaymentMethodsPage from './pages/settings/PaymentMethodsPage'
 import OrderStatusesPage from './pages/settings/OrderStatusesPage'
 import ColorsPage from './pages/settings/constructor/ColorsPage'
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="history" element={<HistoryPage />} />
             <Route path="settings/categories" element={<CategoriesPage />} />
             <Route path="settings/delivery" element={<DeliveryMethodsPage />} />
+            <Route path="settings/delivery/:id" element={<DeliveryMethodDetailPage />} />
             <Route path="settings/payment" element={<PaymentMethodsPage />} />
             <Route path="settings/order-statuses" element={<OrderStatusesPage />} />
             <Route path="settings/constructor/colors" element={<ColorsPage />} />

@@ -28,6 +28,7 @@ src/
 │   ├── roles.ts               # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
 │   ├── warehouse.ts           # GET stats/categories/products/products/:id, POST transactions, POST products
 │   ├── deliveries.ts          # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
+│   ├── deliveryMethods.ts     # GET/PUT /admin/delivery-methods (list + detail + update)
 │   ├── dashboard.ts           # getDashboard*, getDashboardSalesByCategory(period); SalesCategoryPeriod type
 │   └── info-pages.ts          # GET /admin/info-pages, PUT /admin/info-pages/:slug
 ├── stores/
@@ -75,7 +76,8 @@ src/
     │   └── HistoryPage.tsx      # (порожньо)
     └── settings/
         ├── CategoriesPage.tsx   # CRUD категорій товарів: ліва панель (категорії) + права (підкатегорії), drawer форми
-        ├── DeliveryMethodsPage.tsx
+        ├── DeliveryMethodsPage.tsx    # Таблиця методів (НП, УП), switch активності + кнопка редагувати
+        ├── DeliveryMethodDetailPage.tsx  # Налаштування: isEnabled switch, Settings JSON, CheckoutFields editor (таблиця полів)
         ├── PaymentMethodsPage.tsx
         ├── OrderStatusesPage.tsx
         ├── RolesPage.tsx        # CRUD ролей: таблиця, drawer з color picker (10 кольорів) + чекбокси сторінок
@@ -103,6 +105,8 @@ src/
 /deliveries         → DeliveriesPage
 /deliveries/new     → NewDeliveryPage
 /deliveries/:id     → DeliveryDetailPage
+/settings/delivery           → DeliveryMethodsPage
+/settings/delivery/:id       → DeliveryMethodDetailPage
 /settings/suppliers          → SuppliersPage
 /settings/roles              → RolesPage
 /settings/info-pages/:slug   → InfoPageEditPage  (slug: privacy | terms | delivery)
@@ -210,6 +214,14 @@ src/
 | POST   | /api/v1/admin/deliveries/{id}/items/{itemId}/receive          | Прийняти позицію (часткове)            |
 | POST   | /api/v1/admin/deliveries/{id}/receive-all                     | Прийняти всі позиції → 204             |
 
+### Методи доставки
+| Метод  | Шлях                                               | Опис                                          |
+|--------|----------------------------------------------------|-----------------------------------------------|
+| GET    | /api/v1/delivery-methods                           | Публічний список активних методів             |
+| GET    | /api/v1/admin/delivery-methods                     | Адмін список усіх методів                    |
+| GET    | /api/v1/admin/delivery-methods/{id}                | Деталі методу                                 |
+| PUT    | /api/v1/admin/delivery-methods/{id}                | Оновити (isEnabled, settings, checkoutFields) |
+
 ### Дашборд
 | Метод  | Шлях                                               | Опис                                          |
 |--------|----------------------------------------------------|-----------------------------------------------|
@@ -272,6 +284,14 @@ src/
 - `SalesSubcategoryEntry` — id, categoryId, name, totalSold, topProducts[]
 - `SalesProductEntry` — name, quantity
 - `SalesCategoryPeriod` = `'week' | 'month' | 'year' | 'all'` (в api/dashboard.ts)
+
+**Delivery Methods:**
+- `DeliveryCheckoutField` — key, label, type ('input'|'select'), required, isEnabled, optionsJson (рядок JSON для підвантаження опцій)
+- `DeliveryMethodResponse` — id, name, slug, isEnabled, settings (JSON рядок), checkoutFields[]
+- `UpdateDeliveryMethodRequest` — isEnabled, settings, checkoutFields[]
+- Два фіксованих методи: **Нова Пошта** (slug='nova-poshta', id=1), **Укрпошта** (slug='ukrposhta', id=2)
+- Orders.DeliveryMethodId — FK на DeliveryMethods (замінив старий enum DeliveryMethod у DeliveryInfo)
+- `AdminDeliveryResponse` тепер має `method` (slug), `methodName` (назва), `postalCode`
 
 **InfoPage:**
 - `InfoPageResponse` — id, slug, title, content (markdown), order, updatedAt

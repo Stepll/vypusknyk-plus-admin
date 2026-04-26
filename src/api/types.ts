@@ -50,7 +50,7 @@ export interface AdminOrder {
   comment: string | null
   payment: string
   recipient: { fullName: string; phone: string }
-  delivery: { method: string; city: string | null; warehouse: string | null }
+  delivery: { method: string; methodName: string; city: string | null; warehouse: string | null; postalCode: string | null }
   items: AdminOrderItem[]
 }
 
@@ -76,6 +76,30 @@ export interface SaveProductCategoryRequest {
 export interface SaveProductSubcategoryRequest {
   name: string
   order: number
+}
+
+export interface DeliveryCheckoutField {
+  key: string
+  label: string
+  type: 'input' | 'select'
+  required: boolean
+  isEnabled: boolean
+  optionsJson: string
+}
+
+export interface DeliveryMethodResponse {
+  id: number
+  name: string
+  slug: string
+  isEnabled: boolean
+  settings: string
+  checkoutFields: DeliveryCheckoutField[]
+}
+
+export interface UpdateDeliveryMethodRequest {
+  isEnabled: boolean
+  settings: string
+  checkoutFields: DeliveryCheckoutField[]
 }
 
 export interface AdminProduct {
