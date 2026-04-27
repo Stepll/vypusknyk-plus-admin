@@ -696,3 +696,24 @@ export interface UpdateInfoPageRequest {
   title: string
   content: string
 }
+
+export interface RibbonColorResponse {
+  id: number
+  name: string
+  slug: string
+  hex: string
+  secondaryHex: string | null
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveRibbonColorRequest {
+  name: string
+  slug: string
+  hex: string
+  secondaryHex: string | null
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
