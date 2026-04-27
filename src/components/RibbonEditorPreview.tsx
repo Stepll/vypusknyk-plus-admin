@@ -1,4 +1,4 @@
-import { useId, useRef, useState, useEffect, useCallback, type RefObject } from 'react'
+import { useId, useRef, useState, useEffect, useCallback } from 'react'
 import {
   RIBBON_COLORS,
   FONTS,
@@ -51,29 +51,56 @@ const EXTRA_HEX: Record<ExtraTextColor, string> = { white: '#e8e8e8', yellow: '#
 function getRibbonHex(c: RibbonColor) { return RIBBON_COLORS.find(x => x.value === c)?.hex ?? '#dc2626' }
 function getFontFamily(f: Font) { return FONTS.find(x => x.value === f)?.fontFamily ?? '"Times New Roman", serif' }
 
-const _svgCache = new Map<string, string>()
+const EMB_NATIVE_W = 48
+const EMB_NATIVE_H = 52
 
-function useEmblemContent(url: string | null | undefined, ref: RefObject<SVGGElement | null>) {
+type SvgEntry = { inner: string; vbW: number; vbH: number }
+const _svgCache = new Map<string, SvgEntry>()
+
+function parseSvgViewBox(text: string): { vbW: number; vbH: number } {
+  const vb = text.match(/viewBox=["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)["']/)
+  if (vb) return { vbW: parseFloat(vb[1]), vbH: parseFloat(vb[2]) }
+  const w = text.match(/\bwidth=["']([\d.]+)["']/)
+  const h = text.match(/\bheight=["']([\d.]+)["']/)
+  if (w && h) return { vbW: parseFloat(w[1]), vbH: parseFloat(h[1]) }
+  return { vbW: EMB_NATIVE_W, vbH: EMB_NATIVE_H }
+}
+
+function EmblemFromUrl({ url, color, opacity = 0.92 }: { url: string; color: string; opacity?: number }) {
+  const innerRef = useRef<SVGGElement>(null)
+
   useEffect(() => {
-    if (!url || !ref.current) return
-    const el = ref.current
+    if (!url) return
+
+    const apply = ({ inner, vbW, vbH }: SvgEntry) => {
+      const el = innerRef.current
+      if (!el) return
+      const scale = Math.min(EMB_NATIVE_W / vbW, EMB_NATIVE_H / vbH)
+      const tx = (EMB_NATIVE_W - vbW * scale) / 2
+      const ty = (EMB_NATIVE_H - vbH * scale) / 2
+      el.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`)
+      el.innerHTML = inner
+    }
+
     const cached = _svgCache.get(url)
-    if (cached !== undefined) { el.innerHTML = cached; return }
+    if (cached) { apply(cached); return }
+
     fetch(url)
       .then(r => r.text())
       .then(text => {
         const inner = text.match(/<svg[^>]*>([\s\S]*)<\/svg>/i)?.[1] ?? ''
-        _svgCache.set(url, inner)
-        el.innerHTML = inner
+        const entry = { inner, ...parseSvgViewBox(text) }
+        _svgCache.set(url, entry)
+        apply(entry)
       })
       .catch(() => {})
-  }, [url, ref])
-}
+  }, [url])
 
-function EmblemFromUrl({ url, color, opacity = 0.92 }: { url: string; color: string; opacity?: number }) {
-  const ref = useRef<SVGGElement>(null)
-  useEmblemContent(url, ref)
-  return <g ref={ref} fill={color} fillOpacity={opacity} />
+  return (
+    <g fill={color} fillOpacity={opacity}>
+      <g ref={innerRef} />
+    </g>
+  )
 }
 
 function EmblemShape({ k, color, opacity = 0.92 }: { k: number; color: string; opacity?: number }) {
