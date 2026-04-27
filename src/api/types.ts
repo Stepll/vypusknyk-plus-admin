@@ -767,6 +767,23 @@ export interface SaveRibbonMaterialRequest {
   sortOrder: number
 }
 
+export interface RibbonPrintTypeResponse {
+  id: number
+  name: string
+  slug: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveRibbonPrintTypeRequest {
+  name: string
+  slug: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
 export interface SaveRibbonColorRequest {
   name: string
   slug: string
