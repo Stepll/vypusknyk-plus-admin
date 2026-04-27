@@ -767,6 +767,22 @@ export interface SaveRibbonMaterialRequest {
   sortOrder: number
 }
 
+export interface RibbonEmblemResponse {
+  id: number
+  name: string
+  slug: string
+  svgUrl: string | null
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveRibbonEmblemRequest {
+  name: string
+  slug: string
+  isActive: boolean
+  sortOrder: number
+}
+
 export interface RibbonPrintTypeResponse {
   id: number
   name: string

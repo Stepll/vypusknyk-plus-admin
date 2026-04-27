@@ -1,4 +1,4 @@
-import { useId, useRef, useState, useEffect, useCallback } from 'react'
+import { useId, useRef, useState, useEffect, useCallback, type RefObject } from 'react'
 import {
   RIBBON_COLORS,
   FONTS,
@@ -51,6 +51,31 @@ const EXTRA_HEX: Record<ExtraTextColor, string> = { white: '#e8e8e8', yellow: '#
 function getRibbonHex(c: RibbonColor) { return RIBBON_COLORS.find(x => x.value === c)?.hex ?? '#dc2626' }
 function getFontFamily(f: Font) { return FONTS.find(x => x.value === f)?.fontFamily ?? '"Times New Roman", serif' }
 
+const _svgCache = new Map<string, string>()
+
+function useEmblemContent(url: string | null | undefined, ref: RefObject<SVGGElement | null>) {
+  useEffect(() => {
+    if (!url || !ref.current) return
+    const el = ref.current
+    const cached = _svgCache.get(url)
+    if (cached !== undefined) { el.innerHTML = cached; return }
+    fetch(url)
+      .then(r => r.text())
+      .then(text => {
+        const inner = text.match(/<svg[^>]*>([\s\S]*)<\/svg>/i)?.[1] ?? ''
+        _svgCache.set(url, inner)
+        el.innerHTML = inner
+      })
+      .catch(() => {})
+  }, [url, ref])
+}
+
+function EmblemFromUrl({ url, color, opacity = 0.92 }: { url: string; color: string; opacity?: number }) {
+  const ref = useRef<SVGGElement>(null)
+  useEmblemContent(url, ref)
+  return <g ref={ref} fill={color} fillOpacity={opacity} />
+}
+
 function EmblemShape({ k, color, opacity = 0.92 }: { k: number; color: string; opacity?: number }) {
   const p = { fill: color, fillOpacity: opacity }
   switch (k) {
@@ -95,6 +120,8 @@ const GAP       = 14
 const SIDE_PAD  = 50
 const BASE_VBW  = 1000
 
+export interface EmblemEntry { sortOrder: number; svgUrl: string | null }
+
 export interface RibbonEditorPreviewProps {
   mainText?:       string
   school?:         string
@@ -106,6 +133,7 @@ export interface RibbonEditorPreviewProps {
   font?:           Font
   fontFamily?:     string
   emblemKey?:      number
+  emblems?:        EmblemEntry[]
 }
 
 export default function RibbonEditorPreview({
@@ -119,6 +147,7 @@ export default function RibbonEditorPreview({
   font           = 'classic',
   fontFamily:    fontFamilyProp,
   emblemKey      = 0,
+  emblems,
 }: RibbonEditorPreviewProps) {
   const uid     = useId().replace(/:/g, '')
   const sheenId = `rep-sheen-${uid}`
@@ -152,7 +181,8 @@ export default function RibbonEditorPreview({
   const shadowHex  = darkenHex(ribbonHex, 18)
   const textHex    = TEXT_HEX[textColor]
   const extraHex   = EXTRA_HEX[extraTextColor]
-  const fontFamily = fontFamilyProp ?? getFontFamily(font)
+  const fontFamily   = fontFamilyProp ?? getFontFamily(font)
+  const emblemSvgUrl = emblems?.find(e => e.sortOrder === emblemKey)?.svgUrl ?? null
 
   const isBlueYellow = color === 'blue-yellow'
   const is3D         = emblemKey === 5
@@ -213,7 +243,9 @@ export default function RibbonEditorPreview({
         <rect x="0" y={RY} width={vbw} height={RIBBON_H} rx="8" fill={`url(#${sheenId})`} />
 
         <g transform={`translate(${embLeftX}, ${embY}) scale(${EMB_SCALE})`}>
-          <EmblemShape k={emblemKey} color={textHex} />
+          {emblemSvgUrl
+            ? <EmblemFromUrl url={emblemSvgUrl} color={textHex} />
+            : <EmblemShape k={emblemKey} color={textHex} />}
         </g>
 
         {is3D && (
@@ -221,7 +253,9 @@ export default function RibbonEditorPreview({
             transform={`translate(${embRightX + EMB_W}, ${embY}) scale(${-EMB_SCALE}, ${EMB_SCALE})`}
             opacity="0.78"
           >
-            <EmblemShape k={emblemKey} color={textHex} />
+            {emblemSvgUrl
+              ? <EmblemFromUrl url={emblemSvgUrl} color={textHex} />
+              : <EmblemShape k={emblemKey} color={textHex} />}
           </g>
         )}
 
