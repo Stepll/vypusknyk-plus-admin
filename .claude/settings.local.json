@@ -45,7 +45,8 @@
       "Bash(ssh -o ConnectTimeout=30 root@75.119.152.4 \"cd ~/vypusknyk-plus/prod && docker compose pull && docker compose up -d && docker logs prod-api-1 --tail 30\")",
       "WebFetch(domain:monobank.ua)",
       "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")",
-      "Bash(ssh root@75.119.152.4 \"cd ~/vypusknyk-plus/prod && docker compose pull && docker compose up -d && docker logs prod-api-1 --tail 30\")"
+      "Bash(ssh root@75.119.152.4 \"cd ~/vypusknyk-plus/prod && docker compose pull && docker compose up -d && docker logs prod-api-1 --tail 30\")",
+      "Bash(ssh -o ConnectTimeout=15 root@vmi3229320.contaboserver.net \"cd ~/vypusknyk-plus/prod && docker compose pull && docker compose up -d && docker logs prod-api-1 --tail 30\")"
     ]
   }
 }

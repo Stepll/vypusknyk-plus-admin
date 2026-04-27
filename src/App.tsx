@@ -25,6 +25,12 @@ import PaymentMethodsPage from './pages/settings/PaymentMethodsPage'
 import PaymentMethodDetailPage from './pages/settings/PaymentMethodDetailPage'
 import OrderStatusesPage from './pages/settings/OrderStatusesPage'
 import ColorsPage from './pages/settings/constructor/ColorsPage'
+import MaterialsPage from './pages/settings/constructor/MaterialsPage'
+import PrintColorsPage from './pages/settings/constructor/PrintColorsPage'
+import PrintTypesPage from './pages/settings/constructor/PrintTypesPage'
+import FontsPage from './pages/settings/constructor/FontsPage'
+import EmblemsPage from './pages/settings/constructor/EmblemsPage'
+import RulesPage from './pages/settings/constructor/RulesPage'
 import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
@@ -59,6 +65,12 @@ export default function App() {
             <Route path="settings/payment/:id" element={<PaymentMethodDetailPage />} />
             <Route path="settings/order-statuses" element={<OrderStatusesPage />} />
             <Route path="settings/constructor/colors" element={<ColorsPage />} />
+            <Route path="settings/constructor/materials" element={<MaterialsPage />} />
+            <Route path="settings/constructor/print-colors" element={<PrintColorsPage />} />
+            <Route path="settings/constructor/print-types" element={<PrintTypesPage />} />
+            <Route path="settings/constructor/fonts" element={<FontsPage />} />
+            <Route path="settings/constructor/emblems" element={<EmblemsPage />} />
+            <Route path="settings/constructor/rules" element={<RulesPage />} />
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
             <Route path="settings/info-pages/:slug" element={<InfoPageEditPage />} />

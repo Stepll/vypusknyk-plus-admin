@@ -5,7 +5,8 @@ import {
   LogoutOutlined, HeartOutlined, CrownOutlined, InboxOutlined, HistoryOutlined,
   SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined,
   CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
-  TruckOutlined, ShopOutlined, FileTextOutlined,
+  TruckOutlined, ShopOutlined, FileTextOutlined, ExperimentOutlined, FormatPainterOutlined,
+  PrinterOutlined, FontSizeOutlined, PictureOutlined, ApartmentOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
@@ -14,6 +15,12 @@ import { authStore } from '../../stores/AuthStore'
 const { Header, Sider, Content } = Layout
 
 const ROUTE_KEYS = [
+  '/settings/constructor/rules',
+  '/settings/constructor/emblems',
+  '/settings/constructor/fonts',
+  '/settings/constructor/print-types',
+  '/settings/constructor/print-colors',
+  '/settings/constructor/materials',
   '/settings/constructor/colors',
   '/settings/info-pages/privacy',
   '/settings/info-pages/terms',
@@ -75,6 +82,12 @@ const ALL_MENU_ITEMS: MenuItem[] = [
         label: 'Конструктор',
         children: [
           { key: '/settings/constructor/colors', icon: <BgColorsOutlined />, label: 'Кольори', pageKey: 'settings.colors' },
+          { key: '/settings/constructor/materials', icon: <ExperimentOutlined />, label: 'Матеріали', pageKey: 'settings.colors' },
+          { key: '/settings/constructor/print-colors', icon: <FormatPainterOutlined />, label: 'Кольори друку', pageKey: 'settings.colors' },
+          { key: '/settings/constructor/print-types', icon: <PrinterOutlined />, label: 'Типи друку', pageKey: 'settings.colors' },
+          { key: '/settings/constructor/fonts', icon: <FontSizeOutlined />, label: 'Шрифти', pageKey: 'settings.colors' },
+          { key: '/settings/constructor/emblems', icon: <PictureOutlined />, label: 'Емблеми', pageKey: 'settings.colors' },
+          { key: '/settings/constructor/rules', icon: <ApartmentOutlined />, label: 'Правила', pageKey: 'settings.colors' },
         ],
       },
     ],
