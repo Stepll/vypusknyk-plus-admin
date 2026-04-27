@@ -708,6 +708,23 @@ export interface RibbonColorResponse {
   sortOrder: number
 }
 
+export interface RibbonMaterialResponse {
+  id: number
+  name: string
+  slug: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveRibbonMaterialRequest {
+  name: string
+  slug: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
 export interface SaveRibbonColorRequest {
   name: string
   slug: string
