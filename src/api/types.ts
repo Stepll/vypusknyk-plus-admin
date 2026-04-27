@@ -708,6 +708,25 @@ export interface RibbonColorResponse {
   sortOrder: number
 }
 
+export interface RibbonPrintColorResponse {
+  id: number
+  name: string
+  slug: string
+  hex: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveRibbonPrintColorRequest {
+  name: string
+  slug: string
+  hex: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
 export interface RibbonMaterialResponse {
   id: number
   name: string
