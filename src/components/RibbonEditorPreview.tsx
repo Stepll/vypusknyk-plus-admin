@@ -120,7 +120,7 @@ const GAP       = 14
 const SIDE_PAD  = 50
 const BASE_VBW  = 1000
 
-export interface EmblemEntry { sortOrder: number; svgUrl: string | null }
+export interface EmblemEntry { sortOrder: number; svgUrlLeft: string | null; svgUrlRight: string | null }
 
 export interface RibbonEditorPreviewProps {
   mainText?:       string
@@ -182,7 +182,9 @@ export default function RibbonEditorPreview({
   const textHex    = TEXT_HEX[textColor]
   const extraHex   = EXTRA_HEX[extraTextColor]
   const fontFamily   = fontFamilyProp ?? getFontFamily(font)
-  const emblemSvgUrl = emblems?.find(e => e.sortOrder === emblemKey)?.svgUrl ?? null
+  const emblemEntry    = emblems?.find(e => e.sortOrder === emblemKey)
+  const emblemSvgLeft  = emblemEntry?.svgUrlLeft  ?? null
+  const emblemSvgRight = emblemEntry?.svgUrlRight ?? null
 
   const isBlueYellow = color === 'blue-yellow'
   const is3D         = emblemKey === 5
@@ -243,8 +245,8 @@ export default function RibbonEditorPreview({
         <rect x="0" y={RY} width={vbw} height={RIBBON_H} rx="8" fill={`url(#${sheenId})`} />
 
         <g transform={`translate(${embLeftX}, ${embY}) scale(${EMB_SCALE})`}>
-          {emblemSvgUrl
-            ? <EmblemFromUrl url={emblemSvgUrl} color={textHex} />
+          {emblemSvgLeft
+            ? <EmblemFromUrl url={emblemSvgLeft} color={textHex} />
             : <EmblemShape k={emblemKey} color={textHex} />}
         </g>
 
@@ -253,8 +255,8 @@ export default function RibbonEditorPreview({
             transform={`translate(${embRightX + EMB_W}, ${embY}) scale(${-EMB_SCALE}, ${EMB_SCALE})`}
             opacity="0.78"
           >
-            {emblemSvgUrl
-              ? <EmblemFromUrl url={emblemSvgUrl} color={textHex} />
+            {emblemSvgRight
+              ? <EmblemFromUrl url={emblemSvgRight} color={textHex} />
               : <EmblemShape k={emblemKey} color={textHex} />}
           </g>
         )}

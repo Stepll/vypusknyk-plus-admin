@@ -17,8 +17,8 @@ export function deleteRibbonEmblem(id: number): Promise<void> {
   return apiFetch(`/api/v1/admin/ribbon-emblems/${id}`, { method: 'DELETE' })
 }
 
-export function uploadRibbonEmblemSvg(id: number, file: File): Promise<RibbonEmblemResponse> {
+export function uploadRibbonEmblemSvg(id: number, side: 'left' | 'right', file: File): Promise<RibbonEmblemResponse> {
   const form = new FormData()
   form.append('svg', file)
-  return apiFetch(`/api/v1/admin/ribbon-emblems/${id}/svg`, { method: 'POST', body: form })
+  return apiFetch(`/api/v1/admin/ribbon-emblems/${id}/svg/${side}`, { method: 'POST', body: form })
 }

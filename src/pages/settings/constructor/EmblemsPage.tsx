@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Table, Switch, Button, Drawer, Form, Input, InputNumber,
-  Popconfirm, message, Space, Tag, Tooltip,
+  Popconfirm, message, Space, Tag, Tooltip, Divider,
 } from 'antd'
-import { PictureOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import {
+  PictureOutlined, PlusOutlined, EditOutlined, DeleteOutlined,
+  UploadOutlined, DownloadOutlined, InfoCircleOutlined,
+} from '@ant-design/icons'
 import {
   getRibbonEmblems, createRibbonEmblem, updateRibbonEmblem, deleteRibbonEmblem, uploadRibbonEmblemSvg,
 } from '../../../api/ribbonEmblems'
@@ -16,14 +19,29 @@ const EMPTY: SaveRibbonEmblemRequest = {
 const SVG_TOOLTIP = (
   <div style={{ maxWidth: 260 }}>
     <p style={{ margin: '0 0 6px' }}>
-      SVG файл повинен використовувати <code>fill="currentColor"</code> замість фіксованих кольорів —
+      SVG файл повинен використовувати <code>fill="currentColor"</code> —
       тоді емблема автоматично приймає колір напису стрічки.
     </p>
     <p style={{ margin: 0 }}>
-      <strong>Figma:</strong> виділи форму → Fill → змінити на <code>currentColor</code> → Export as SVG.
+      <strong>Figma:</strong> виділи форму → Fill → <code>currentColor</code> → Export SVG.
     </p>
   </div>
 )
+
+function SvgPreviewBox({ url }: { url: string | null }) {
+  return (
+    <div style={{
+      width: 56, height: 56, borderRadius: 8, border: '1px solid #e8e8e8',
+      background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden',
+    }}>
+      {url
+        ? <img src={url} alt="" style={{ width: 40, height: 40, objectFit: 'contain' }} />
+        : <PictureOutlined style={{ color: '#d9d9d9', fontSize: 22 }} />
+      }
+    </div>
+  )
+}
 
 export default function EmblemsPage() {
   const [emblems, setEmblems] = useState<RibbonEmblemResponse[]>([])
@@ -31,10 +49,11 @@ export default function EmblemsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<RibbonEmblemResponse | null>(null)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState<number | null>(null)
+  const [uploading, setUploading] = useState<'left' | 'right' | null>(null)
   const [form] = Form.useForm<SaveRibbonEmblemRequest>()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const uploadingIdRef = useRef<number | null>(null)
+
+  const fileLeftRef  = useRef<HTMLInputElement>(null)
+  const fileRightRef = useRef<HTMLInputElement>(null)
 
   const load = () => {
     setLoading(true)
@@ -65,11 +84,12 @@ export default function EmblemsPage() {
       if (editing) {
         const updated = await updateRibbonEmblem(editing.id, vals)
         setEmblems(es => es.map(e => e.id === updated.id ? updated : e))
+        setEditing(updated)
       } else {
         const created = await createRibbonEmblem(vals)
         setEmblems(es => [...es, created])
+        setEditing(created)
       }
-      setDrawerOpen(false)
       message.success('Збережено')
     } catch {
       message.error('Помилка збереження')
@@ -97,46 +117,31 @@ export default function EmblemsPage() {
     }
   }
 
-  const triggerUpload = (id: number) => {
-    uploadingIdRef.current = id
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = async (ev: React.ChangeEvent<HTMLInputElement>) => {
-    const file = ev.target.files?.[0]
-    const id = uploadingIdRef.current
-    if (!file || !id) return
-    ev.target.value = ''
-
-    setUploading(id)
+  const handleUpload = async (side: 'left' | 'right', file: File) => {
+    if (!editing) return
+    setUploading(side)
     try {
-      const updated = await uploadRibbonEmblemSvg(id, file)
+      const updated = await uploadRibbonEmblemSvg(editing.id, side, file)
       setEmblems(es => es.map(x => x.id === updated.id ? updated : x))
-      message.success('SVG завантажено')
+      setEditing(updated)
+      message.success(`SVG (${side === 'left' ? 'ліва' : 'права'}) завантажено`)
     } catch {
       message.error('Помилка завантаження SVG')
     } finally {
       setUploading(null)
-      uploadingIdRef.current = null
     }
   }
 
   const columns = [
     {
-      title: 'Превью',
+      title: 'Ліва / Права',
       key: 'preview',
-      width: 64,
+      width: 140,
       render: (_: unknown, e: RibbonEmblemResponse) => (
-        <div style={{
-          width: 48, height: 48, borderRadius: 8, border: '1px solid #f0f0f0',
-          background: '#1a1a2e', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          overflow: 'hidden',
-        }}>
-          {e.svgUrl
-            ? <img src={e.svgUrl} alt={e.name} style={{ width: 32, height: 32, objectFit: 'contain' }} />
-            : <PictureOutlined style={{ color: '#555', fontSize: 20 }} />
-          }
-        </div>
+        <Space size={8}>
+          <SvgPreviewBox url={e.svgUrlLeft} />
+          <SvgPreviewBox url={e.svgUrlRight} />
+        </Space>
       ),
     },
     {
@@ -159,19 +164,9 @@ export default function EmblemsPage() {
     {
       title: '',
       key: 'actions',
-      width: 140,
+      width: 80,
       render: (_: unknown, e: RibbonEmblemResponse) => (
         <Space>
-          <Tooltip title={SVG_TOOLTIP} placement="left" overlayStyle={{ maxWidth: 300 }}>
-            <Button
-              size="small"
-              icon={<UploadOutlined />}
-              loading={uploading === e.id}
-              onClick={() => triggerUpload(e.id)}
-            >
-              SVG
-            </Button>
-          </Tooltip>
           <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(e)} />
           <Popconfirm
             title="Видалити емблему?"
@@ -188,11 +183,26 @@ export default function EmblemsPage() {
   return (
     <div>
       <input
-        ref={fileInputRef}
+        ref={fileLeftRef}
         type="file"
         accept=".svg,image/svg+xml"
         style={{ display: 'none' }}
-        onChange={handleFileChange}
+        onChange={ev => {
+          const f = ev.target.files?.[0]
+          if (f) handleUpload('left', f)
+          ev.target.value = ''
+        }}
+      />
+      <input
+        ref={fileRightRef}
+        type="file"
+        accept=".svg,image/svg+xml"
+        style={{ display: 'none' }}
+        onChange={ev => {
+          const f = ev.target.files?.[0]
+          if (f) handleUpload('right', f)
+          ev.target.value = ''
+        }}
       />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
@@ -229,10 +239,10 @@ export default function EmblemsPage() {
         title={editing ? 'Редагувати емблему' : 'Нова емблема'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={400}
+        width={440}
         footer={
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-            <Button onClick={() => setDrawerOpen(false)}>Скасувати</Button>
+            <Button onClick={() => setDrawerOpen(false)}>Закрити</Button>
             <Button type="primary" loading={saving} onClick={handleSave}>Зберегти</Button>
           </div>
         }
@@ -242,7 +252,7 @@ export default function EmblemsPage() {
             <Input placeholder="Дзвіночок" />
           </Form.Item>
 
-          <Form.Item name="slug" label="Slug (значення в коді)" rules={[{ required: true, message: 'Обовʼязково' }]}>
+          <Form.Item name="slug" label="Slug" rules={[{ required: true, message: 'Обовʼязково' }]}>
             <Input placeholder="bell" />
           </Form.Item>
 
@@ -254,6 +264,78 @@ export default function EmblemsPage() {
             <Switch />
           </Form.Item>
         </Form>
+
+        {editing && (
+          <>
+            <Divider />
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                Ліва емблема
+                <Tooltip title={SVG_TOOLTIP} overlayStyle={{ maxWidth: 300 }}>
+                  <InfoCircleOutlined style={{ color: '#8c8c8c', cursor: 'help', fontSize: 13 }} />
+                </Tooltip>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <SvgPreviewBox url={editing.svgUrlLeft} />
+                <Space direction="vertical" size={6}>
+                  <Button
+                    size="small"
+                    icon={<UploadOutlined />}
+                    loading={uploading === 'left'}
+                    onClick={() => fileLeftRef.current?.click()}
+                  >
+                    Завантажити SVG
+                  </Button>
+                  {editing.svgUrlLeft && (
+                    <Button
+                      size="small"
+                      icon={<DownloadOutlined />}
+                      href={editing.svgUrlLeft}
+                      target="_blank"
+                      download
+                    >
+                      Скачати SVG
+                    </Button>
+                  )}
+                </Space>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+                Права емблема
+                <Tooltip title={SVG_TOOLTIP} overlayStyle={{ maxWidth: 300 }}>
+                  <InfoCircleOutlined style={{ color: '#8c8c8c', cursor: 'help', fontSize: 13 }} />
+                </Tooltip>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <SvgPreviewBox url={editing.svgUrlRight} />
+                <Space direction="vertical" size={6}>
+                  <Button
+                    size="small"
+                    icon={<UploadOutlined />}
+                    loading={uploading === 'right'}
+                    onClick={() => fileRightRef.current?.click()}
+                  >
+                    Завантажити SVG
+                  </Button>
+                  {editing.svgUrlRight && (
+                    <Button
+                      size="small"
+                      icon={<DownloadOutlined />}
+                      href={editing.svgUrlRight}
+                      target="_blank"
+                      download
+                    >
+                      Скачати SVG
+                    </Button>
+                  )}
+                </Space>
+              </div>
+            </div>
+          </>
+        )}
       </Drawer>
     </div>
   )
