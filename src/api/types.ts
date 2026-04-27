@@ -714,6 +714,8 @@ export interface RibbonPrintColorResponse {
   slug: string
   hex: string
   priceModifier: number
+  isForMainText: boolean
+  isForExtraText: boolean
   isActive: boolean
   sortOrder: number
 }
@@ -723,6 +725,8 @@ export interface SaveRibbonPrintColorRequest {
   slug: string
   hex: string
   priceModifier: number
+  isForMainText: boolean
+  isForExtraText: boolean
   isActive: boolean
   sortOrder: number
 }

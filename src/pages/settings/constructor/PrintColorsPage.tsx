@@ -10,7 +10,8 @@ import {
 import type { RibbonPrintColorResponse, SaveRibbonPrintColorRequest } from '../../../api/types'
 
 const EMPTY: SaveRibbonPrintColorRequest = {
-  name: '', slug: '', hex: '#000000', priceModifier: 0, isActive: true, sortOrder: 0,
+  name: '', slug: '', hex: '#000000', priceModifier: 0,
+  isForMainText: true, isForExtraText: false, isActive: true, sortOrder: 0,
 }
 
 export default function PrintColorsPage() {
@@ -113,6 +114,40 @@ export default function PrintColorsPage() {
       render: (hex: string) => <code style={{ fontSize: 12 }}>{hex}</code>,
     },
     {
+      title: 'Використання',
+      key: 'usage',
+      render: (_: unknown, c: RibbonPrintColorResponse) => (
+        <Space direction="vertical" size={4}>
+          <Space size={6}>
+            <Switch
+              size="small"
+              checked={c.isForMainText}
+              onChange={async val => {
+                try {
+                  const updated = await updateRibbonPrintColor(c.id, { ...c, isForMainText: val })
+                  setColors(cs => cs.map(x => x.id === updated.id ? updated : x))
+                } catch { message.error('Помилка') }
+              }}
+            />
+            <span style={{ fontSize: 12 }}>Основний напис</span>
+          </Space>
+          <Space size={6}>
+            <Switch
+              size="small"
+              checked={c.isForExtraText}
+              onChange={async val => {
+                try {
+                  const updated = await updateRibbonPrintColor(c.id, { ...c, isForExtraText: val })
+                  setColors(cs => cs.map(x => x.id === updated.id ? updated : x))
+                } catch { message.error('Помилка') }
+              }}
+            />
+            <span style={{ fontSize: 12 }}>Додатковий напис</span>
+          </Space>
+        </Space>
+      ),
+    },
+    {
       title: 'Надбавка',
       dataIndex: 'priceModifier',
       key: 'priceModifier',
@@ -211,6 +246,14 @@ export default function PrintColorsPage() {
                 border: '1px solid #e5e7eb',
               }} />
             </div>
+          </Form.Item>
+
+          <Form.Item name="isForMainText" label="Основний напис" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+
+          <Form.Item name="isForExtraText" label="Додатковий напис" valuePropName="checked">
+            <Switch />
           </Form.Item>
 
           <Form.Item name="priceModifier" label="Надбавка до ціни (₴)">
