@@ -7,28 +7,8 @@ import {
   ArrowLeftOutlined, ShoppingOutlined, DownOutlined, RightOutlined,
 } from '@ant-design/icons'
 import { getOrder, updateOrderStatus } from '../../api/orders'
-import type { AdminOrder, AdminOrderItem, NamesData, RibbonCustomization } from '../../api/types'
-
-const STATUS_OPTIONS = [
-  { value: 'Accepted',   label: 'Прийнято' },
-  { value: 'Production', label: 'Виробництво' },
-  { value: 'Shipped',    label: 'Відправлено' },
-  { value: 'Delivered',  label: 'Доставлено' },
-]
-
-const STATUS_COLORS: Record<string, string> = {
-  Accepted:   'blue',
-  Production: 'orange',
-  Shipped:    'geekblue',
-  Delivered:  'green',
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  Accepted:   'Прийнято',
-  Production: 'Виробництво',
-  Shipped:    'Відправлено',
-  Delivered:  'Доставлено',
-}
+import { getOrderStatuses } from '../../api/orderStatuses'
+import type { AdminOrder, AdminOrderItem, NamesData, RibbonCustomization, OrderStatusResponse } from '../../api/types'
 
 const DELIVERY_LABELS: Record<string, string> = {
   'nova-poshta': 'Нова Пошта',
@@ -154,17 +134,23 @@ export default function OrderDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [order, setOrder] = useState<AdminOrder | null>(null)
+  const [statuses, setStatuses] = useState<OrderStatusResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [statusUpdating, setStatusUpdating] = useState(false)
 
   useEffect(() => {
-    getOrder(Number(id))
-      .then(setOrder)
+    Promise.all([
+      getOrder(Number(id)),
+      getOrderStatuses(),
+    ])
+      .then(([o, s]) => { setOrder(o); setStatuses(s) })
       .catch(() => { message.error('Не вдалося завантажити замовлення'); navigate('/orders') })
       .finally(() => setLoading(false))
   }, [id, navigate])
 
-  const handleStatusChange = async (status: AdminOrder['status']) => {
+  const statusMap = Object.fromEntries(statuses.map(s => [s.name, s]))
+
+  const handleStatusChange = async (status: string) => {
     if (!order) return
     setStatusUpdating(true)
     try {
@@ -207,16 +193,17 @@ export default function OrderDetailPage() {
               <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>
                 Замовлення #{order.orderNumber}
               </h2>
-              <Tag color={STATUS_COLORS[order.status]} style={{ margin: 0 }}>
-                {STATUS_LABELS[order.status] ?? order.status}
-              </Tag>
+              {statusMap[order.status]
+                ? <Tag style={{ color: '#fff', background: statusMap[order.status].color, border: 'none', margin: 0 }}>{order.status}</Tag>
+                : <Tag style={{ margin: 0 }}>{order.status}</Tag>
+              }
             </div>
             <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>{createdAt}</p>
           </div>
         </div>
         <Select
           value={order.status}
-          options={STATUS_OPTIONS}
+          options={statuses.map(s => ({ value: s.name, label: s.name }))}
           onChange={handleStatusChange}
           loading={statusUpdating}
           style={{ width: 180 }}

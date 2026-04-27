@@ -42,7 +42,7 @@ export interface AdminOrder {
   id: number
   orderNumber: string
   createdAt: string
-  status: 'Accepted' | 'Production' | 'Shipped' | 'Delivered'
+  status: string
   total: number
   isAnonymous: boolean
   userId: number | null
@@ -112,6 +112,23 @@ export interface PaymentMethodResponse {
 
 export interface UpdatePaymentMethodRequest {
   isEnabled: boolean
+}
+
+export interface OrderStatusResponse {
+  id: number
+  name: string
+  color: string
+  sortOrder: number
+  isFinal: boolean
+  isActive: boolean
+}
+
+export interface SaveOrderStatusRequest {
+  name: string
+  color: string
+  sortOrder: number
+  isFinal: boolean
+  isActive: boolean
 }
 
 export interface AdminProduct {

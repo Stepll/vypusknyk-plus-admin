@@ -1,79 +1,78 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { Table, Tag, Select } from 'antd'
 import { ShoppingCartOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { ordersStore } from '../../stores/OrdersStore'
-import type { AdminOrder } from '../../api/types'
+import { getOrderStatuses } from '../../api/orderStatuses'
+import type { AdminOrder, OrderStatusResponse } from '../../api/types'
 
-const STATUS_COLORS: Record<string, string> = {
-  Accepted: 'orange',
-  Production: 'blue',
-  Shipped: 'cyan',
-  Delivered: 'green',
+function statusColor(hex: string): string {
+  return hex
 }
-
-const STATUS_LABELS: Record<string, string> = {
-  Accepted: 'Прийнято',
-  Production: 'У виробництві',
-  Shipped: 'Відправлено',
-  Delivered: 'Доставлено',
-}
-
-const STATUS_OPTIONS = [
-  { value: '', label: 'Всі статуси' },
-  { value: 'Accepted', label: 'Прийнято' },
-  { value: 'Production', label: 'У виробництві' },
-  { value: 'Shipped', label: 'Відправлено' },
-  { value: 'Delivered', label: 'Доставлено' },
-]
-
-const columns = [
-  { title: '№', dataIndex: 'orderNumber', key: 'orderNumber', width: 80 },
-  {
-    title: 'Клієнт',
-    key: 'client',
-    render: (_: unknown, r: AdminOrder) =>
-      r.isAnonymous ? r.email ?? 'Гість' : r.recipient.fullName,
-  },
-  {
-    title: 'Сума',
-    dataIndex: 'total',
-    key: 'total',
-    render: (v: number) => <strong>{v} грн</strong>,
-  },
-  {
-    title: 'Статус',
-    dataIndex: 'status',
-    key: 'status',
-    render: (s: string) => (
-      <Tag color={STATUS_COLORS[s] ?? 'default'}>{STATUS_LABELS[s] ?? s}</Tag>
-    ),
-  },
-  {
-    title: 'Змінити статус',
-    key: 'actions',
-    render: (_: unknown, r: AdminOrder) => (
-      <Select
-        size="small"
-        value={r.status}
-        style={{ width: 160 }}
-        options={STATUS_OPTIONS.filter(o => o.value)}
-        onChange={val => ordersStore.updateStatus(r.id, val)}
-      />
-    ),
-  },
-  {
-    title: 'Дата',
-    dataIndex: 'createdAt',
-    key: 'createdAt',
-    render: (v: string) => new Date(v).toLocaleDateString('uk-UA'),
-  },
-]
 
 const OrdersPage = observer(() => {
   const navigate = useNavigate()
-  useEffect(() => { ordersStore.fetchOrders() }, [])
+  const [statuses, setStatuses] = useState<OrderStatusResponse[]>([])
+
+  useEffect(() => {
+    ordersStore.fetchOrders()
+    getOrderStatuses().then(setStatuses).catch(() => {})
+  }, [])
+
+  const statusMap = Object.fromEntries(statuses.map(s => [s.name, s]))
+
+  const filterOptions = [
+    { value: '', label: 'Всі статуси' },
+    ...statuses.map(s => ({ value: s.name, label: s.name })),
+  ]
+
+  const columns = [
+    { title: '№', dataIndex: 'orderNumber', key: 'orderNumber', width: 80 },
+    {
+      title: 'Клієнт',
+      key: 'client',
+      render: (_: unknown, r: AdminOrder) =>
+        r.isAnonymous ? r.email ?? 'Гість' : r.recipient.fullName,
+    },
+    {
+      title: 'Сума',
+      dataIndex: 'total',
+      key: 'total',
+      render: (v: number) => <strong>{v} грн</strong>,
+    },
+    {
+      title: 'Статус',
+      dataIndex: 'status',
+      key: 'status',
+      render: (s: string) => {
+        const st = statusMap[s]
+        return st
+          ? <Tag style={{ color: '#fff', background: statusColor(st.color), border: 'none' }}>{s}</Tag>
+          : <Tag>{s}</Tag>
+      },
+    },
+    {
+      title: 'Змінити статус',
+      key: 'actions',
+      render: (_: unknown, r: AdminOrder) => (
+        <Select
+          size="small"
+          value={r.status}
+          style={{ width: 160 }}
+          options={statuses.map(s => ({ value: s.name, label: s.name }))}
+          onChange={val => ordersStore.updateStatus(r.id, val)}
+          onClick={e => e.stopPropagation()}
+        />
+      ),
+    },
+    {
+      title: 'Дата',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      render: (v: string) => new Date(v).toLocaleDateString('uk-UA'),
+    },
+  ]
 
   return (
     <div>
@@ -93,7 +92,7 @@ const OrdersPage = observer(() => {
         </div>
         <Select
           value={ordersStore.statusFilter}
-          options={STATUS_OPTIONS}
+          options={filterOptions}
           style={{ width: 180 }}
           onChange={val => ordersStore.setStatusFilter(val)}
           placeholder="Фільтр за статусом"
