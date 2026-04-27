@@ -49,6 +49,7 @@ export interface AdminOrder {
   email: string | null
   comment: string | null
   payment: string
+  paymentMethodName: string
   recipient: { fullName: string; phone: string }
   delivery: { method: string; methodName: string; city: string | null; warehouse: string | null; postalCode: string | null }
   items: AdminOrderItem[]
@@ -100,6 +101,17 @@ export interface UpdateDeliveryMethodRequest {
   isEnabled: boolean
   settings: string
   checkoutFields: DeliveryCheckoutField[]
+}
+
+export interface PaymentMethodResponse {
+  id: number
+  name: string
+  slug: string
+  isEnabled: boolean
+}
+
+export interface UpdatePaymentMethodRequest {
+  isEnabled: boolean
 }
 
 export interface AdminProduct {

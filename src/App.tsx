@@ -22,6 +22,7 @@ import CategoriesPage from './pages/settings/CategoriesPage'
 import DeliveryMethodsPage from './pages/settings/DeliveryMethodsPage'
 import DeliveryMethodDetailPage from './pages/settings/DeliveryMethodDetailPage'
 import PaymentMethodsPage from './pages/settings/PaymentMethodsPage'
+import PaymentMethodDetailPage from './pages/settings/PaymentMethodDetailPage'
 import OrderStatusesPage from './pages/settings/OrderStatusesPage'
 import ColorsPage from './pages/settings/constructor/ColorsPage'
 import RolesPage from './pages/settings/RolesPage'
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="settings/delivery" element={<DeliveryMethodsPage />} />
             <Route path="settings/delivery/:id" element={<DeliveryMethodDetailPage />} />
             <Route path="settings/payment" element={<PaymentMethodsPage />} />
+            <Route path="settings/payment/:id" element={<PaymentMethodDetailPage />} />
             <Route path="settings/order-statuses" element={<OrderStatusesPage />} />
             <Route path="settings/constructor/colors" element={<ColorsPage />} />
             <Route path="settings/roles" element={<RolesPage />} />
