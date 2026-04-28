@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Layout, Menu, Button, Avatar, Tag } from 'antd'
 import {
   DashboardOutlined, ShoppingCartOutlined, AppstoreOutlined, TeamOutlined,
   LogoutOutlined, HeartOutlined, CrownOutlined, InboxOutlined, HistoryOutlined,
-  SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined,
+  SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined, MessageOutlined,
   CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
   TruckOutlined, ShopOutlined, FileTextOutlined, ExperimentOutlined, FormatPainterOutlined,
   PrinterOutlined, FontSizeOutlined, PictureOutlined, ApartmentOutlined,
@@ -11,6 +11,8 @@ import {
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { authStore } from '../../stores/AuthStore'
+import { chatStore } from '../../stores/ChatStore'
+import FloatingChat from '../chat/FloatingChat'
 
 const { Header, Sider, Content } = Layout
 
@@ -32,7 +34,7 @@ const ROUTE_KEYS = [
   '/settings/order-statuses',
   '/settings/roles',
   '/settings/suppliers',
-  '/designs', '/admins', '/warehouse', '/deliveries', '/history',
+  '/designs', '/admins', '/warehouse', '/deliveries', '/chats', '/history',
   '/orders', '/products', '/users',
 ]
 
@@ -53,6 +55,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
   { key: '/admins', icon: <CrownOutlined />, label: 'Адміни', pageKey: 'admins' },
   { key: '/warehouse', icon: <InboxOutlined />, label: 'Складський облік', pageKey: 'warehouse' },
   { key: '/deliveries', icon: <TruckOutlined />, label: 'Поставки', pageKey: 'deliveries' },
+  { key: '/chats', icon: <MessageOutlined />, label: 'Чати', pageKey: 'chats' },
   { key: '/history', icon: <HistoryOutlined />, label: 'Історія змін', pageKey: 'history' },
   {
     key: 'settings',
@@ -110,6 +113,12 @@ function filterMenuItems(items: MenuItem[], pages: string[], isSuperAdmin: boole
 const AdminLayout = observer(() => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
+
+  useEffect(() => {
+    const token = authStore.token
+    if (token) chatStore.connect(token)
+    return () => { chatStore.disconnect() }
+  }, [])
 
   const selectedKey = pathname === '/' ? '/' : ROUTE_KEYS.find(k => pathname.startsWith(k)) ?? '/'
 
@@ -199,6 +208,7 @@ const AdminLayout = observer(() => {
           </div>
         </Content>
       </Layout>
+      <FloatingChat />
     </Layout>
   )
 })
