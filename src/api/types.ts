@@ -810,3 +810,44 @@ export interface SaveRibbonColorRequest {
   isActive: boolean
   sortOrder: number
 }
+
+export interface ConstructorIncompatibilityResponse {
+  id: number
+  typeA: string
+  slugA: string
+  typeB: string
+  isWarning: boolean
+  message: string | null
+  slugsB: string[]
+}
+
+export interface SaveConstructorIncompatibilityRequest {
+  typeA: string
+  slugA: string
+  typeB: string
+  isWarning: boolean
+  message: string | null
+  slugsB: string[]
+}
+
+export interface ConstructorForcedTextResponse {
+  id: number
+  triggerType: string
+  triggerSlug: string
+  targetField: string
+  message: string | null
+  values: string[]
+}
+
+export interface SaveConstructorForcedTextRequest {
+  triggerType: string
+  triggerSlug: string
+  targetField: string
+  message: string | null
+  values: string[]
+}
+
+export interface ConstructorRulesResponse {
+  incompatibilities: ConstructorIncompatibilityResponse[]
+  forcedTexts: ConstructorForcedTextResponse[]
+}
