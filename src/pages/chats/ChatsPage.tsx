@@ -17,7 +17,7 @@ export default function ChatsPage() {
           <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>Спілкування з клієнтами</p>
         </div>
       </div>
-      <div style={{ margin: '-24px -28px -24px', borderTop: '1px solid #f0f0f0' }}>
+      <div style={{ margin: '0 -28px -24px', borderTop: '1px solid #f0f0f0' }}>
         <ChatPanel />
       </div>
     </div>
