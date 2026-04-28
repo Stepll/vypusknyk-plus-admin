@@ -17,7 +17,8 @@
 src/
 ├── api/
 │   ├── client.ts              # apiFetch (base URL, Content-Type, auth header, 204 guard)
-│   ├── types.ts               # Shared TypeScript типи (RoleInfo, Sales*, ProductCategory*, Dashboard*)
+│   │                          # FormData-fix: пропускає Content-Type коли body instanceof FormData
+│   ├── types.ts               # Shared TypeScript типи (RoleInfo, Sales*, ProductCategory*, Dashboard*, Ribbon*)
 │   ├── auth.ts                # login → AdminAuthResponse (включає role?: RoleInfo)
 │   ├── orders.ts              # GET /admin/orders, GET /admin/orders/:id, PATCH status
 │   ├── products.ts            # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
@@ -30,7 +31,10 @@ src/
 │   ├── deliveries.ts          # GET/POST /admin/suppliers, GET/POST /admin/deliveries, receive endpoints
 │   ├── deliveryMethods.ts     # GET/PUT /admin/delivery-methods (list + detail + update)
 │   ├── dashboard.ts           # getDashboard*, getDashboardSalesByCategory(period); SalesCategoryPeriod type
-│   └── info-pages.ts          # GET /admin/info-pages, PUT /admin/info-pages/:slug
+│   ├── info-pages.ts          # GET /admin/info-pages, PUT /admin/info-pages/:slug
+│   ├── ribbonPrintTypes.ts    # CRUD /admin/ribbon-print-types
+│   ├── ribbonEmblems.ts       # CRUD /admin/ribbon-emblems + uploadRibbonEmblemSvg(id, side, file)
+│   └── constructorRules.ts    # CRUD /admin/constructor-rules/incompatibilities + /forced-texts
 ├── stores/
 │   ├── OrdersStore.ts     # MobX — orders list, pagination, status filter
 │   ├── ProductsStore.ts   # MobX — products list, pagination, delete
@@ -39,14 +43,18 @@ src/
 │   ├── WarehouseStore.ts  # MobX — warehouse products, stats, categories, transactions
 │   └── DeliveryStore.ts   # MobX — deliveries, suppliers, delivery details Map, filters
 ├── components/
-│   ├── RibbonEditorPreview.tsx  # SVG-превью стрічки (скопійовано з frontend); пропси: mainText, school, className, names, color, textColor, extraTextColor, font, emblemKey
+│   ├── RibbonEditorPreview.tsx  # SVG-превью стрічки (скопійовано з frontend)
+│   │                            # Пропси: mainText, school, className, names, color, textColor,
+│   │                            # extraTextColor, font, fontFamily?, emblemKey, emblems?: EmblemEntry[]
+│   │                            # EmblemEntry = { sortOrder, svgUrlLeft, svgUrlRight }
+│   │                            # EmblemFromUrl: auto-scale SVG via viewBox parsing + ref.current.innerHTML
 │   ├── RibbonEditorPreview.css
 │   └── layout/
 │       └── AdminLayout.tsx  # Sider з вкладеним меню + Header + Content (Outlet)
 │                            # Меню фільтрується за role.pages (SuperAdmin бачить все)
 │                            # Header показує тег ролі поруч з ім'ям адміна
 ├── constants/
-│   └── ribbonRules.ts       # RibbonColor, Font, RIBBON_COLORS, FONTS, PRINT_TYPES, MATERIALS, EMBLEMS
+│   └── ribbonRules.ts       # RibbonColor, Font, RIBBON_COLORS, FONTS, PRINT_TYPES, MATERIALS (без disabled логіки — правила в БД)
 └── pages/
     ├── dashboard/DashboardPage.tsx  # 9 блоків: Stats, Статуси+Recent, Distributions, Charts,
     │                                # TopItems+LowStock, Deliveries, Designs, TopProducts, SalesByCategory
@@ -84,7 +92,18 @@ src/
         ├── SuppliersPage.tsx    # CRUD постачальників (drawer форма + popconfirm delete)
         ├── InfoPageEditPage.tsx # Редактор інформаційних сторінок (markdown textarea + save)
         └── constructor/
-            └── ColorsPage.tsx
+            ├── ColorsPage.tsx
+            ├── MaterialsPage.tsx
+            ├── PrintColorsPage.tsx
+            ├── FontsPage.tsx
+            ├── PrintTypesPage.tsx   # CRUD типів друку (Name, Slug, PriceModifier, SortOrder, IsActive)
+            ├── EmblemsPage.tsx      # CRUD емблем + окремий SVG upload ліва/права
+            │                        # Превью на білому фоні (56×56), upload тільки в drawer
+            │                        # handleUpload(side, file) → uploadRibbonEmblemSvg(id, side, file)
+            └── RulesPage.tsx        # Scratch-подібний UI для правил конструктора
+                                     # Вкладка "Несумісності": блоки [поле][slug]→[недоступні|попередження][поле]: checkboxes
+                                     # Вкладка "Фіксований текст": блоки [поле][slug]→[targetField]: tag chips
+                                     # Slug-дропдауни завантажуються з API (printTypes, materials, fonts, printColors, colors, emblems)
 ```
 
 ## Маршрути (App.tsx)
@@ -110,6 +129,13 @@ src/
 /settings/suppliers          → SuppliersPage
 /settings/roles              → RolesPage
 /settings/info-pages/:slug   → InfoPageEditPage  (slug: privacy | terms | delivery)
+/settings/constructor/colors        → ColorsPage
+/settings/constructor/materials     → MaterialsPage
+/settings/constructor/print-colors  → PrintColorsPage
+/settings/constructor/fonts         → FontsPage
+/settings/constructor/print-types   → PrintTypesPage
+/settings/constructor/emblems       → EmblemsPage
+/settings/constructor/rules         → RulesPage
 ```
 
 ## Меню (AdminLayout)
@@ -136,7 +162,13 @@ src/
     Умови використання          (/settings/info-pages/terms)
     Доставка та оплата          (/settings/info-pages/delivery)
   Конструктор ▶
-    Кольори
+    Кольори          (/settings/constructor/colors)
+    Матеріали        (/settings/constructor/materials)
+    Кольори друку    (/settings/constructor/print-colors)
+    Шрифти           (/settings/constructor/fonts)
+    Типи друку       (/settings/constructor/print-types)
+    Емблеми          (/settings/constructor/emblems)
+    Правила          (/settings/constructor/rules)
 ```
 
 ## API ендпоінти (бекенд)
@@ -227,6 +259,39 @@ src/
 |--------|----------------------------------------------------|-----------------------------------------------|
 | GET    | /api/v1/admin/dashboard/sales-by-category?period=  | Продажі за категоріями (week/month/year/all)  |
 
+### Конструктор — типи друку
+| Метод  | Шлях                                          | Опис                              |
+|--------|-----------------------------------------------|-----------------------------------|
+| GET    | /api/v1/ribbon-print-types                    | Публічний список                  |
+| GET    | /api/v1/admin/ribbon-print-types              | Адмін список                      |
+| POST   | /api/v1/admin/ribbon-print-types              | Створити                          |
+| PUT    | /api/v1/admin/ribbon-print-types/{id}         | Оновити                           |
+| DELETE | /api/v1/admin/ribbon-print-types/{id}         | Soft delete                       |
+
+### Конструктор — емблеми
+| Метод  | Шлях                                          | Опис                              |
+|--------|-----------------------------------------------|-----------------------------------|
+| GET    | /api/v1/ribbon-emblems                        | Публічний список                  |
+| GET    | /api/v1/admin/ribbon-emblems                  | Адмін список                      |
+| POST   | /api/v1/admin/ribbon-emblems                  | Створити                          |
+| PUT    | /api/v1/admin/ribbon-emblems/{id}             | Оновити                           |
+| DELETE | /api/v1/admin/ribbon-emblems/{id}             | Soft delete                       |
+| POST   | /api/v1/admin/ribbon-emblems/{id}/svg/left    | Upload SVG ліва (multipart)       |
+| POST   | /api/v1/admin/ribbon-emblems/{id}/svg/right   | Upload SVG права (multipart)      |
+
+### Конструктор — правила
+| Метод  | Шлях                                                        | Опис                                          |
+|--------|-------------------------------------------------------------|-----------------------------------------------|
+| GET    | /api/v1/constructor/rules                                   | Публічний — всі правила одним запитом         |
+| GET    | /api/v1/admin/constructor-rules/incompatibilities           | Список несумісностей                          |
+| POST   | /api/v1/admin/constructor-rules/incompatibilities           | Створити несумісність                         |
+| PUT    | /api/v1/admin/constructor-rules/incompatibilities/{id}      | Оновити                                       |
+| DELETE | /api/v1/admin/constructor-rules/incompatibilities/{id}      | Soft delete                                   |
+| GET    | /api/v1/admin/constructor-rules/forced-texts                | Список правил фіксованого тексту              |
+| POST   | /api/v1/admin/constructor-rules/forced-texts                | Створити                                      |
+| PUT    | /api/v1/admin/constructor-rules/forced-texts/{id}           | Оновити                                       |
+| DELETE | /api/v1/admin/constructor-rules/forced-texts/{id}           | Soft delete                                   |
+
 ## Типи даних (api/types.ts)
 
 **Roles:**
@@ -293,12 +358,32 @@ src/
 - Orders.DeliveryMethodId — FK на DeliveryMethods (замінив старий enum DeliveryMethod у DeliveryInfo)
 - `AdminDeliveryResponse` тепер має `method` (slug), `methodName` (назва), `postalCode`
 
+**Ribbon Print Types (конструктор):**
+- `RibbonPrintTypeResponse` — id, name, slug, priceModifier, isActive, sortOrder
+- `SaveRibbonPrintTypeRequest` — name, slug, priceModifier, isActive, sortOrder
+
+**Ribbon Emblems (конструктор):**
+- `RibbonEmblemResponse` — id, name, slug, svgUrlLeft (MinIO URL або null), svgUrlRight (MinIO URL або null), isActive, sortOrder
+- `SaveRibbonEmblemRequest` — name, slug, isActive, sortOrder
+- SVG зберігається в MinIO: `emblems/{id}-left.svg` / `emblems/{id}-right.svg`
+- Завантаження через `uploadRibbonEmblemSvg(id, 'left' | 'right', File)` — FormData multipart
+
 **InfoPage:**
 - `InfoPageResponse` — id, slug, title, content (markdown), order, updatedAt
 - `UpdateInfoPageRequest` — title, content
 - Фіксовані slug: `privacy`, `terms`, `delivery`
 - Сторінки засіваються `InfoPageSeeder` при першому старті бекенду (якщо таблиця порожня)
 - Контент — Markdown; рендериться через `react-markdown` на клієнтському фронті
+
+**Constructor Rules (правила конструктора):**
+- `ConstructorIncompatibilityResponse` — id, typeA, slugA, typeB, isWarning, message, slugsB: string[]
+- `SaveConstructorIncompatibilityRequest` — typeA, slugA, typeB, isWarning, message, slugsB[]
+- `ConstructorForcedTextResponse` — id, triggerType, triggerSlug, targetField, message, values: string[]
+- `SaveConstructorForcedTextRequest` — triggerType, triggerSlug, targetField, message, values[]
+- `ConstructorRulesResponse` — incompatibilities[], forcedTexts[]
+- `typeA/typeB/triggerType` — одне з: `'printType' | 'material' | 'font' | 'textColor' | 'color' | 'emblem'`
+- `targetField` — `'mainText' | 'school'`
+- `isWarning=false` → кнопка disabled + tooltip; `isWarning=true` → кнопка активна, але показує попередження
 
 ## Особливості реалізації
 
@@ -321,6 +406,12 @@ src/
 **DeliveryDetailPage** — кнопка "і" (InfoCircleOutlined) у діях кожної позиції відкриває Drawer з Timeline прийомів (дата, кількість, нотатка).
 
 **TransactionDrawer** (outcome) — необов'язковий Select "Замовлення" внизу форми: завантажує 100 останніх замовлень, показує номер + дату (secondary style через `optionRender`).
+
+**RulesPage (Scratch-like UI):**
+- Дві вкладки: Несумісності / Фіксований текст
+- Кожне правило — картка з горизонтальними Select-ами: `Якщо [поле] = [slug] → [недоступні|попередження] [поле]:`
+- Slug-опції для кожного типу завантажуються з відповідного ribbon API при завантаженні сторінки
+- Збереження per-card (не глобальна кнопка); від'ємні ID для нових (ще не збережених) правил
 
 ## Правила ID
 
