@@ -1,12 +1,15 @@
 import { observer } from 'mobx-react-lite'
 import { Badge, Button, Tooltip } from 'antd'
 import { MessageOutlined, CloseOutlined, ExpandAltOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { chatStore } from '../../stores/ChatStore'
 import ChatPanel from './ChatPanel'
 
 const FloatingChat = observer(() => {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  if (pathname === '/chats') return null
 
   return (
     <>
