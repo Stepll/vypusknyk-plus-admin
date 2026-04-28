@@ -110,11 +110,15 @@ export default function UserDetailPage() {
             <UserOutlined />
           </div>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 600, color: '#1a1a2e', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
               {user.fullName}
+              {user.isGuest
+                ? <Tag color="orange" style={{ fontWeight: 400, fontSize: 12 }}>Гість</Tag>
+                : <Tag color="green" style={{ fontWeight: 400, fontSize: 12 }}>Зареєстрований</Tag>
+              }
             </h2>
             <p style={{ color: '#8c8c8c', fontSize: 13, margin: 0 }}>
-              Зареєстрований {createdAt}
+              {user.isGuest ? `Гостьовий профіль • ${createdAt}` : `Зареєстрований ${createdAt}`}
             </p>
           </div>
         </div>
@@ -167,10 +171,16 @@ export default function UserDetailPage() {
             title={<span style={{ fontSize: 14, fontWeight: 600 }}>Інформація</span>}
           >
             <Descriptions column={1} size="small" styles={{ label: { color: '#8c8c8c' } }}>
-              <Descriptions.Item label="Email">{user.email}</Descriptions.Item>
+              <Descriptions.Item label="Тип">
+                {user.isGuest
+                  ? <Tag color="orange">Гість</Tag>
+                  : <Tag color="green">Зареєстрований</Tag>
+                }
+              </Descriptions.Item>
+              <Descriptions.Item label="Email">{user.email ?? '–'}</Descriptions.Item>
               <Descriptions.Item label="Імʼя">{user.fullName}</Descriptions.Item>
               <Descriptions.Item label="Телефон">{user.phone ?? '–'}</Descriptions.Item>
-              <Descriptions.Item label="Дата реєстрації">{createdAt}</Descriptions.Item>
+              <Descriptions.Item label="Дата">{createdAt}</Descriptions.Item>
               <Descriptions.Item label="Замовлень">{user.orders.length}</Descriptions.Item>
               <Descriptions.Item label="Дизайнів">{user.savedDesigns.length}</Descriptions.Item>
             </Descriptions>

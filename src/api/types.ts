@@ -187,7 +187,8 @@ export interface SaveProductRequest {
 
 export interface AdminUser {
   id: number
-  email: string
+  isGuest: boolean
+  email: string | null
   fullName: string
   phone: string | null
   createdAt: string
@@ -297,7 +298,8 @@ export interface CreateAdminRequest {
 
 export interface AdminUserDetail {
   id: number
-  email: string
+  isGuest: boolean
+  email: string | null
   fullName: string
   phone: string | null
   createdAt: string

@@ -1,23 +1,33 @@
 import { useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
-import { Table } from 'antd'
+import { Table, Tag } from 'antd'
 import { TeamOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { usersStore } from '../../stores/UsersStore'
+import type { AdminUser } from '../../api/types'
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-  { title: 'Email', dataIndex: 'email', key: 'email' },
+  {
+    title: 'Тип',
+    dataIndex: 'isGuest',
+    key: 'isGuest',
+    width: 110,
+    render: (isGuest: boolean) => isGuest
+      ? <Tag color="orange">Гість</Tag>
+      : <Tag color="green">Зареєстрований</Tag>,
+  },
+  { title: 'Email', dataIndex: 'email', key: 'email', render: (v: string | null) => v ?? '—' },
   { title: "Ім'я", dataIndex: 'fullName', key: 'fullName' },
   { title: 'Телефон', dataIndex: 'phone', key: 'phone', render: (v: string | null) => v ?? '—' },
   { title: 'Замовлень', dataIndex: 'ordersCount', key: 'ordersCount', width: 100 },
   {
-    title: 'Зареєстрований',
+    title: 'Дата',
     dataIndex: 'createdAt',
     key: 'createdAt',
     render: (v: string) => new Date(v).toLocaleDateString('uk-UA'),
   },
-]
+] satisfies import('antd').TableColumnsType<AdminUser>
 
 const UsersPage = observer(() => {
   const navigate = useNavigate()
