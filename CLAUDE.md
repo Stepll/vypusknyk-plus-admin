@@ -65,8 +65,8 @@ src/
     │   ├── ProductsPage.tsx
     │   └── ProductEditPage.tsx
     ├── users/
-    │   ├── UsersPage.tsx
-    │   └── UserDetailPage.tsx
+    │   ├── UsersPage.tsx          # Таблиця з колонкою "Тип" (тег Гість/Зареєстрований)
+    │   └── UserDetailPage.tsx     # Тег IsGuest у заголовку та блоці інформації; email nullable
     ├── designs/
     │   ├── SavedDesignsPage.tsx   # Таблиця з SVG-превью стрічки в кожному рядку (h=200px), пошук
     │   └── DesignDetailPage.tsx   # Превью, параметри, класи+імена, delete (Popconfirm)
@@ -330,10 +330,18 @@ src/
 **Designs:**
 - `RibbonClassGroup` — className, names (імена через `\n`)
 - `RibbonState` — mainText, school, comment, printType, color, material, textColor, extraTextColor, font, emblemKey, **classes: RibbonClassGroup[]**
-- `AdminSavedDesignItem` — id, designName, savedAt, userId, userFullName, userEmail, **state: RibbonState**
+- `AdminSavedDesignItem` — id, designName, savedAt, userId, userFullName, userEmail?, **state: RibbonState**
 - `AdminSavedDesignDetail` extends Item (повертається з GET /:id)
 - `RibbonState.classes` зберігається як JSON-масив у полі `State` таблиці `SavedDesigns`
 - Відображення: `RibbonEditorPreview` отримує `names` як `string[]` (flatMap по classes)
+
+**Users (гостьові користувачі):**
+- `AdminUser` — id, **isGuest: boolean**, email: string | null, fullName, phone?, createdAt, ordersCount
+- `AdminUserDetail` — + orders[], savedDesigns[]
+- Гостьовий юзер: `isGuest=true`, `email=null`, `passwordHash=null` — створюється автоматично при замовленні без акаунту
+- Merge при реєстрації: якщо `phone` збігається з гостем → UPDATE того самого рядка (IsGuest=false, Email, PasswordHash)
+- `FindOrCreateGuestUserAsync(phone, fullName)` — логіка в `OrderService`: знаходить або створює гостя за телефоном
+- Унікальний індекс на `Phone` (partial: `WHERE Phone IS NOT NULL`) — гарантує один запис на номер
 
 **Product Categories (нова система):**
 - `ProductCategoryResponse` — id, name, order, subcategories[]
@@ -453,6 +461,7 @@ docker logs prod-api-1 --tail 50
 
 - **Global query filters** (`!e.IsDeleted`) на: User, Order, OrderItem, SavedDesign, CartItem, Product, Admin, **Supplier, Delivery**. При Include навігації з query filter — обов'язково завантажувати через окремий запит з `IgnoreQueryFilters()` щоб уникнути null.
 - **apiFetch** — перевіряє `res.status === 204` перед `res.json()`. Ендпоінти що повертають "порожній успіх" мусять повертати 204, не 200.
+- **Гостьові юзери** — `User.Email` і `User.PasswordHash` є nullable. Гості не можуть логінитись (`LoginAsync` фільтрує `!u.IsGuest`). При реєстрації з тим самим телефоном — UPDATE існуючого рядка, а не INSERT нового.
 
 ## TODO
 
