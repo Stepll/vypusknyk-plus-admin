@@ -6,10 +6,9 @@ import {
 import type { MenuProps } from 'antd'
 import {
   ArrowLeftOutlined, CheckCircleOutlined, CloseCircleOutlined,
-  DownOutlined, EditOutlined, UserOutlined,
+  DownOutlined, EditOutlined, MailOutlined, UserOutlined,
 } from '@ant-design/icons'
-import { getUser } from '../../api/users'
-import { patchUserInfo, patchUserVerification } from '../../api/users'
+import { getUser, patchUserInfo, patchUserVerification, sendUserActivationEmail } from '../../api/users'
 import type { AdminUserDetail, AdminUserOrderSummary } from '../../api/types'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -139,7 +138,7 @@ function VerificationTag({
     <Dropdown menu={{ items, onClick: handleMenuClick }} trigger={['click']} disabled={loading}>
       <Tag
         color={verified ? 'success' : 'default'}
-        style={{ cursor: 'pointer', userSelect: 'none' }}
+        style={{ cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
       >
         {verified ? activeLabel : inactiveLabel}
         <DownOutlined style={{ fontSize: 9, marginLeft: 4, opacity: 0.6 }} />
@@ -149,9 +148,9 @@ function VerificationTag({
 }
 
 function EditableField({
-  label, value, field, userId, onUpdate,
+  value, field, userId, onUpdate,
 }: {
-  label: string
+  label?: string
   value: string | null
   field: 'fullName' | 'phone'
   userId: number
@@ -182,36 +181,46 @@ function EditableField({
 
   const cancel = () => { setDraft(value ?? ''); setEditing(false) }
 
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-      <span style={{ color: '#8c8c8c', fontSize: 13, flexShrink: 0, width: 72 }}>{label}</span>
-      {editing ? (
-        <>
-          <Input
-            ref={inputRef as React.RefObject<any>}
-            size="small"
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onPressEnter={save}
-            onKeyDown={e => e.key === 'Escape' && cancel()}
-            style={{ flex: 1 }}
-            disabled={saving}
-          />
-          <Button size="small" type="primary" onClick={save} loading={saving}>OK</Button>
-          <Button size="small" onClick={cancel} disabled={saving}>✕</Button>
-        </>
-      ) : (
-        <>
-          <span style={{ flex: 1, fontSize: 14 }}>{value ?? '–'}</span>
-          <Button
-            type="text" size="small" icon={<EditOutlined />}
-            style={{ color: '#bfbfbf', flexShrink: 0 }}
-            onClick={() => { setDraft(value ?? ''); setEditing(true) }}
-          />
-        </>
-      )}
+  return editing ? (
+    <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+      <Input
+        ref={inputRef as React.RefObject<any>}
+        size="small"
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onPressEnter={save}
+        onKeyDown={e => e.key === 'Escape' && cancel()}
+        style={{ flex: 1 }}
+        disabled={saving}
+      />
+      <Button size="small" type="primary" onClick={save} loading={saving}>OK</Button>
+      <Button size="small" onClick={cancel} disabled={saving}>✕</Button>
+    </div>
+  ) : (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
+      <span style={{ fontSize: 14, color: value ? undefined : '#bfbfbf' }}>{value ?? '–'}</span>
+      <Button
+        type="text" size="small" icon={<EditOutlined />}
+        style={{ color: '#bfbfbf', padding: '0 4px' }}
+        onClick={() => { setDraft(value ?? ''); setEditing(true) }}
+      />
     </div>
   )
+}
+
+const ROW_STYLE: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  minHeight: 32,
+  flexWrap: 'wrap',
+}
+
+const LABEL_STYLE: React.CSSProperties = {
+  color: '#8c8c8c',
+  fontSize: 13,
+  width: 72,
+  flexShrink: 0,
 }
 
 export default function UserDetailPage() {
@@ -219,6 +228,7 @@ export default function UserDetailPage() {
   const navigate = useNavigate()
   const [user, setUser] = useState<AdminUserDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [sendingEmail, setSendingEmail] = useState(false)
 
   useEffect(() => {
     getUser(Number(id))
@@ -229,6 +239,18 @@ export default function UserDetailPage() {
 
   const handleUpdate = (data: Partial<AdminUserDetail>) => {
     setUser(prev => prev ? { ...prev, ...data } : prev)
+  }
+
+  const handleSendActivation = async () => {
+    setSendingEmail(true)
+    try {
+      await sendUserActivationEmail(Number(id))
+      message.success('Лист активації надіслано')
+    } catch {
+      message.error('Не вдалося надіслати лист')
+    } finally {
+      setSendingEmail(false)
+    }
   }
 
   if (loading) {
@@ -270,85 +292,110 @@ export default function UserDetailPage() {
         </div>
       </div>
 
-      {/* Info block — full width on top */}
+      {/* Info block — two columns */}
       <Card style={{ borderRadius: 12, marginBottom: 20 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px 32px' }}>
+        <Row gutter={32}>
+          {/* Column 1: Name, Phone, Email */}
+          <Col xs={24} md={12}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Email row */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Email</span>
-              <span style={{ fontSize: 14 }}>{user.email ?? '–'}</span>
-              <VerificationTag
-                verified={user.isEmailVerified}
-                field="isEmailVerified"
-                userId={userId}
-                onUpdate={handleUpdate}
-              />
+              {/* Name */}
+              <div style={ROW_STYLE}>
+                <span style={LABEL_STYLE}>Імʼя</span>
+                <EditableField
+                  label="Імʼя"
+                  value={user.fullName}
+                  field="fullName"
+                  userId={userId}
+                  onUpdate={handleUpdate}
+                />
+                <VerificationTag
+                  verified={user.isNameVerified}
+                  field="isNameVerified"
+                  userId={userId}
+                  onUpdate={handleUpdate}
+                />
+              </div>
+
+              {/* Phone */}
+              <div style={ROW_STYLE}>
+                <span style={LABEL_STYLE}>Телефон</span>
+                <EditableField
+                  label="Телефон"
+                  value={user.phone}
+                  field="phone"
+                  userId={userId}
+                  onUpdate={handleUpdate}
+                />
+                <VerificationTag
+                  verified={user.isPhoneVerified}
+                  field="isPhoneVerified"
+                  userId={userId}
+                  onUpdate={handleUpdate}
+                />
+              </div>
+
+              {/* Email */}
+              <div style={ROW_STYLE}>
+                <span style={LABEL_STYLE}>Email</span>
+                <span style={{ fontSize: 14, flex: 1, color: user.email ? undefined : '#bfbfbf' }}>
+                  {user.email ?? '–'}
+                </span>
+                <VerificationTag
+                  verified={user.isEmailVerified}
+                  field="isEmailVerified"
+                  userId={userId}
+                  onUpdate={handleUpdate}
+                />
+                {user.email && (
+                  <Button
+                    size="small"
+                    icon={<MailOutlined />}
+                    loading={sendingEmail}
+                    onClick={handleSendActivation}
+                    style={{ flexShrink: 0 }}
+                  >
+                    Надіслати лист активації
+                  </Button>
+                )}
+              </div>
+
             </div>
-          </div>
+          </Col>
 
-          {/* Name row */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <EditableField
-                label="Імʼя"
-                value={user.fullName}
-                field="fullName"
-                userId={userId}
-                onUpdate={handleUpdate}
-              />
-              <VerificationTag
-                verified={user.isNameVerified}
-                field="isNameVerified"
-                userId={userId}
-                onUpdate={handleUpdate}
-              />
+          {/* Column 2: rest */}
+          <Col xs={24} md={12}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              <div style={ROW_STYLE}>
+                <span style={LABEL_STYLE}>Тип</span>
+                {user.isGuest
+                  ? <Tag color="orange">Гість</Tag>
+                  : <Tag color="green">Зареєстрований</Tag>
+                }
+              </div>
+
+              <div style={ROW_STYLE}>
+                <span style={LABEL_STYLE}>Дата</span>
+                <span style={{ fontSize: 14 }}>{createdAt}</span>
+              </div>
+
+              <div style={ROW_STYLE}>
+                <span style={LABEL_STYLE}>Замовлень</span>
+                <span style={{ fontSize: 14 }}>{user.orders.length}</span>
+              </div>
+
+              <div style={ROW_STYLE}>
+                <span style={LABEL_STYLE}>Дизайнів</span>
+                <span style={{ fontSize: 14 }}>{user.savedDesigns.length}</span>
+              </div>
+
             </div>
-          </div>
-
-          {/* Phone row */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <EditableField
-                label="Телефон"
-                value={user.phone}
-                field="phone"
-                userId={userId}
-                onUpdate={handleUpdate}
-              />
-              <VerificationTag
-                verified={user.isPhoneVerified}
-                field="isPhoneVerified"
-                userId={userId}
-                onUpdate={handleUpdate}
-              />
-            </div>
-          </div>
-
-          {/* Static info */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Тип</span>
-            {user.isGuest
-              ? <Tag color="orange">Гість</Tag>
-              : <Tag color="green">Зареєстрований</Tag>
-            }
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Дата</span>
-            <span style={{ fontSize: 14 }}>{createdAt}</span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Замовлень</span>
-            <span style={{ fontSize: 14 }}>{user.orders.length}</span>
-          </div>
-        </div>
+          </Col>
+        </Row>
       </Card>
 
       <Row gutter={24} align="top">
-        {/* Orders */}
         <Col xs={24} lg={16}>
           <Card
             style={{ borderRadius: 12, marginBottom: 16 }}
@@ -387,7 +434,6 @@ export default function UserDetailPage() {
           </Card>
         </Col>
 
-        {/* Right column — placeholder for future blocks (email history etc.) */}
         <Col xs={24} lg={8} />
       </Row>
     </div>

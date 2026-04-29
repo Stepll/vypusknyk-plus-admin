@@ -23,3 +23,6 @@ export const patchUserVerification = (
     method: 'PATCH',
     body: JSON.stringify(data),
   })
+
+export const sendUserActivationEmail = (id: number) =>
+  apiFetch<void>(`/api/v1/admin/users/${id}/send-activation-email`, { method: 'POST' })
