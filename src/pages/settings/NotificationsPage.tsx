@@ -25,18 +25,19 @@ interface TableRow {
 
 // ── System Tab ────────────────────────────────────────────────────────────────
 
-function SystemTab({ form, admins }: { form: ReturnType<typeof Form.useForm>[0]; admins: AdminOption[] }) {
-  const selected: number[] = Form.useWatch('systemAdminIds', form) ?? []
+function SystemTab({ form, admins, triggerKey }: { form: ReturnType<typeof Form.useForm>[0]; admins: AdminOption[]; triggerKey: string }) {
+  const [selected, setSelected] = useState<number[]>([])
+
+  useEffect(() => {
+    setSelected(form.getFieldValue('systemAdminIds') ?? [])
+  }, [triggerKey])
+
+  const update = (next: number[]) => { setSelected(next); form.setFieldValue('systemAdminIds', next) }
+  const remove = (id: number) => update(selected.filter(i => i !== id))
+  const add = (id: number) => { if (id && !selected.includes(id)) update([...selected, id]) }
+
   const selectedAdmins = admins.filter(a => selected.includes(a.id))
   const availableAdmins = admins.filter(a => !selected.includes(a.id))
-
-  const remove = (id: number) =>
-    form.setFieldValue('systemAdminIds', selected.filter(i => i !== id))
-
-  const add = (id: number) => {
-    if (id && !selected.includes(id))
-      form.setFieldValue('systemAdminIds', [...selected, id])
-  }
 
   return (
     <div>
@@ -77,14 +78,23 @@ function SystemTab({ form, admins }: { form: ReturnType<typeof Form.useForm>[0];
 
 // ── Email Tab ─────────────────────────────────────────────────────────────────
 
-function EmailTab({ form }: { form: ReturnType<typeof Form.useForm>[0] }) {
+function EmailTab({ form, triggerKey }: { form: ReturnType<typeof Form.useForm>[0]; triggerKey: string }) {
   const [newEmail, setNewEmail] = useState('')
-  const recipients: string[] = Form.useWatch('emailRecipients', form) ?? []
+  const [recipients, setRecipients] = useState<string[]>([])
+
+  useEffect(() => {
+    setRecipients(form.getFieldValue('emailRecipients') ?? [])
+  }, [triggerKey])
+
+  const update = (next: string[]) => {
+    setRecipients(next)
+    form.setFieldValue('emailRecipients', next)
+  }
 
   const add = () => {
     const trimmed = newEmail.trim()
     if (!trimmed || recipients.includes(trimmed)) return
-    form.setFieldValue('emailRecipients', [...recipients, trimmed])
+    update([...recipients, trimmed])
     setNewEmail('')
   }
 
@@ -107,11 +117,7 @@ function EmailTab({ form }: { form: ReturnType<typeof Form.useForm>[0] }) {
         </Space.Compact>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {recipients.map(email => (
-            <Tag
-              key={email} closable
-              onClose={() => form.setFieldValue('emailRecipients', recipients.filter(e => e !== email))}
-              icon={<MailOutlined />}
-            >
+            <Tag key={email} closable onClose={() => update(recipients.filter(e => e !== email))} icon={<MailOutlined />}>
               {email}
             </Tag>
           ))}
@@ -126,14 +132,23 @@ function EmailTab({ form }: { form: ReturnType<typeof Form.useForm>[0] }) {
 
 // ── Telegram Tab ──────────────────────────────────────────────────────────────
 
-function TelegramTab({ form }: { form: ReturnType<typeof Form.useForm>[0] }) {
+function TelegramTab({ form, triggerKey }: { form: ReturnType<typeof Form.useForm>[0]; triggerKey: string }) {
   const [newId, setNewId] = useState('')
-  const ids: string[] = Form.useWatch('telegramUserIds', form) ?? []
+  const [ids, setIds] = useState<string[]>([])
+
+  useEffect(() => {
+    setIds(form.getFieldValue('telegramUserIds') ?? [])
+  }, [triggerKey])
+
+  const update = (next: string[]) => {
+    setIds(next)
+    form.setFieldValue('telegramUserIds', next)
+  }
 
   const add = () => {
     const trimmed = newId.trim()
     if (!trimmed || ids.includes(trimmed)) return
-    form.setFieldValue('telegramUserIds', [...ids, trimmed])
+    update([...ids, trimmed])
     setNewId('')
   }
 
@@ -159,11 +174,7 @@ function TelegramTab({ form }: { form: ReturnType<typeof Form.useForm>[0] }) {
         </Space.Compact>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {ids.map(id => (
-            <Tag
-              key={id} closable color="blue"
-              onClose={() => form.setFieldValue('telegramUserIds', ids.filter(i => i !== id))}
-              icon={<SendOutlined />}
-            >
+            <Tag key={id} closable color="blue" onClose={() => update(ids.filter(i => i !== id))} icon={<SendOutlined />}>
               {id}
             </Tag>
           ))}
@@ -388,9 +399,9 @@ export default function NotificationsPage() {
         <Form form={form} layout="vertical">
           <Tabs
             items={[
-              { key: 'system', label: 'Система', children: <SystemTab form={form} admins={admins} /> },
-              { key: 'email', label: 'Email', children: <EmailTab form={form} /> },
-              { key: 'telegram', label: 'Telegram', children: <TelegramTab form={form} /> },
+              { key: 'system', label: 'Система', children: <SystemTab form={form} admins={admins} triggerKey={editing?.triggerType ?? ''} /> },
+              { key: 'email', label: 'Email', children: <EmailTab form={form} triggerKey={editing?.triggerType ?? ''} /> },
+              { key: 'telegram', label: 'Telegram', children: <TelegramTab form={form} triggerKey={editing?.triggerType ?? ''} /> },
             ]}
           />
         </Form>
