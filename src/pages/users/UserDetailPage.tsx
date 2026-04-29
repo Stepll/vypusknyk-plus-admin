@@ -360,13 +360,26 @@ export default function UserDetailPage() {
               </div>
 
               {/* Telegram */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0 }}>Telegram</span>
-                <Tooltip title="Незабаром">
-                  <Button icon={<MessageOutlined />} size="small" disabled>
-                    Написати в Telegram
-                  </Button>
-                </Tooltip>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0, paddingTop: 4 }}>Telegram</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Tooltip title="Незабаром">
+                    <Button icon={<MessageOutlined />} size="small" disabled>
+                      Написати через бот
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title={viberPhone ? undefined : 'Телефон не вказано'}>
+                    <Button
+                      icon={<SendOutlined />}
+                      size="small"
+                      disabled={!viberPhone}
+                      href={viberPhone ? `https://t.me/${encodeURIComponent(viberPhone)}` : undefined}
+                      target="_blank"
+                    >
+                      Відкрити чат у Telegram
+                    </Button>
+                  </Tooltip>
+                </div>
               </div>
 
               {/* Viber */}
