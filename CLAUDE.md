@@ -34,14 +34,20 @@ src/
 │   ├── info-pages.ts          # GET /admin/info-pages, PUT /admin/info-pages/:slug
 │   ├── ribbonPrintTypes.ts    # CRUD /admin/ribbon-print-types
 │   ├── ribbonEmblems.ts       # CRUD /admin/ribbon-emblems + uploadRibbonEmblemSvg(id, side, file)
-│   └── constructorRules.ts    # CRUD /admin/constructor-rules/incompatibilities + /forced-texts
+│   ├── constructorRules.ts    # CRUD /admin/constructor-rules/incompatibilities + /forced-texts
+│   └── chat.ts                # ChatMessageDto, ChatConversationListItem; getConversations(), getConversationMessages(id)
 ├── stores/
 │   ├── OrdersStore.ts     # MobX — orders list, pagination, status filter
 │   ├── ProductsStore.ts   # MobX — products list, pagination, delete
 │   ├── UsersStore.ts      # MobX — users list, pagination
 │   ├── AuthStore.ts       # MobX — admin auth (JWT token + role info); getters: isSuperAdmin, allowedPages
 │   ├── WarehouseStore.ts  # MobX — warehouse products, stats, categories, transactions
-│   └── DeliveryStore.ts   # MobX — deliveries, suppliers, delivery details Map, filters
+│   ├── DeliveryStore.ts   # MobX — deliveries, suppliers, delivery details Map, filters
+│   └── ChatStore.ts       # MobX singleton — SignalR connection; conversations[], messages Map<id,msgs[]>,
+│                           # activeConversationId, isWidgetOpen, unreadCount (computed)
+│                           # connect(token), disconnect(), loadConversations(), openConversation(id),
+│                           # sendMessage(text), setWidgetOpen(open)
+│                           # SignalR token passed via query string (?access_token=); groups: admins + conversation:{id}
 ├── components/
 │   ├── RibbonEditorPreview.tsx  # SVG-превью стрічки (скопійовано з frontend)
 │   │                            # Пропси: mainText, school, className, names, color, textColor,
@@ -49,10 +55,19 @@ src/
 │   │                            # EmblemEntry = { sortOrder, svgUrlLeft, svgUrlRight }
 │   │                            # EmblemFromUrl: auto-scale SVG via viewBox parsing + ref.current.innerHTML
 │   ├── RibbonEditorPreview.css
+│   ├── chat/
+│   │   ├── ChatPanel.tsx    # Shared компонент: ліва панель (список розмов) + права (повідомлення + input)
+│   │   │                    # Пропс: compact?: boolean (для floating widget)
+│   │   │                    # Auto-scroll на нові повідомлення через useRef + useEffect
+│   │   └── FloatingChat.tsx # Floating кнопка + overlay panel справа внизу
+│   │                        # useLocation() → якщо pathname === '/chats' → return null (приховується)
+│   │                        # Кнопка expand → setWidgetOpen(false) + navigate('/chats')
 │   └── layout/
 │       └── AdminLayout.tsx  # Sider з вкладеним меню + Header + Content (Outlet)
 │                            # Меню фільтрується за role.pages (SuperAdmin бачить все)
 │                            # Header показує тег ролі поруч з ім'ям адміна
+│                            # useEffect → chatStore.connect(token) при монтуванні; cleanup disconnect()
+│                            # Рендерить <FloatingChat /> перед закриваючим </Layout>
 ├── constants/
 │   └── ribbonRules.ts       # RibbonColor, Font, RIBBON_COLORS, FONTS, PRINT_TYPES, MATERIALS (без disabled логіки — правила в БД)
 └── pages/
@@ -80,6 +95,9 @@ src/
     │   ├── DeliveriesPage.tsx   # Таблиця поставок з фільтрами, прогрес-бар
     │   ├── DeliveryDetailPage.tsx  # Деталі поставки: позиції, прийом товару, історія прийому (drawer)
     │   └── NewDeliveryPage.tsx  # Повна сторінка створення поставки (dynamic item rows)
+    ├── chats/
+    │   └── ChatsPage.tsx        # Full-page Telegram-like чат; header з іконкою
+    │                             # margin: '0 -28px -24px' для ChatPanel (притискає до країв)
     ├── history/
     │   └── HistoryPage.tsx      # (порожньо)
     └── settings/
@@ -110,6 +128,7 @@ src/
 
 ```
 /                   → DashboardPage
+/chats              → ChatsPage
 /orders             → OrdersPage
 /orders/:id         → OrderDetailPage
 /products           → ProductsPage
@@ -147,6 +166,7 @@ src/
 Користувачі
 Збережені дизайни
 Адміни
+Чати               (/chats)
 Складський облік   (/warehouse)
 Поставки           (/deliveries)
 Історія змін
@@ -279,6 +299,28 @@ src/
 | POST   | /api/v1/admin/ribbon-emblems/{id}/svg/left    | Upload SVG ліва (multipart)       |
 | POST   | /api/v1/admin/ribbon-emblems/{id}/svg/right   | Upload SVG права (multipart)      |
 
+### Чат (SignalR + REST)
+| Метод  | Шлях                                            | Опис                                              |
+|--------|-------------------------------------------------|---------------------------------------------------|
+| GET    | /api/v1/admin/chats                             | Список розмов (ChatConversationListItem[])        |
+| GET    | /api/v1/admin/chats/{id}/messages               | Повідомлення розмови (ChatMessageDto[])           |
+| GET    | /api/v1/chat/my                                 | Розмова поточного юзера (GET або CREATE)          |
+| GET    | /api/v1/chat/my/messages                        | Повідомлення поточного юзера                      |
+| WS     | /hubs/chat?access_token=...                     | SignalR Hub (JWT via query string)                |
+
+**SignalR Hub методи (клієнт → сервер):**
+- `JoinConversation(conversationId)` — підписатись на групу `conversation:{id}`
+- `SendMessage(conversationId, text)` — відправити повідомлення
+- `MarkRead(conversationId)` — позначити прочитаними (тільки повідомлення від ІНШОЇ сторони)
+
+**SignalR Hub події (сервер → клієнт):**
+- `ReceiveMessage(ChatMessageDto)` — нове повідомлення в розмові
+- `ConversationUpdated(ChatConversationListItem)` — оновлення розмови (для admin-групи)
+
+**SignalR групи:**
+- `admins` — всі підключені адміни (для `ConversationUpdated`)
+- `conversation:{id}` — учасники конкретної розмови
+
 ### Конструктор — правила
 | Метод  | Шлях                                                        | Опис                                          |
 |--------|-------------------------------------------------------------|-----------------------------------------------|
@@ -393,6 +435,14 @@ src/
 - `targetField` — `'mainText' | 'school'`
 - `isWarning=false` → кнопка disabled + tooltip; `isWarning=true` → кнопка активна, але показує попередження
 
+**Chat (онлайн чат):**
+- `ChatSenderType` enum — `User | Admin` (зберігається як int в БД)
+- `ChatMessageDto` — id, conversationId, senderType ('User'|'Admin'), senderId, text, sentAt, isRead
+- `ChatConversationListItem` — id, userId, userFullName, userEmail?, lastMessageText?, lastMessageAt?, unreadCount
+- `ChatConversation` entity — UserId FK, LastMessageAt, IsClosedByAdmin, Messages[]
+- `ChatMessage` entity — ConversationId FK, SenderId, SenderType, Text, SentAt, IsRead
+- `MarkMessagesReadAsync(conversationId, readBy)` — позначає як прочитані тільки повідомлення від ІНШОГО sender-а
+
 ## Особливості реалізації
 
 **SalesByCategoryBlock (Block 9 дашборду)** — двоярусна кругова діаграма Recharts:
@@ -420,6 +470,12 @@ src/
 - Кожне правило — картка з горизонтальними Select-ами: `Якщо [поле] = [slug] → [недоступні|попередження] [поле]:`
 - Slug-опції для кожного типу завантажуються з відповідного ribbon API при завантаженні сторінки
 - Збереження per-card (не глобальна кнопка); від'ємні ID для нових (ще не збережених) правил
+
+**ChatPanel + FloatingChat (чат):**
+- `ChatPanel` — shared компонент; ліва панель = список розмов (Avatar + ім'я + preview + unread badge); права панель = повідомлення + textarea input
+- `FloatingChat` — `useLocation()` → `if (pathname === '/chats') return null`; overlay 520px wide; кнопка expand → `navigate('/chats')`; singleton `chatStore` використовується одночасно ChatsPage і FloatingChat
+- `ChatsPage` — `margin: '0 -28px -24px'` для ChatPanel щоб притиснути до країв сторінки
+- `chatStore.connect(token)` викликається в `AdminLayout` `useEffect` при монтуванні; `chatStore.unreadCount` — computed (sum unread по conversations)
 
 ## Правила ID
 
@@ -457,11 +513,39 @@ docker logs prod-api-1 --tail 50
 
 **Автоміграції** — `MigrateAsync()` в `Program.cs` при старті.
 
+**ВАЖЛИВО: порядок деплою бекенду** — завжди спочатку rebuild image локально і push на Docker Hub, потім pull на сервері. `docker compose pull` тягне з Docker Hub — якщо не запушив, сервер підніме стару версію.
+
+## Nginx — WebSocket для SignalR
+
+SignalR потребує спеціального блоку в nginx.conf для `/hubs/` шляху:
+
+```nginx
+location /hubs/ {
+    proxy_pass http://api:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+}
+```
+
+Без цього блоку WebSocket handshake падає і SignalR не може підключитись. Конфіг редагується вручну на сервері (`/etc/nginx/sites-available/...` або в `docker-compose` volumes).
+
 ## Бекенд — важливі патерни
 
 - **Global query filters** (`!e.IsDeleted`) на: User, Order, OrderItem, SavedDesign, CartItem, Product, Admin, **Supplier, Delivery**. При Include навігації з query filter — обов'язково завантажувати через окремий запит з `IgnoreQueryFilters()` щоб уникнути null.
 - **apiFetch** — перевіряє `res.status === 204` перед `res.json()`. Ендпоінти що повертають "порожній успіх" мусять повертати 204, не 200.
 - **Гостьові юзери** — `User.Email` і `User.PasswordHash` є nullable. Гості не можуть логінитись (`LoginAsync` фільтрує `!u.IsGuest`). При реєстрації з тим самим телефоном — UPDATE існуючого рядка, а не INSERT нового.
+- **SignalR JWT** — токен передається через query string `?access_token=` (не Authorization header). В `Program.cs` потрібен `JwtBearerEvents.OnMessageReceived` для читання з `context.Request.Query["access_token"]`.
+- **ChatHub авторизація** — `IsAdmin()` перевіряє `Context.User.IsInRole("Admin")`; admin JWT має role claim "Admin", user JWT — ні.
+- **Idempotent migrations** — для production де міграції могли частково застосуватись: використовувати `IF EXISTS`/`IF NOT EXISTS`/`ON CONFLICT DO NOTHING` замість EF Core `DropIndex`/`CreateTable`/`InsertData`.
+
+## Клієнтський фронт (vypusknyk-plus-frontend) — Chat
+
+- `src/stores/ChatStore.ts` — клас (не singleton), доданий до `RootStore`; `connect()` бере токен через `getToken()` з `src/api/token.ts`; `open()` → `unreadCount=0` + invoke MarkRead
+- `src/components/chat/ChatWidget.tsx` — `observer()`; рендерить null якщо `!auth.isLoggedIn`; connects через `useEffect([auth.isLoggedIn])`; рожевий gradient кнопка 52×52 bottom-right; overlay 340×480px; unread badge
+- `@microsoft/signalr` — npm пакет встановлений в обох проектах (admin + frontend)
 
 ## TODO
 

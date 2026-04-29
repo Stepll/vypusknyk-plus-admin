@@ -300,8 +300,11 @@ export interface AdminUserDetail {
   id: number
   isGuest: boolean
   email: string | null
+  isEmailVerified: boolean
   fullName: string
+  isNameVerified: boolean
   phone: string | null
+  isPhoneVerified: boolean
   createdAt: string
   orders: AdminUserOrderSummary[]
   savedDesigns: AdminUserSavedDesign[]

@@ -1,8 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Card, Col, Descriptions, Row, Spin, Table, Tag, message } from 'antd'
-import { ArrowLeftOutlined, UserOutlined } from '@ant-design/icons'
+import {
+  Button, Card, Col, Dropdown, Input, Row, Spin, Table, Tag, message,
+} from 'antd'
+import type { MenuProps } from 'antd'
+import {
+  ArrowLeftOutlined, CheckCircleOutlined, CloseCircleOutlined,
+  DownOutlined, EditOutlined, UserOutlined,
+} from '@ant-design/icons'
 import { getUser } from '../../api/users'
+import { patchUserInfo, patchUserVerification } from '../../api/users'
 import type { AdminUserDetail, AdminUserOrderSummary } from '../../api/types'
 
 const STATUS_COLORS: Record<string, string> = {
@@ -73,6 +80,140 @@ const designColumns = [
   },
 ]
 
+type VerificationKey = 'isEmailVerified' | 'isNameVerified' | 'isPhoneVerified'
+
+function VerificationTag({
+  verified, field, userId, onUpdate,
+}: {
+  verified: boolean
+  field: VerificationKey
+  userId: number
+  onUpdate: (data: Partial<AdminUserDetail>) => void
+}) {
+  const [loading, setLoading] = useState(false)
+
+  const labels: Record<VerificationKey, [string, string]> = {
+    isEmailVerified: ['Активований', 'Неактивований'],
+    isNameVerified:  ['Підтверджено', 'Непідтверджено'],
+    isPhoneVerified: ['Підтверджено', 'Непідтверджено'],
+  }
+
+  const [activeLabel, inactiveLabel] = labels[field]
+
+  const items: MenuProps['items'] = [
+    {
+      key: 'true',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CheckCircleOutlined style={{ color: '#52c41a' }} />
+          {activeLabel}
+        </span>
+      ),
+    },
+    {
+      key: 'false',
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
+          {inactiveLabel}
+        </span>
+      ),
+    },
+  ]
+
+  const handleMenuClick: MenuProps['onClick'] = async ({ key }) => {
+    const newVal = key === 'true'
+    if (newVal === verified) return
+    setLoading(true)
+    try {
+      const updated = await patchUserVerification(userId, { [field]: newVal })
+      onUpdate(updated)
+    } catch {
+      message.error('Не вдалося оновити статус')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Dropdown menu={{ items, onClick: handleMenuClick }} trigger={['click']} disabled={loading}>
+      <Tag
+        color={verified ? 'success' : 'default'}
+        style={{ cursor: 'pointer', userSelect: 'none' }}
+      >
+        {verified ? activeLabel : inactiveLabel}
+        <DownOutlined style={{ fontSize: 9, marginLeft: 4, opacity: 0.6 }} />
+      </Tag>
+    </Dropdown>
+  )
+}
+
+function EditableField({
+  label, value, field, userId, onUpdate,
+}: {
+  label: string
+  value: string | null
+  field: 'fullName' | 'phone'
+  userId: number
+  onUpdate: (data: Partial<AdminUserDetail>) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value ?? '')
+  const [saving, setSaving] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (editing) setTimeout(() => inputRef.current?.focus(), 50)
+  }, [editing])
+
+  const save = async () => {
+    if (draft === (value ?? '')) { setEditing(false); return }
+    setSaving(true)
+    try {
+      const updated = await patchUserInfo(userId, { [field]: draft })
+      onUpdate(updated)
+      setEditing(false)
+    } catch {
+      message.error('Не вдалося зберегти')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const cancel = () => { setDraft(value ?? ''); setEditing(false) }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+      <span style={{ color: '#8c8c8c', fontSize: 13, flexShrink: 0, width: 72 }}>{label}</span>
+      {editing ? (
+        <>
+          <Input
+            ref={inputRef as React.RefObject<any>}
+            size="small"
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onPressEnter={save}
+            onKeyDown={e => e.key === 'Escape' && cancel()}
+            style={{ flex: 1 }}
+            disabled={saving}
+          />
+          <Button size="small" type="primary" onClick={save} loading={saving}>OK</Button>
+          <Button size="small" onClick={cancel} disabled={saving}>✕</Button>
+        </>
+      ) : (
+        <>
+          <span style={{ flex: 1, fontSize: 14 }}>{value ?? '–'}</span>
+          <Button
+            type="text" size="small" icon={<EditOutlined />}
+            style={{ color: '#bfbfbf', flexShrink: 0 }}
+            onClick={() => { setDraft(value ?? ''); setEditing(true) }}
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -86,12 +227,17 @@ export default function UserDetailPage() {
       .finally(() => setLoading(false))
   }, [id, navigate])
 
+  const handleUpdate = (data: Partial<AdminUserDetail>) => {
+    setUser(prev => prev ? { ...prev, ...data } : prev)
+  }
+
   if (loading) {
     return <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Spin size="large" /></div>
   }
 
   if (!user) return null
 
+  const userId = Number(id)
   const createdAt = new Date(user.createdAt).toLocaleDateString('uk-UA', {
     day: '2-digit', month: '2-digit', year: 'numeric',
   })
@@ -99,7 +245,7 @@ export default function UserDetailPage() {
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
         <Button icon={<ArrowLeftOutlined />} type="text" onClick={() => navigate('/users')} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
           <div style={{
@@ -124,8 +270,85 @@ export default function UserDetailPage() {
         </div>
       </div>
 
+      {/* Info block — full width on top */}
+      <Card style={{ borderRadius: 12, marginBottom: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px 32px' }}>
+
+          {/* Email row */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Email</span>
+              <span style={{ fontSize: 14 }}>{user.email ?? '–'}</span>
+              <VerificationTag
+                verified={user.isEmailVerified}
+                field="isEmailVerified"
+                userId={userId}
+                onUpdate={handleUpdate}
+              />
+            </div>
+          </div>
+
+          {/* Name row */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <EditableField
+                label="Імʼя"
+                value={user.fullName}
+                field="fullName"
+                userId={userId}
+                onUpdate={handleUpdate}
+              />
+              <VerificationTag
+                verified={user.isNameVerified}
+                field="isNameVerified"
+                userId={userId}
+                onUpdate={handleUpdate}
+              />
+            </div>
+          </div>
+
+          {/* Phone row */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <EditableField
+                label="Телефон"
+                value={user.phone}
+                field="phone"
+                userId={userId}
+                onUpdate={handleUpdate}
+              />
+              <VerificationTag
+                verified={user.isPhoneVerified}
+                field="isPhoneVerified"
+                userId={userId}
+                onUpdate={handleUpdate}
+              />
+            </div>
+          </div>
+
+          {/* Static info */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Тип</span>
+            {user.isGuest
+              ? <Tag color="orange">Гість</Tag>
+              : <Tag color="green">Зареєстрований</Tag>
+            }
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Дата</span>
+            <span style={{ fontSize: 14 }}>{createdAt}</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#8c8c8c', fontSize: 13, width: 72, flexShrink: 0 }}>Замовлень</span>
+            <span style={{ fontSize: 14 }}>{user.orders.length}</span>
+          </div>
+        </div>
+      </Card>
+
       <Row gutter={24} align="top">
-        {/* Left — orders + designs */}
+        {/* Orders */}
         <Col xs={24} lg={16}>
           <Card
             style={{ borderRadius: 12, marginBottom: 16 }}
@@ -164,28 +387,8 @@ export default function UserDetailPage() {
           </Card>
         </Col>
 
-        {/* Right — user info */}
-        <Col xs={24} lg={8}>
-          <Card
-            style={{ borderRadius: 12 }}
-            title={<span style={{ fontSize: 14, fontWeight: 600 }}>Інформація</span>}
-          >
-            <Descriptions column={1} size="small" styles={{ label: { color: '#8c8c8c' } }}>
-              <Descriptions.Item label="Тип">
-                {user.isGuest
-                  ? <Tag color="orange">Гість</Tag>
-                  : <Tag color="green">Зареєстрований</Tag>
-                }
-              </Descriptions.Item>
-              <Descriptions.Item label="Email">{user.email ?? '–'}</Descriptions.Item>
-              <Descriptions.Item label="Імʼя">{user.fullName}</Descriptions.Item>
-              <Descriptions.Item label="Телефон">{user.phone ?? '–'}</Descriptions.Item>
-              <Descriptions.Item label="Дата">{createdAt}</Descriptions.Item>
-              <Descriptions.Item label="Замовлень">{user.orders.length}</Descriptions.Item>
-              <Descriptions.Item label="Дизайнів">{user.savedDesigns.length}</Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </Col>
+        {/* Right column — placeholder for future blocks (email history etc.) */}
+        <Col xs={24} lg={8} />
       </Row>
     </div>
   )
