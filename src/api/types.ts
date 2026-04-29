@@ -189,8 +189,11 @@ export interface AdminUser {
   id: number
   isGuest: boolean
   email: string | null
+  isEmailVerified: boolean
   fullName: string
+  isNameVerified: boolean
   phone: string | null
+  isPhoneVerified: boolean
   createdAt: string
   ordersCount: number
 }

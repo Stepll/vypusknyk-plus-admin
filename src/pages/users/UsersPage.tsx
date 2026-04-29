@@ -1,10 +1,12 @@
 import { useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { Table, Tag } from 'antd'
-import { TeamOutlined } from '@ant-design/icons'
+import { CheckCircleFilled, TeamOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { usersStore } from '../../stores/UsersStore'
 import type { AdminUser } from '../../api/types'
+
+const Check = () => <CheckCircleFilled style={{ color: '#52c41a', fontSize: 13, marginLeft: 5 }} />
 
 const columns = [
   { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
@@ -17,9 +19,36 @@ const columns = [
       ? <Tag color="orange">Гість</Tag>
       : <Tag color="green">Зареєстрований</Tag>,
   },
-  { title: 'Email', dataIndex: 'email', key: 'email', render: (v: string | null) => v ?? '—' },
-  { title: "Ім'я", dataIndex: 'fullName', key: 'fullName' },
-  { title: 'Телефон', dataIndex: 'phone', key: 'phone', render: (v: string | null) => v ?? '—' },
+  {
+    title: 'Email',
+    key: 'email',
+    render: (_: unknown, r: AdminUser) => (
+      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        {r.email ?? '—'}
+        {r.email && r.isEmailVerified && <Check />}
+      </span>
+    ),
+  },
+  {
+    title: "Ім'я",
+    key: 'fullName',
+    render: (_: unknown, r: AdminUser) => (
+      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        {r.fullName}
+        {r.isNameVerified && <Check />}
+      </span>
+    ),
+  },
+  {
+    title: 'Телефон',
+    key: 'phone',
+    render: (_: unknown, r: AdminUser) => (
+      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        {r.phone ?? '—'}
+        {r.phone && r.isPhoneVerified && <Check />}
+      </span>
+    ),
+  },
   { title: 'Замовлень', dataIndex: 'ordersCount', key: 'ordersCount', width: 100 },
   {
     title: 'Дата',
