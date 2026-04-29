@@ -273,12 +273,12 @@ export default function NotificationsPage() {
     const values = form.getFieldsValue()
     const req: UpdateNotificationTriggerConfigRequest = {
       emailEnabled: values.emailEnabled ?? false,
-      emailRecipients: values.emailRecipients ?? [],
+      emailRecipients: form.getFieldValue('emailRecipients') ?? [],
       telegramEnabled: values.telegramEnabled ?? false,
-      telegramUserIds: values.telegramUserIds ?? [],
+      telegramUserIds: form.getFieldValue('telegramUserIds') ?? [],
       telegramGroupEnabled: values.telegramGroupEnabled ?? false,
       systemEnabled: values.systemEnabled ?? false,
-      systemAdminIds: values.systemAdminIds ?? [],
+      systemAdminIds: form.getFieldValue('systemAdminIds') ?? [],
     }
     setSaving(true)
     try {
