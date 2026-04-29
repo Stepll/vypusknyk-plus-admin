@@ -324,8 +324,77 @@ export default function UserDetailPage() {
         </div>
       </div>
 
-      {/* Info block + Contact block */}
+      {/* Contact block + Info block */}
       <Row gutter={16} style={{ marginBottom: 20 }}>
+        {/* Contact card — 40% */}
+        <Col xs={24} xl={9}>
+          <Card
+            style={{ borderRadius: 12, height: '100%' }}
+            title={<span style={{ fontSize: 14, fontWeight: 600 }}>Зв'язок з клієнтом</span>}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              {/* Email */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0 }}>Email</span>
+                <Tooltip title={user.email ? undefined : 'Email не вказано'}>
+                  <Button
+                    icon={<MailOutlined />}
+                    size="small"
+                    disabled={!user.email}
+                    onClick={() => setEmailDrawerOpen(true)}
+                  >
+                    Написати лист
+                  </Button>
+                </Tooltip>
+              </div>
+
+              {/* SMS */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0 }}>SMS</span>
+                <Tooltip title="Незабаром">
+                  <Button icon={<MobileOutlined />} size="small" disabled>
+                    Надіслати SMS
+                  </Button>
+                </Tooltip>
+              </div>
+
+              {/* Telegram */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0 }}>Telegram</span>
+                <Tooltip title="Незабаром">
+                  <Button icon={<MessageOutlined />} size="small" disabled>
+                    Написати в Telegram
+                  </Button>
+                </Tooltip>
+              </div>
+
+              {/* Viber */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0, paddingTop: 4 }}>Viber</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Tooltip title="Незабаром">
+                    <Button icon={<MessageOutlined />} size="small" disabled>
+                      Написати через бізнес-чат
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title={viberPhone ? undefined : 'Телефон не вказано'}>
+                    <Button
+                      icon={<SendOutlined />}
+                      size="small"
+                      disabled={!viberPhone}
+                      href={viberPhone ? `viber://chat?number=${encodeURIComponent(viberPhone)}` : undefined}
+                    >
+                      Відкрити чат у Viber
+                    </Button>
+                  </Tooltip>
+                </div>
+              </div>
+
+            </div>
+          </Card>
+        </Col>
+
         {/* Info card — 60% */}
         <Col xs={24} xl={15}>
           <Card style={{ borderRadius: 12, height: '100%' }}>
@@ -395,75 +464,6 @@ export default function UserDetailPage() {
                 </div>
               </Col>
             </Row>
-          </Card>
-        </Col>
-
-        {/* Contact card — 40% */}
-        <Col xs={24} xl={9}>
-          <Card
-            style={{ borderRadius: 12, height: '100%' }}
-            title={<span style={{ fontSize: 14, fontWeight: 600 }}>Зв'язок з клієнтом</span>}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-
-              {/* Email */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0 }}>Email</span>
-                <Tooltip title={user.email ? undefined : 'Email не вказано'}>
-                  <Button
-                    icon={<MailOutlined />}
-                    size="small"
-                    disabled={!user.email}
-                    onClick={() => setEmailDrawerOpen(true)}
-                  >
-                    Написати лист
-                  </Button>
-                </Tooltip>
-              </div>
-
-              {/* SMS */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0 }}>SMS</span>
-                <Tooltip title="Незабаром">
-                  <Button icon={<MobileOutlined />} size="small" disabled>
-                    Надіслати SMS
-                  </Button>
-                </Tooltip>
-              </div>
-
-              {/* Telegram */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0 }}>Telegram</span>
-                <Tooltip title="Незабаром">
-                  <Button icon={<MessageOutlined />} size="small" disabled>
-                    Написати в Telegram
-                  </Button>
-                </Tooltip>
-              </div>
-
-              {/* Viber */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <span style={{ color: '#8c8c8c', fontSize: 13, width: 70, flexShrink: 0, paddingTop: 4 }}>Viber</span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <Tooltip title="Незабаром">
-                    <Button icon={<MessageOutlined />} size="small" disabled>
-                      Написати через бізнес-чат
-                    </Button>
-                  </Tooltip>
-                  <Tooltip title={viberPhone ? undefined : 'Телефон не вказано'}>
-                    <Button
-                      icon={<SendOutlined />}
-                      size="small"
-                      disabled={!viberPhone}
-                      href={viberPhone ? `viber://chat?number=${encodeURIComponent(viberPhone)}` : undefined}
-                    >
-                      Відкрити чат у Viber
-                    </Button>
-                  </Tooltip>
-                </div>
-              </div>
-
-            </div>
           </Card>
         </Col>
       </Row>
