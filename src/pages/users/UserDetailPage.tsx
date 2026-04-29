@@ -317,14 +317,14 @@ export default function UserDetailPage() {
               <div style={{ padding: '10px 14px', color: '#8c8c8c', fontSize: 13, display: 'flex', alignItems: 'flex-start', paddingTop: 14 }}>Email</div>
               <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <span style={{ fontSize: 14, color: user.email ? undefined : '#bfbfbf' }}>{user.email ?? '–'}</span>
-                <div><VerificationTag verified={user.isEmailVerified} field="isEmailVerified" userId={userId} onUpdate={handleUpdate} /></div>
-                {user.email && (
-                  <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <VerificationTag verified={user.isEmailVerified} field="isEmailVerified" userId={userId} onUpdate={handleUpdate} />
+                  {user.email && (
                     <Button size="small" icon={<MailOutlined />} loading={sendingEmail} onClick={handleSendActivation}>
                       Надіслати лист активації
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
             </div>
