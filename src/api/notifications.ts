@@ -25,7 +25,6 @@ export interface NotificationTriggerConfigResponse {
 }
 
 export interface UpdateNotificationTriggerConfigRequest {
-  extraConfig?: string;
   emailEnabled: boolean;
   emailRecipients: string[];
   telegramEnabled: boolean;
