@@ -23,7 +23,8 @@ src/
 │   ├── orders.ts              # GET /admin/orders, GET /admin/orders/:id, PATCH status
 │   ├── products.ts            # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
 │   ├── productCategories.ts   # CRUD /admin/product-categories + subcategories
-│   ├── users.ts               # GET /admin/users, GET /admin/users/:id
+│   ├── users.ts               # GET /admin/users, GET /admin/users/:id, PATCH info/verification,
+│   │                          # sendUserActivationEmail, apiFetch → POST send-email
 │   ├── designs.ts             # GET /admin/designs, GET /admin/designs/:id, DELETE /admin/designs/:id
 │   ├── admins.ts              # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
 │   ├── roles.ts               # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
@@ -81,7 +82,15 @@ src/
     │   └── ProductEditPage.tsx
     ├── users/
     │   ├── UsersPage.tsx          # Таблиця з колонкою "Тип" (тег Гість/Зареєстрований)
-    │   └── UserDetailPage.tsx     # Тег IsGuest у заголовку та блоці інформації; email nullable
+    │   │                          # Зелена галочка (CheckCircleFilled) при verified email/name/phone
+    │   └── UserDetailPage.tsx     # Ліва колонка (xl=9): "Зв'язок з клієнтом" card
+    │                              #   Email: Drawer (тема + тіло → POST send-email)
+    │                              #   SMS, Telegram бот, Viber бізнес-чат: disabled (Незабаром)
+    │                              #   Viber: deep link viber://chat?number=+380...
+    │                              #   Telegram: deep link https://t.me/+380...
+    │                              # Права колонка (xl=15): Info card
+    │                              #   EditableField: inline редагування name/phone (олівець → input)
+    │                              #   VerificationTag: Dropdown для зміни isEmailVerified/isNameVerified/isPhoneVerified
     ├── designs/
     │   ├── SavedDesignsPage.tsx   # Таблиця з SVG-превью стрічки в кожному рядку (h=200px), пошук
     │   └── DesignDetailPage.tsx   # Превью, параметри, класи+імена, delete (Popconfirm)
@@ -209,6 +218,10 @@ src/
 | PATCH  | /api/v1/admin/products/{id}/images/{imageId}/preview  | Встановити превʼю                        |
 | GET    | /api/v1/admin/users                                   | Всі юзери (paginated)                    |
 | GET    | /api/v1/admin/users/{id}                              | Деталі + orders[] + savedDesigns[]       |
+| PATCH  | /api/v1/admin/users/{id}/info                         | Оновити fullName/phone                   |
+| PATCH  | /api/v1/admin/users/{id}/verification                 | Оновити isEmailVerified/isNameVerified/isPhoneVerified |
+| POST   | /api/v1/admin/users/{id}/send-activation-email        | Надіслати лист активації → 204           |
+| POST   | /api/v1/admin/users/{id}/send-email                   | Надіслати кастомний лист (subject, body) → 204 |
 | GET    | /api/v1/admin/designs                                 | Всі збережені дизайни (paginated, з state) |
 | GET    | /api/v1/admin/designs/{id}                            | Деталі дизайну (з state + classes)       |
 | DELETE | /api/v1/admin/designs/{id}                            | Soft delete дизайну → 204               |
@@ -377,9 +390,12 @@ src/
 - `RibbonState.classes` зберігається як JSON-масив у полі `State` таблиці `SavedDesigns`
 - Відображення: `RibbonEditorPreview` отримує `names` як `string[]` (flatMap по classes)
 
-**Users (гостьові користувачі):**
-- `AdminUser` — id, **isGuest: boolean**, email: string | null, fullName, phone?, createdAt, ordersCount
-- `AdminUserDetail` — + orders[], savedDesigns[]
+**Users (гостьові користувачі + верифікація):**
+- `AdminUser` — id, isGuest, email: string | null, fullName, phone?, createdAt, ordersCount, **isEmailVerified, isNameVerified, isPhoneVerified**
+- `AdminUserDetail` — + orders[], savedDesigns[], + всі verification поля
+- `PatchUserInfoRequest` — fullName?, phone?
+- `PatchUserVerificationRequest` — isEmailVerified?, isNameVerified?, isPhoneVerified?
+- `SendUserEmailRequest` — subject, body
 - Гостьовий юзер: `isGuest=true`, `email=null`, `passwordHash=null` — створюється автоматично при замовленні без акаунту
 - Merge при реєстрації: якщо `phone` збігається з гостем → UPDATE того самого рядка (IsGuest=false, Email, PasswordHash)
 - `FindOrCreateGuestUserAsync(phone, fullName)` — логіка в `OrderService`: знаходить або створює гостя за телефоном
