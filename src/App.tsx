@@ -34,6 +34,7 @@ import RulesPage from './pages/settings/constructor/RulesPage'
 import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
+import NotificationsPage from './pages/settings/NotificationsPage'
 import ChatsPage from './pages/chats/ChatsPage'
 
 export default function App() {
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="settings/constructor/rules" element={<RulesPage />} />
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
+            <Route path="settings/notifications" element={<NotificationsPage />} />
             <Route path="settings/info-pages/:slug" element={<InfoPageEditPage />} />
             <Route path="chats" element={<ChatsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

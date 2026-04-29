@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx'
 import * as signalR from '@microsoft/signalr'
 import * as api from '../api/chat'
 import type { ChatConversationListItem, ChatMessageDto } from '../api/chat'
+import { notificationsStore } from './NotificationsStore'
 
 const HUB_URL = `${import.meta.env.VITE_API_URL ?? 'http://localhost:5272'}/hubs/chat`
 
@@ -60,6 +61,10 @@ class ChatStore {
           new Date(b.lastMessageAt ?? 0).getTime() - new Date(a.lastMessageAt ?? 0).getTime()
         )
       })
+    })
+
+    conn.on('ReceiveAdminNotification', (notification) => {
+      notificationsStore.handlePush(notification)
     })
 
     conn.onreconnected(() => runInAction(() => { this.isConnected = true }))

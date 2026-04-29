@@ -6,13 +6,15 @@ import {
   SettingOutlined, BgColorsOutlined, TagsOutlined, CarOutlined, MessageOutlined,
   CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
   TruckOutlined, ShopOutlined, FileTextOutlined, ExperimentOutlined, FormatPainterOutlined,
-  PrinterOutlined, FontSizeOutlined, PictureOutlined, ApartmentOutlined,
+  PrinterOutlined, FontSizeOutlined, PictureOutlined, ApartmentOutlined, BellOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { authStore } from '../../stores/AuthStore'
 import { chatStore } from '../../stores/ChatStore'
+import { notificationsStore } from '../../stores/NotificationsStore'
 import FloatingChat from '../chat/FloatingChat'
+import NotificationsPopover from '../notifications/NotificationsPopover'
 
 const { Header, Sider, Content } = Layout
 
@@ -28,6 +30,7 @@ const ROUTE_KEYS = [
   '/settings/info-pages/terms',
   '/settings/info-pages/delivery',
   '/settings/info-pages',
+  '/settings/notifications',
   '/settings/categories',
   '/settings/delivery',
   '/settings/payment',
@@ -68,6 +71,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
       { key: '/settings/order-statuses', icon: <CheckCircleOutlined />, label: 'Статуси замовлень', pageKey: 'settings.order-statuses' },
       { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники', pageKey: 'settings.suppliers' },
       { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі', pageKey: 'settings.roles' },
+      { key: '/settings/notifications', icon: <BellOutlined />, label: 'Сповіщення', pageKey: 'settings.notifications' },
       {
         key: 'info-pages',
         icon: <FileTextOutlined />,
@@ -116,7 +120,10 @@ const AdminLayout = observer(() => {
 
   useEffect(() => {
     const token = authStore.token
-    if (token) chatStore.connect(token)
+    if (token) {
+      chatStore.connect(token)
+      notificationsStore.load()
+    }
     return () => { chatStore.disconnect() }
   }, [])
 
@@ -182,6 +189,7 @@ const AdminLayout = observer(() => {
             )}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <NotificationsPopover />
             <Avatar size={32} style={{ background: '#4f46e5', fontSize: 13, fontWeight: 600, cursor: 'default' }}>
               {initials}
             </Avatar>
