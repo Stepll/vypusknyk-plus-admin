@@ -295,68 +295,35 @@ export default function UserDetailPage() {
       {/* Info block — two columns */}
       <Card style={{ borderRadius: 12, marginBottom: 20 }}>
         <Row gutter={32}>
-          {/* Column 1: Name, Phone, Email */}
+          {/* Column 1: Name, Phone, Email — table layout */}
           <Col xs={24} md={12}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', border: '1px solid #f0f0f0', borderRadius: 8, overflow: 'hidden' }}>
 
               {/* Name */}
-              <div style={ROW_STYLE}>
-                <span style={LABEL_STYLE}>Імʼя</span>
-                <EditableField
-                  label="Імʼя"
-                  value={user.fullName}
-                  field="fullName"
-                  userId={userId}
-                  onUpdate={handleUpdate}
-                />
-                <VerificationTag
-                  verified={user.isNameVerified}
-                  field="isNameVerified"
-                  userId={userId}
-                  onUpdate={handleUpdate}
-                />
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0f0f0', color: '#8c8c8c', fontSize: 13, display: 'flex', alignItems: 'flex-start', paddingTop: 14 }}>Імʼя</div>
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <EditableField value={user.fullName} field="fullName" userId={userId} onUpdate={handleUpdate} />
+                <div><VerificationTag verified={user.isNameVerified} field="isNameVerified" userId={userId} onUpdate={handleUpdate} /></div>
               </div>
 
               {/* Phone */}
-              <div style={ROW_STYLE}>
-                <span style={LABEL_STYLE}>Телефон</span>
-                <EditableField
-                  label="Телефон"
-                  value={user.phone}
-                  field="phone"
-                  userId={userId}
-                  onUpdate={handleUpdate}
-                />
-                <VerificationTag
-                  verified={user.isPhoneVerified}
-                  field="isPhoneVerified"
-                  userId={userId}
-                  onUpdate={handleUpdate}
-                />
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0f0f0', color: '#8c8c8c', fontSize: 13, display: 'flex', alignItems: 'flex-start', paddingTop: 14 }}>Телефон</div>
+              <div style={{ padding: '10px 14px', borderBottom: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <EditableField value={user.phone} field="phone" userId={userId} onUpdate={handleUpdate} />
+                <div><VerificationTag verified={user.isPhoneVerified} field="isPhoneVerified" userId={userId} onUpdate={handleUpdate} /></div>
               </div>
 
               {/* Email */}
-              <div style={ROW_STYLE}>
-                <span style={LABEL_STYLE}>Email</span>
-                <span style={{ fontSize: 14, flex: 1, color: user.email ? undefined : '#bfbfbf' }}>
-                  {user.email ?? '–'}
-                </span>
-                <VerificationTag
-                  verified={user.isEmailVerified}
-                  field="isEmailVerified"
-                  userId={userId}
-                  onUpdate={handleUpdate}
-                />
+              <div style={{ padding: '10px 14px', color: '#8c8c8c', fontSize: 13, display: 'flex', alignItems: 'flex-start', paddingTop: 14 }}>Email</div>
+              <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span style={{ fontSize: 14, color: user.email ? undefined : '#bfbfbf' }}>{user.email ?? '–'}</span>
+                <div><VerificationTag verified={user.isEmailVerified} field="isEmailVerified" userId={userId} onUpdate={handleUpdate} /></div>
                 {user.email && (
-                  <Button
-                    size="small"
-                    icon={<MailOutlined />}
-                    loading={sendingEmail}
-                    onClick={handleSendActivation}
-                    style={{ flexShrink: 0 }}
-                  >
-                    Надіслати лист активації
-                  </Button>
+                  <div>
+                    <Button size="small" icon={<MailOutlined />} loading={sendingEmail} onClick={handleSendActivation}>
+                      Надіслати лист активації
+                    </Button>
+                  </div>
                 )}
               </div>
 
