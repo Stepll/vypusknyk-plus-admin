@@ -10,6 +10,8 @@ import {
   AUDIT_ACTIONS,
   AUDIT_FIELD_NAMES,
 } from '../../api/auditLogs'
+import { getAdmins } from '../../api/admins'
+import type { AdminAdminItem } from '../../api/types'
 
 const { RangePicker } = DatePicker
 const { Text } = Typography
@@ -91,6 +93,11 @@ export default function HistoryPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
   const [filters, setFilters] = useState<AuditLogFilters>({ page: 1, pageSize: 50 })
+  const [admins, setAdmins] = useState<AdminAdminItem[]>([])
+
+  useEffect(() => {
+    getAdmins(1, 200).then(res => setAdmins(res.items)).catch(() => {})
+  }, [])
 
   async function load(f: AuditLogFilters) {
     setLoading(true)
@@ -193,6 +200,16 @@ export default function HistoryPage() {
           style={{ width: 160 }}
           options={Object.entries(AUDIT_ENTITY_TYPES).map(([v, l]) => ({ value: v, label: l }))}
           onChange={(v) => applyFilter({ entityType: v })}
+        />
+        <Select
+          allowClear
+          placeholder="Адмін"
+          style={{ width: 180 }}
+          options={[
+            { value: 0, label: 'Super Admin' },
+            ...admins.map(a => ({ value: a.id, label: a.fullName })),
+          ]}
+          onChange={(v) => applyFilter({ adminId: v })}
         />
         <Select
           allowClear
