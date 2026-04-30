@@ -9,6 +9,7 @@
 - **MobX 6** + **mobx-react-lite** — стейт менеджмент
 - **React Router 7** — маршрутизація (BrowserRouter)
 - **Tailwind CSS 4** — утилітарні стилі (через `@tailwindcss/vite`)
+- **xlsx (SheetJS)** — генерація та парсинг Excel файлів (export/import)
 - **API base URL**: `http://localhost:5272` (env var `VITE_API_URL`)
 
 ## Структура проекту
@@ -22,6 +23,7 @@ src/
 │   ├── auth.ts                # login → AdminAuthResponse (включає role?: RoleInfo)
 │   ├── orders.ts              # GET /admin/orders, GET /admin/orders/:id, PATCH status
 │   ├── products.ts            # GET /admin/products, CRUD, uploadImage, deleteImage, setPreview
+│   │                          # getAllProducts() — пагінований fetch усіх продуктів для Excel-експорту
 │   ├── productCategories.ts   # CRUD /admin/product-categories + subcategories
 │   ├── users.ts               # GET /admin/users, GET /admin/users/:id, PATCH info/verification,
 │   │                          # sendUserActivationEmail, apiFetch → POST send-email
@@ -89,7 +91,10 @@ src/
     │   ├── OrdersPage.tsx
     │   └── OrderDetailPage.tsx
     ├── products/
-    │   ├── ProductsPage.tsx
+    │   ├── ProductsPage.tsx       # Таблиця продуктів; кнопки: Шаблон / Експорт / Імпорт / Новий продукт
+    │   │                          # Експорт: getAllProducts() → xlsx (всі сторінки); Імпорт: parse xlsx →
+    │   │                          # якщо є ID → updateProduct, інакше → createProduct; категорію резолвить
+    │   │                          # за Категорія ID або за назвою через getProductCategories()
     │   └── ProductEditPage.tsx
     ├── users/
     │   ├── UsersPage.tsx          # Таблиця з колонкою "Тип" (тег Гість/Зареєстрований)
