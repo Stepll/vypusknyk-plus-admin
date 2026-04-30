@@ -6,6 +6,19 @@ export const getProducts = (page = 1, pageSize = 20) => {
   return apiFetch<PagedResponse<AdminProduct>>(`/api/v1/admin/products?${params}`)
 }
 
+export const getAllProducts = async (): Promise<AdminProduct[]> => {
+  const pageSize = 200
+  let page = 1
+  const all: AdminProduct[] = []
+  while (true) {
+    const data = await getProducts(page, pageSize)
+    all.push(...data.items)
+    if (all.length >= data.total) break
+    page++
+  }
+  return all
+}
+
 export const getProduct = (id: number) =>
   apiFetch<AdminProduct>(`/api/v1/admin/products/${id}`)
 
