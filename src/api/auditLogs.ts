@@ -87,5 +87,5 @@ export async function getAuditLogs(filters: AuditLogFilters = {}): Promise<Audit
   if (filters.to) params.set('to', filters.to);
   if (filters.page != null) params.set('page', String(filters.page));
   if (filters.pageSize != null) params.set('pageSize', String(filters.pageSize));
-  return apiFetch(`/admin/audit-logs?${params.toString()}`);
+  return apiFetch(`/api/v1/admin/audit-logs?${params.toString()}`);
 }
