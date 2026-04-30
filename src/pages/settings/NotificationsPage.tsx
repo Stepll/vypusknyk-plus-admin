@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Table, Button, Drawer, Tabs, Form, Switch, Space, Typography,
-  Tag, Spin, message, Select, Input,
+  Tag, Spin, message, Select, Input, Divider,
 } from 'antd'
 import { EditOutlined, MailOutlined, SendOutlined, BellOutlined, PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -26,6 +26,7 @@ interface TableRow {
 const TRIGGER_VARS: Record<string, { key: string; label: string }[]> = {
   new_order: [
     { key: 'orderNumber', label: 'Номер замовлення' },
+    { key: 'orderUrl', label: 'Посилання на замовлення' },
     { key: 'customerName', label: "Ім'я клієнта" },
     { key: 'customerPhone', label: 'Телефон' },
     { key: 'customerEmail', label: 'Email клієнта' },
@@ -38,6 +39,7 @@ const TRIGGER_VARS: Record<string, { key: string; label: string }[]> = {
   ],
   order_status_changed: [
     { key: 'orderNumber', label: 'Номер замовлення' },
+    { key: 'orderUrl', label: 'Посилання на замовлення' },
     { key: 'statusName', label: 'Новий статус' },
     { key: 'previousStatus', label: 'Попередній статус' },
     { key: 'customerName', label: "Ім'я клієнта" },
@@ -50,6 +52,7 @@ const TRIGGER_VARS: Record<string, { key: string; label: string }[]> = {
   ],
   new_user: [
     { key: 'fullName', label: "Ім'я" },
+    { key: 'userUrl', label: 'Посилання на користувача' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Телефон' },
     { key: 'registrationDate', label: 'Дата реєстрації' },
@@ -143,10 +146,11 @@ function SystemTab({ form, admins, triggerKey }: { form: ReturnType<typeof Form.
           />
         )}
       </Form.Item>
-      <Form.Item name="systemTitle" label="Заголовок (шаблон)">
+      <Divider style={{ fontSize: 13, color: '#8c8c8c', margin: '16px 0 12px' }}>Шаблон повідомлення</Divider>
+      <Form.Item name="systemTitle" label="Заголовок">
         <Input placeholder="Наприклад: Нове замовлення #{{orderNumber}}" />
       </Form.Item>
-      <Form.Item name="systemMessage" label="Повідомлення (шаблон)">
+      <Form.Item name="systemMessage" label="Текст">
         <Input.TextArea rows={3} placeholder="Наприклад: від {{customerName}}, сума {{total}} грн" />
       </Form.Item>
     </div>
@@ -203,10 +207,11 @@ function EmailTab({ form, triggerKey }: { form: ReturnType<typeof Form.useForm>[
           )}
         </div>
       </Form.Item>
-      <Form.Item name="emailSubject" label="Тема листа (шаблон)">
+      <Divider style={{ fontSize: 13, color: '#8c8c8c', margin: '16px 0 12px' }}>Шаблон листа</Divider>
+      <Form.Item name="emailSubject" label="Тема">
         <Input placeholder="Наприклад: Нове замовлення #{{orderNumber}}" />
       </Form.Item>
-      <Form.Item name="emailMessage" label="Тіло листа (шаблон)">
+      <Form.Item name="emailMessage" label="Текст">
         <Input.TextArea rows={5} placeholder="Наприклад: Клієнт {{customerName}} оформив замовлення на {{total}} грн." />
       </Form.Item>
     </div>
@@ -266,7 +271,8 @@ function TelegramTab({ form, triggerKey }: { form: ReturnType<typeof Form.useFor
           )}
         </div>
       </Form.Item>
-      <Form.Item name="telegramMessage" label="Повідомлення (шаблон)">
+      <Divider style={{ fontSize: 13, color: '#8c8c8c', margin: '16px 0 12px' }}>Шаблон повідомлення</Divider>
+      <Form.Item name="telegramMessage" label="Текст">
         <Input.TextArea rows={4} placeholder="Наприклад: 📦 Нове замовлення #{{orderNumber}} від {{customerName}}" />
       </Form.Item>
     </div>
