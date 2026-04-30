@@ -31,6 +31,13 @@ const ROUTE_KEYS = [
   '/settings/info-pages/delivery',
   '/settings/info-pages',
   '/settings/notifications',
+  '/settings/content/home',
+  '/settings/content/about',
+  '/settings/content/catalog',
+  '/settings/content/constructors',
+  '/settings/content/events',
+  '/settings/content/contacts',
+  '/settings/content',
   '/settings/categories',
   '/settings/delivery',
   '/settings/payment',
@@ -72,6 +79,19 @@ const ALL_MENU_ITEMS: MenuItem[] = [
       { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники', pageKey: 'settings.suppliers' },
       { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі', pageKey: 'settings.roles' },
       { key: '/settings/notifications', icon: <BellOutlined />, label: 'Сповіщення', pageKey: 'settings.notifications' },
+      {
+        key: 'content',
+        icon: <FileTextOutlined />,
+        label: 'Контент сторінок',
+        children: [
+          { key: '/settings/content/home', icon: <FileTextOutlined />, label: 'Головна', pageKey: 'settings.info-pages' },
+          { key: '/settings/content/about', icon: <FileTextOutlined />, label: 'Про нас', pageKey: 'settings.info-pages' },
+          { key: '/settings/content/catalog', icon: <FileTextOutlined />, label: 'Каталог', pageKey: 'settings.info-pages' },
+          { key: '/settings/content/constructors', icon: <FileTextOutlined />, label: 'Конструктори', pageKey: 'settings.info-pages' },
+          { key: '/settings/content/events', icon: <FileTextOutlined />, label: 'Шкільні свята', pageKey: 'settings.info-pages' },
+          { key: '/settings/content/contacts', icon: <FileTextOutlined />, label: 'Контакти', pageKey: 'settings.info-pages' },
+        ],
+      },
       {
         key: 'info-pages',
         icon: <FileTextOutlined />,
@@ -132,6 +152,7 @@ const AdminLayout = observer(() => {
   const [openKeys, setOpenKeys] = useState<string[]>(() => {
     if (pathname.startsWith('/settings/constructor')) return ['settings', 'constructor']
     if (pathname.startsWith('/settings/info-pages')) return ['settings', 'info-pages']
+    if (pathname.startsWith('/settings/content')) return ['settings', 'content']
     if (pathname.startsWith('/settings')) return ['settings']
     return []
   })
@@ -166,7 +187,7 @@ const AdminLayout = observer(() => {
           openKeys={openKeys}
           onOpenChange={keys => setOpenKeys(keys as string[])}
           items={menuItems}
-          onClick={({ key }) => { if (!['settings', 'constructor', 'info-pages'].includes(key)) navigate(key) }}
+          onClick={({ key }) => { if (!['settings', 'constructor', 'info-pages', 'content'].includes(key)) navigate(key) }}
           style={{ background: 'transparent', border: 'none' }}
         />
       </Sider>

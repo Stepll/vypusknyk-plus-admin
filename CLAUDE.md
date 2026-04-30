@@ -334,6 +334,17 @@ src/
 | POST   | /api/v1/admin/ribbon-emblems/{id}/svg/left    | Upload SVG ліва (multipart)       |
 | POST   | /api/v1/admin/ribbon-emblems/{id}/svg/right   | Upload SVG права (multipart)      |
 
+### Контент сторінок
+| Метод  | Шлях | Опис |
+|--------|------|------|
+| GET    | /api/v1/page-content/{slug} | Публічний — JSON контент сторінки |
+| GET    | /api/v1/admin/page-content/{slug} | Адмін — читати контент |
+| PUT    | /api/v1/admin/page-content/{slug} | Адмін — зберегти контент (JSON body) |
+| POST   | /api/v1/admin/page-content/{slug}/images?field={key} | Завантажити фото → { url } |
+
+**Slugs:** `home`, `about`, `catalog`, `constructors`, `events`, `contacts`
+**Seeder:** `PageContentSeeder` ініціалізує дефолтний контент при старті бекенду
+
 ### Сповіщення адмінів
 | Метод  | Шлях | Опис |
 |--------|------|------|

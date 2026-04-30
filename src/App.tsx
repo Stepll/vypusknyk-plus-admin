@@ -35,6 +35,12 @@ import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
 import NotificationsPage from './pages/settings/NotificationsPage'
+import HomeContentPage from './pages/settings/content/HomeContentPage'
+import AboutContentPage from './pages/settings/content/AboutContentPage'
+import CatalogContentPage from './pages/settings/content/CatalogContentPage'
+import ConstructorsContentPage from './pages/settings/content/ConstructorsContentPage'
+import EventsContentPage from './pages/settings/content/EventsContentPage'
+import ContactsContentPage from './pages/settings/content/ContactsContentPage'
 import ChatsPage from './pages/chats/ChatsPage'
 
 export default function App() {
@@ -76,6 +82,12 @@ export default function App() {
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
             <Route path="settings/notifications" element={<NotificationsPage />} />
+            <Route path="settings/content/home" element={<HomeContentPage />} />
+            <Route path="settings/content/about" element={<AboutContentPage />} />
+            <Route path="settings/content/catalog" element={<CatalogContentPage />} />
+            <Route path="settings/content/constructors" element={<ConstructorsContentPage />} />
+            <Route path="settings/content/events" element={<EventsContentPage />} />
+            <Route path="settings/content/contacts" element={<ContactsContentPage />} />
             <Route path="settings/info-pages/:slug" element={<InfoPageEditPage />} />
             <Route path="chats" element={<ChatsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
