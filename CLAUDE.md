@@ -36,7 +36,11 @@ src/
 │   ├── ribbonPrintTypes.ts    # CRUD /admin/ribbon-print-types
 │   ├── ribbonEmblems.ts       # CRUD /admin/ribbon-emblems + uploadRibbonEmblemSvg(id, side, file)
 │   ├── constructorRules.ts    # CRUD /admin/constructor-rules/incompatibilities + /forced-texts
-│   └── chat.ts                # ChatMessageDto, ChatConversationListItem; getConversations(), getConversationMessages(id)
+│   ├── chat.ts                # ChatMessageDto, ChatConversationListItem; getConversations(), getConversationMessages(id)
+│   └── notifications.ts       # AdminNotificationDto, NotificationTriggerConfigResponse (+emailSubject/emailMessage/
+│                              # telegramMessage/systemTitle/systemMessage), UpdateNotificationTriggerConfigRequest,
+│                              # NotificationAdminRecipientDto; getMyNotifications, getUnreadCount, markNotificationRead,
+│                              # markAllNotificationsRead, getTriggerConfigs, updateTriggerConfig, getNotificationRecipients
 ├── stores/
 │   ├── OrdersStore.ts     # MobX — orders list, pagination, status filter
 │   ├── ProductsStore.ts   # MobX — products list, pagination, delete
@@ -44,10 +48,13 @@ src/
 │   ├── AuthStore.ts       # MobX — admin auth (JWT token + role info); getters: isSuperAdmin, allowedPages
 │   ├── WarehouseStore.ts  # MobX — warehouse products, stats, categories, transactions
 │   ├── DeliveryStore.ts   # MobX — deliveries, suppliers, delivery details Map, filters
-│   └── ChatStore.ts       # MobX singleton — SignalR connection; conversations[], messages Map<id,msgs[]>,
-│                           # activeConversationId, isWidgetOpen, unreadCount (computed)
-│                           # connect(token), disconnect(), loadConversations(), openConversation(id),
-│                           # sendMessage(text), setWidgetOpen(open)
+│   ├── ChatStore.ts       # MobX singleton — SignalR connection; conversations[], messages Map<id,msgs[]>,
+│   │                      # activeConversationId, isWidgetOpen, unreadCount (computed)
+│   │                      # connect(token), disconnect(), loadConversations(), openConversation(id),
+│   │                      # sendMessage(text), setWidgetOpen(open)
+│   │                      # SignalR також слухає 'ReceiveAdminNotification' → notificationsStore.handlePush(n)
+│   └── NotificationsStore.ts  # MobX singleton — unreadCount (observable), notifications[]
+│                               # load(), handlePush(dto), markRead(id), markAllRead()
 │                           # SignalR token passed via query string (?access_token=); groups: admins + conversation:{id}
 ├── components/
 │   ├── RibbonEditorPreview.tsx  # SVG-превью стрічки (скопійовано з frontend)
@@ -56,6 +63,10 @@ src/
 │   │                            # EmblemEntry = { sortOrder, svgUrlLeft, svgUrlRight }
 │   │                            # EmblemFromUrl: auto-scale SVG via viewBox parsing + ref.current.innerHTML
 │   ├── RibbonEditorPreview.css
+│   ├── notifications/
+│   │   └── NotificationsPopover.tsx  # Badge+Bell кнопка в header; Popover зі списком сповіщень
+│   │                                  # Клік на сповіщення → navigate до /orders/:id або /users/:id
+│   │                                  # "Позначити всі прочитаними" кнопка
 │   ├── chat/
 │   │   ├── ChatPanel.tsx    # Shared компонент: ліва панель (список розмов) + права (повідомлення + input)
 │   │   │                    # Пропс: compact?: boolean (для floating widget)
@@ -110,6 +121,10 @@ src/
     ├── history/
     │   └── HistoryPage.tsx      # (порожньо)
     └── settings/
+        ├── NotificationsPage.tsx  # Таблиця тригерів: new_order, order_status_changed (expandable з per-status дочірніми),
+        │                          # new_user. Drawer: таби System/Email/Telegram + Divider перед шаблоном + MetadataTable
+        │                          # System: картки адмінів + Select; Email: теги адрес; Telegram: теги user ID
+        │                          # Recipients з /notification-triggers/recipients (Super Admin id=0 першим)
         ├── CategoriesPage.tsx   # CRUD категорій товарів: ліва панель (категорії) + права (підкатегорії), drawer форми
         ├── DeliveryMethodsPage.tsx    # Таблиця методів (НП, УП), switch активності + кнопка редагувати
         ├── DeliveryMethodDetailPage.tsx  # Налаштування: isEnabled switch, Settings JSON, CheckoutFields editor (таблиця полів)
@@ -164,6 +179,7 @@ src/
 /settings/constructor/print-types   → PrintTypesPage
 /settings/constructor/emblems       → EmblemsPage
 /settings/constructor/rules         → RulesPage
+/settings/notifications             → NotificationsPage
 ```
 
 ## Меню (AdminLayout)
@@ -198,6 +214,7 @@ src/
     Типи друку       (/settings/constructor/print-types)
     Емблеми          (/settings/constructor/emblems)
     Правила          (/settings/constructor/rules)
+  Сповіщення             (/settings/notifications)
 ```
 
 ## API ендпоінти (бекенд)
@@ -311,6 +328,17 @@ src/
 | DELETE | /api/v1/admin/ribbon-emblems/{id}             | Soft delete                       |
 | POST   | /api/v1/admin/ribbon-emblems/{id}/svg/left    | Upload SVG ліва (multipart)       |
 | POST   | /api/v1/admin/ribbon-emblems/{id}/svg/right   | Upload SVG права (multipart)      |
+
+### Сповіщення адмінів
+| Метод  | Шлях | Опис |
+|--------|------|------|
+| GET    | /api/v1/admin/notification-triggers | Конфіги тригерів |
+| PUT    | /api/v1/admin/notification-triggers/{triggerType} | Оновити конфіг |
+| GET    | /api/v1/admin/notification-triggers/recipients | Адміни + Super Admin (id=0) для вибору отримувачів |
+| GET    | /api/v1/admin/notifications | Мої сповіщення (?limit=50) |
+| GET    | /api/v1/admin/notifications/unread-count | Кількість непрочитаних |
+| POST   | /api/v1/admin/notifications/{id}/read | Позначити прочитаним |
+| POST   | /api/v1/admin/notifications/read-all | Позначити всі прочитаними |
 
 ### Чат (SignalR + REST)
 | Метод  | Шлях                                            | Опис                                              |
@@ -460,6 +488,16 @@ src/
 - `MarkMessagesReadAsync(conversationId, readBy)` — позначає як прочитані тільки повідомлення від ІНШОГО sender-а
 
 ## Особливості реалізації
+
+**Система сповіщень адмінів:**
+- SignalR подія `ReceiveAdminNotification` приходить у групу `admin:{id}` (Super Admin — `admin:0`)
+- `ChatStore.connect()` реєструє обробник → `notificationsStore.handlePush(dto)`
+- `NotificationsStore` зберігає `unreadCount` + список; `load()` запитує REST при вході
+- `NotificationsPopover` рендериться в header поруч з іменем адміна; Badge показує unreadCount
+- Тригери: `new_order`, `order_status_changed`, `order_status_changed:{statusName}` (sub-тригери), `new_user`
+- Шаблони `{{variable}}` підставляються на бекенді; доступні змінні відображаються в MetadataTable у drawer
+- Super Admin (id=0): тільки real-time push через SignalR, без запису в БД (немає рядка в таблиці Admins)
+- Email відправляється через `SendRawEmailAsync` якщо `EmailEnabled=true`; Telegram — конфіг є, відправки немає
 
 **SalesByCategoryBlock (Block 9 дашборду)** — двоярусна кругова діаграма Recharts:
 - Внутрішнє кільце = категорії, зовнішнє = підкатегорії (вирівняні за кутом до батьківської категорії)
