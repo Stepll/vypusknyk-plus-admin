@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Table, Button, Drawer, Tabs, Form, Switch, Space, Typography,
-  Tag, Spin, message, Select,
+  Tag, Spin, message, Select, Input,
 } from 'antd'
-import { EditOutlined, MailOutlined, SendOutlined, BellOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import { EditOutlined, MailOutlined, SendOutlined, BellOutlined, PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
   getTriggerConfigs, updateTriggerConfig,
@@ -21,6 +21,77 @@ interface TableRow {
   displayName: string
   config?: NotificationTriggerConfigResponse
   children?: TableRow[]
+}
+
+const TRIGGER_VARS: Record<string, { key: string; label: string }[]> = {
+  new_order: [
+    { key: 'orderNumber', label: 'Номер замовлення' },
+    { key: 'customerName', label: "Ім'я клієнта" },
+    { key: 'customerPhone', label: 'Телефон' },
+    { key: 'customerEmail', label: 'Email клієнта' },
+    { key: 'total', label: 'Сума' },
+    { key: 'itemCount', label: 'К-сть позицій' },
+    { key: 'deliveryCity', label: 'Місто доставки' },
+    { key: 'deliveryMethod', label: 'Метод доставки' },
+    { key: 'paymentMethod', label: 'Метод оплати' },
+    { key: 'comment', label: 'Коментар' },
+  ],
+  order_status_changed: [
+    { key: 'orderNumber', label: 'Номер замовлення' },
+    { key: 'statusName', label: 'Новий статус' },
+    { key: 'previousStatus', label: 'Попередній статус' },
+    { key: 'customerName', label: "Ім'я клієнта" },
+    { key: 'customerPhone', label: 'Телефон' },
+    { key: 'customerEmail', label: 'Email клієнта' },
+    { key: 'total', label: 'Сума' },
+    { key: 'deliveryCity', label: 'Місто доставки' },
+    { key: 'deliveryMethod', label: 'Метод доставки' },
+    { key: 'adminName', label: 'Адмін' },
+  ],
+  new_user: [
+    { key: 'fullName', label: "Ім'я" },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Телефон' },
+    { key: 'registrationDate', label: 'Дата реєстрації' },
+  ],
+}
+
+function getVarsForTrigger(triggerType: string) {
+  if (triggerType.startsWith('order_status_changed'))
+    return TRIGGER_VARS.order_status_changed
+  return TRIGGER_VARS[triggerType] ?? []
+}
+
+// ── Metadata table ────────────────────────────────────────────────────────────
+
+function MetadataTable({ triggerType }: { triggerType: string }) {
+  const vars = getVarsForTrigger(triggerType)
+  if (vars.length === 0) return null
+
+  const copyVar = (key: string) => {
+    navigator.clipboard.writeText(`{{${key}}}`)
+    message.success(`Скопійовано {{${key}}}`)
+  }
+
+  return (
+    <div style={{ marginTop: 24, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+      <Typography.Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+        Доступні змінні для шаблонів:
+      </Typography.Text>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {vars.map(v => (
+          <Tag
+            key={v.key}
+            style={{ cursor: 'pointer', fontSize: 12 }}
+            icon={<CopyOutlined />}
+            onClick={() => copyVar(v.key)}
+          >
+            {`{{${v.key}}}`} — {v.label}
+          </Tag>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // ── System Tab ────────────────────────────────────────────────────────────────
@@ -71,6 +142,12 @@ function SystemTab({ form, admins, triggerKey }: { form: ReturnType<typeof Form.
             options={availableAdmins.map(a => ({ value: a.id, label: `${a.fullName} (${a.email})` }))}
           />
         )}
+      </Form.Item>
+      <Form.Item name="systemTitle" label="Заголовок (шаблон)">
+        <Input placeholder="Наприклад: Нове замовлення #{{orderNumber}}" />
+      </Form.Item>
+      <Form.Item name="systemMessage" label="Повідомлення (шаблон)">
+        <Input.TextArea rows={3} placeholder="Наприклад: від {{customerName}}, сума {{total}} грн" />
       </Form.Item>
     </div>
   )
@@ -125,6 +202,12 @@ function EmailTab({ form, triggerKey }: { form: ReturnType<typeof Form.useForm>[
             <Typography.Text type="secondary" style={{ fontSize: 13 }}>Немає отримувачів</Typography.Text>
           )}
         </div>
+      </Form.Item>
+      <Form.Item name="emailSubject" label="Тема листа (шаблон)">
+        <Input placeholder="Наприклад: Нове замовлення #{{orderNumber}}" />
+      </Form.Item>
+      <Form.Item name="emailMessage" label="Тіло листа (шаблон)">
+        <Input.TextArea rows={5} placeholder="Наприклад: Клієнт {{customerName}} оформив замовлення на {{total}} грн." />
       </Form.Item>
     </div>
   )
@@ -182,6 +265,9 @@ function TelegramTab({ form, triggerKey }: { form: ReturnType<typeof Form.useFor
             <Typography.Text type="secondary" style={{ fontSize: 13 }}>Немає ID</Typography.Text>
           )}
         </div>
+      </Form.Item>
+      <Form.Item name="telegramMessage" label="Повідомлення (шаблон)">
+        <Input.TextArea rows={4} placeholder="Наприклад: 📦 Нове замовлення #{{orderNumber}} від {{customerName}}" />
       </Form.Item>
     </div>
   )
@@ -259,11 +345,16 @@ export default function NotificationsPage() {
     form.setFieldsValue({
       emailEnabled: config?.emailEnabled ?? false,
       emailRecipients: config?.emailRecipients ?? [],
+      emailSubject: config?.emailSubject ?? '',
+      emailMessage: config?.emailMessage ?? '',
       telegramEnabled: config?.telegramEnabled ?? false,
       telegramUserIds: config?.telegramUserIds ?? [],
       telegramGroupEnabled: config?.telegramGroupEnabled ?? false,
+      telegramMessage: config?.telegramMessage ?? '',
       systemEnabled: config?.systemEnabled ?? false,
       systemAdminIds: config?.systemAdminIds ?? [],
+      systemTitle: config?.systemTitle ?? '',
+      systemMessage: config?.systemMessage ?? '',
     })
     setDrawerOpen(true)
   }
@@ -274,11 +365,16 @@ export default function NotificationsPage() {
     const req: UpdateNotificationTriggerConfigRequest = {
       emailEnabled: values.emailEnabled ?? false,
       emailRecipients: form.getFieldValue('emailRecipients') ?? [],
+      emailSubject: values.emailSubject ?? '',
+      emailMessage: values.emailMessage ?? '',
       telegramEnabled: values.telegramEnabled ?? false,
       telegramUserIds: form.getFieldValue('telegramUserIds') ?? [],
       telegramGroupEnabled: values.telegramGroupEnabled ?? false,
+      telegramMessage: values.telegramMessage ?? '',
       systemEnabled: values.systemEnabled ?? false,
       systemAdminIds: form.getFieldValue('systemAdminIds') ?? [],
+      systemTitle: values.systemTitle ?? '',
+      systemMessage: values.systemMessage ?? '',
     }
     setSaving(true)
     try {
@@ -388,7 +484,7 @@ export default function NotificationsPage() {
         title={editing?.displayName ?? 'Тригер'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={460}
+        width={500}
         footer={
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
             <Button onClick={() => setDrawerOpen(false)}>Скасувати</Button>
@@ -404,6 +500,7 @@ export default function NotificationsPage() {
               { key: 'telegram', label: 'Telegram', children: <TelegramTab form={form} triggerKey={editing?.triggerType ?? ''} /> },
             ]}
           />
+          <MetadataTable triggerType={editing?.triggerType ?? ''} />
         </Form>
       </Drawer>
     </div>

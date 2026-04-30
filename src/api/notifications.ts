@@ -17,21 +17,31 @@ export interface NotificationTriggerConfigResponse {
   extraConfig?: string;
   emailEnabled: boolean;
   emailRecipients: string[];
+  emailSubject?: string;
+  emailMessage?: string;
   telegramEnabled: boolean;
   telegramUserIds: string[];
   telegramGroupEnabled: boolean;
+  telegramMessage?: string;
   systemEnabled: boolean;
   systemAdminIds: number[];
+  systemTitle?: string;
+  systemMessage?: string;
 }
 
 export interface UpdateNotificationTriggerConfigRequest {
   emailEnabled: boolean;
   emailRecipients: string[];
+  emailSubject?: string;
+  emailMessage?: string;
   telegramEnabled: boolean;
   telegramUserIds: string[];
   telegramGroupEnabled: boolean;
+  telegramMessage?: string;
   systemEnabled: boolean;
   systemAdminIds: number[];
+  systemTitle?: string;
+  systemMessage?: string;
 }
 
 export const getMyNotifications = (limit = 50) =>
