@@ -56,6 +56,15 @@ export const markNotificationRead = (id: number) =>
 export const markAllNotificationsRead = () =>
   apiFetch<void>('/api/v1/admin/notifications/read-all', { method: 'POST' });
 
+export interface NotificationAdminRecipientDto {
+  id: number;
+  fullName: string;
+  email: string;
+}
+
+export const getNotificationRecipients = () =>
+  apiFetch<NotificationAdminRecipientDto[]>('/api/v1/admin/notification-triggers/recipients');
+
 export const getTriggerConfigs = () =>
   apiFetch<NotificationTriggerConfigResponse[]>('/api/v1/admin/notification-triggers');
 

@@ -6,14 +6,14 @@ import {
 import { EditOutlined, MailOutlined, SendOutlined, BellOutlined, PlusOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  getTriggerConfigs, updateTriggerConfig,
+  getTriggerConfigs, updateTriggerConfig, getNotificationRecipients,
   type NotificationTriggerConfigResponse, type UpdateNotificationTriggerConfigRequest,
+  type NotificationAdminRecipientDto,
 } from '../../api/notifications'
-import { getAdmins } from '../../api/admins'
 import { getOrderStatuses } from '../../api/orderStatuses'
 import type { OrderStatusResponse } from '../../api/types'
 
-interface AdminOption { id: number; fullName: string; email: string }
+type AdminOption = NotificationAdminRecipientDto
 
 interface TableRow {
   key: string
@@ -331,11 +331,11 @@ export default function NotificationsPage() {
   useEffect(() => {
     Promise.all([
       getTriggerConfigs(),
-      getAdmins(1, 100),
+      getNotificationRecipients(),
       getOrderStatuses(),
-    ]).then(([cfgs, adminsRes, statuses]) => {
+    ]).then(([cfgs, recipients, statuses]) => {
       setConfigs(cfgs)
-      setAdmins(adminsRes.items.map(a => ({ id: a.id, fullName: a.fullName, email: a.email })))
+      setAdmins(recipients)
       setOrderStatuses(statuses.filter(s => s.isActive).sort((a, b) => a.sortOrder - b.sortOrder))
     }).finally(() => setLoading(false))
   }, [])
