@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Table, Select, DatePicker, Tag, Tooltip, Space, Typography, Collapse } from 'antd'
+import { Table, Select, DatePicker, Tag, Tooltip, Space, Typography, Collapse, Checkbox, Divider } from 'antd'
 import { HistoryOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import {
@@ -94,6 +94,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(false)
   const [filters, setFilters] = useState<AuditLogFilters>({ page: 1, pageSize: 50 })
   const [admins, setAdmins] = useState<AdminAdminItem[]>([])
+  const [selectedEntityTypes, setSelectedEntityTypes] = useState<string[]>([])
+  const allEntityTypeKeys = Object.keys(AUDIT_ENTITY_TYPES)
 
   useEffect(() => {
     getAdmins(1, 200).then(res => setAdmins(res.items)).catch(() => {})
@@ -195,11 +197,36 @@ export default function HistoryPage() {
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         <Select
+          mode="multiple"
           allowClear
           placeholder="Тип сутності"
-          style={{ width: 160 }}
+          style={{ width: 220 }}
+          maxTagCount={2}
+          value={selectedEntityTypes}
           options={Object.entries(AUDIT_ENTITY_TYPES).map(([v, l]) => ({ value: v, label: l }))}
-          onChange={(v) => applyFilter({ entityType: v })}
+          onChange={(vals: string[]) => {
+            setSelectedEntityTypes(vals)
+            applyFilter({ entityTypes: vals.length ? vals : undefined })
+          }}
+          dropdownRender={(menu) => (
+            <>
+              <div style={{ padding: '6px 12px' }}>
+                <Checkbox
+                  checked={selectedEntityTypes.length === allEntityTypeKeys.length}
+                  indeterminate={selectedEntityTypes.length > 0 && selectedEntityTypes.length < allEntityTypeKeys.length}
+                  onChange={(e) => {
+                    const vals = e.target.checked ? allEntityTypeKeys : []
+                    setSelectedEntityTypes(vals)
+                    applyFilter({ entityTypes: vals.length ? vals : undefined })
+                  }}
+                >
+                  Вибрати всі
+                </Checkbox>
+              </div>
+              <Divider style={{ margin: '4px 0' }} />
+              {menu}
+            </>
+          )}
         />
         <Select
           allowClear

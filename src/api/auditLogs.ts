@@ -19,7 +19,7 @@ export interface AuditLogsPagedResponse {
 }
 
 export interface AuditLogFilters {
-  entityType?: string;
+  entityTypes?: string[];
   entityId?: number;
   adminId?: number;
   action?: string;
@@ -39,6 +39,19 @@ export const AUDIT_ENTITY_TYPES: Record<string, string> = {
   Supplier: 'Постачальник',
   ProductCategory: 'Категорія',
   ProductSubcategory: 'Підкатегорія',
+  StockProduct: 'Складський товар',
+  DeliveryMethod: 'Метод доставки',
+  PaymentMethod: 'Метод оплати',
+  OrderStatus: 'Статус замовлення',
+  NotificationTriggerConfig: 'Сповіщення',
+  RibbonColor: 'Колір стрічки',
+  RibbonMaterial: 'Матеріал',
+  RibbonPrintColor: 'Колір друку',
+  RibbonFont: 'Шрифт',
+  RibbonPrintType: 'Тип друку',
+  RibbonEmblem: 'Емблема',
+  ConstructorIncompatibility: 'Несумісність',
+  ConstructorForcedText: 'Фіксований текст',
 };
 
 export const AUDIT_ACTIONS: Record<string, string> = {
@@ -79,7 +92,7 @@ export const AUDIT_FIELD_NAMES: Record<string, string> = {
 
 export async function getAuditLogs(filters: AuditLogFilters = {}): Promise<AuditLogsPagedResponse> {
   const params = new URLSearchParams();
-  if (filters.entityType) params.set('entityType', filters.entityType);
+  filters.entityTypes?.forEach(t => params.append('entityTypes', t));
   if (filters.entityId != null) params.set('entityId', String(filters.entityId));
   if (filters.adminId != null) params.set('adminId', String(filters.adminId));
   if (filters.action) params.set('action', filters.action);
