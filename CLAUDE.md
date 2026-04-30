@@ -39,6 +39,7 @@ src/
 │   ├── ribbonEmblems.ts       # CRUD /admin/ribbon-emblems + uploadRibbonEmblemSvg(id, side, file)
 │   ├── constructorRules.ts    # CRUD /admin/constructor-rules/incompatibilities + /forced-texts
 │   ├── chat.ts                # ChatMessageDto, ChatConversationListItem; getConversations(), getConversationMessages(id)
+│   ├── auditLogs.ts           # AuditLogResponse, AUDIT_ENTITY_TYPES/ACTIONS/FIELD_NAMES maps, getAuditLogs(filters)
 │   └── notifications.ts       # AdminNotificationDto, NotificationTriggerConfigResponse (+emailSubject/emailMessage/
 │                              # telegramMessage/systemTitle/systemMessage), UpdateNotificationTriggerConfigRequest,
 │                              # NotificationAdminRecipientDto; getMyNotifications, getUnreadCount, markNotificationRead,
@@ -125,6 +126,10 @@ src/
     │                             # margin: '0 -28px -24px' для ChatPanel (притискає до країв)
     ├── history/
     │   └── HistoryPage.tsx      # (порожньо)
+    ├── history/
+│   └── HistoryPage.tsx      # Таблиця audit-логів: фільтри (тип сутності, дія, діапазон дат),
+│                             # колонки: Коли / Адмін / Дія (тег) / Сутність (посилання) / Зміни
+│                             # Create: collapse зі snapshot полів; Update: old→new по кожному полю
     └── settings/
         ├── NotificationsPage.tsx  # Таблиця тригерів: new_order, order_status_changed (expandable з per-status дочірніми),
         │                          # new_user. Drawer: таби System/Email/Telegram + Divider перед шаблоном + MetadataTable
@@ -344,6 +349,16 @@ src/
 
 **Slugs:** `home`, `about`, `catalog`, `constructors`, `events`, `contacts`
 **Seeder:** `PageContentSeeder` ініціалізує дефолтний контент при старті бекенду
+
+### Аудит-лог
+| Метод  | Шлях | Опис |
+|--------|------|------|
+| GET    | /api/v1/admin/audit-logs | Журнал дій (?entityType, entityId, adminId, action, from, to, page, pageSize) |
+
+**Трековані сутності:** Order, Product, User, Admin, Role, Delivery, Supplier, ProductCategory, ProductSubcategory
+**Дії:** Create (snapshot scalar полів), Update (old→new змінених полів), Delete (soft-delete через IsDeleted flag)
+**adminId=null** → "Система" (seeder/background); **adminId=0** → Super Admin
+**Виключені поля:** PasswordHash, IsDeleted, CreatedAt, UpdatedAt
 
 ### Сповіщення адмінів
 | Метод  | Шлях | Опис |
