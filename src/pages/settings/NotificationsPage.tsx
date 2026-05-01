@@ -367,7 +367,7 @@ export default function NotificationsPage() {
 
   const handleSave = async () => {
     if (!editing) return
-    const values = form.getFieldsValue()
+    const values = form.getFieldsValue(true)
     const req: UpdateNotificationTriggerConfigRequest = {
       emailEnabled: values.emailEnabled ?? false,
       emailRecipients: form.getFieldValue('emailRecipients') ?? [],
