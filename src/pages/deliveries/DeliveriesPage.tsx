@@ -22,6 +22,7 @@ const DeliveriesPage = observer(() => {
   }, [])
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Номер', dataIndex: 'number', key: 'number', width: 160,
       render: (v: string) => <span style={{ fontWeight: 600, fontFamily: 'monospace' }}>{v}</span>,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Table, Select, DatePicker, Tag, Tooltip, Space, Typography, Collapse, Checkbox, Divider } from 'antd'
 import { HistoryOutlined } from '@ant-design/icons'
+import { Link } from 'react-router-dom'
 import dayjs from 'dayjs'
 import {
   getAuditLogs,
@@ -28,6 +29,21 @@ const ENTITY_ROUTE: Record<string, (id: number) => string> = {
   User: (id) => `/users/${id}`,
   Admin: (id) => `/admins/${id}`,
   Delivery: (id) => `/deliveries/${id}`,
+  Role: (id) => `/settings/roles?openId=${id}`,
+  Supplier: (id) => `/settings/suppliers?openId=${id}`,
+  ProductCategory: (id) => `/settings/categories?openId=${id}`,
+  ProductSubcategory: (id) => `/settings/categories?openSubcatId=${id}`,
+  OrderStatus: (id) => `/settings/order-statuses?openId=${id}`,
+  DeliveryMethod: (id) => `/settings/delivery/${id}`,
+  StockProduct: (id) => `/warehouse?openId=${id}`,
+  RibbonColor: (id) => `/settings/constructor/colors?openId=${id}`,
+  RibbonMaterial: (id) => `/settings/constructor/materials?openId=${id}`,
+  RibbonPrintColor: (id) => `/settings/constructor/print-colors?openId=${id}`,
+  RibbonFont: (id) => `/settings/constructor/fonts?openId=${id}`,
+  RibbonPrintType: (id) => `/settings/constructor/print-types?openId=${id}`,
+  RibbonEmblem: (id) => `/settings/constructor/emblems?openId=${id}`,
+  ConstructorIncompatibility: (id) => `/settings/constructor/rules?openId=${id}`,
+  ConstructorForcedText: (id) => `/settings/constructor/rules?openForcedId=${id}`,
 }
 
 interface FieldChange {
@@ -164,7 +180,7 @@ export default function HistoryPage() {
           <Space size={4}>
             <Text style={{ fontSize: 13 }}>{label}</Text>
             {route ? (
-              <a href={route} style={{ fontSize: 12 }}>#{row.entityId}</a>
+              <Link to={route} style={{ fontSize: 12 }}>#{row.entityId}</Link>
             ) : (
               <Text type="secondary" style={{ fontSize: 12 }}>#{row.entityId}</Text>
             )}

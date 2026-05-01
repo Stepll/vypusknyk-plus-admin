@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button, Checkbox, Drawer, Form, Input, Popconfirm, Table, Tag, message } from 'antd'
 import { DeleteOutlined, EditOutlined, PlusOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 import { getRoles, createRole, updateRole, deleteRole } from '../../api/roles'
 import type { RoleResponse } from '../../api/types'
 
@@ -47,12 +48,23 @@ export default function RolesPage() {
   const [selectedColor, setSelectedColor] = useState(COLORS[1])
   const [selectedPages, setSelectedPages] = useState<string[]>([])
   const [form] = Form.useForm()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
 
-  const load = () => {
+  const load = async () => {
     setLoading(true)
-    getRoles()
-      .then(setRoles)
-      .finally(() => setLoading(false))
+    try {
+      const data = await getRoles()
+      setRoles(data)
+      if (initialOpenId.current) {
+        const role = data.find(r => r.id === Number(initialOpenId.current))
+        if (role) openEdit(role)
+        initialOpenId.current = null
+        setSearchParams({}, { replace: true })
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [])

@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Table, Switch, Button, Drawer, Form, Input, InputNumber,
   Popconfirm, message, Space, Tag, Tooltip,
 } from 'antd'
 import { FontSizeOutlined, PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 import { getRibbonFonts, createRibbonFont, updateRibbonFont, deleteRibbonFont } from '../../../api/ribbonFonts'
 import type { RibbonFontResponse, SaveRibbonFontRequest } from '../../../api/types'
 
@@ -36,16 +37,28 @@ export default function FontsPage() {
   const [editing, setEditing] = useState<RibbonFontResponse | null>(null)
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm<SaveRibbonFontRequest>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
 
-  const load = () => {
+  const load = async () => {
     setLoading(true)
-    getRibbonFonts()
-      .then(setFonts)
-      .catch(() => message.error('Не вдалося завантажити шрифти'))
-      .finally(() => setLoading(false))
+    try {
+      const data = await getRibbonFonts()
+      setFonts(data)
+      if (initialOpenId.current) {
+        const item = data.find(i => i.id === Number(initialOpenId.current))
+        if (item) openEdit(item)
+        initialOpenId.current = null
+        setSearchParams({}, { replace: true })
+      }
+    } catch {
+      message.error('Не вдалося завантажити шрифти')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(load, [])
+  useEffect(() => { load() }, [])
 
   const openCreate = () => {
     setEditing(null)
@@ -103,6 +116,7 @@ export default function FontsPage() {
   }
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Назва',
       key: 'name',

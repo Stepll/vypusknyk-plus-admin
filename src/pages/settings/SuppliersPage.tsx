@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Table, Button, Drawer, Form, Input, Space, Popconfirm, Tag, message,
 } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, ShopOutlined } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 import * as api from '../../api/deliveries'
 import type { SupplierResponse } from '../../api/types'
 
@@ -13,11 +14,20 @@ export default function SuppliersPage() {
   const [editing, setEditing] = useState<SupplierResponse | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [form] = Form.useForm()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
 
   const load = async () => {
     setLoading(true)
     try {
-      setSuppliers(await api.getSuppliers())
+      const data = await api.getSuppliers()
+      setSuppliers(data)
+      if (initialOpenId.current) {
+        const item = data.find(i => i.id === Number(initialOpenId.current))
+        if (item) openEdit(item)
+        initialOpenId.current = null
+        setSearchParams({}, { replace: true })
+      }
     } finally {
       setLoading(false)
     }
@@ -86,6 +96,7 @@ export default function SuppliersPage() {
   }
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Назва', dataIndex: 'name', key: 'name',
       render: (v: string) => <span style={{ fontWeight: 500 }}>{v}</span>,

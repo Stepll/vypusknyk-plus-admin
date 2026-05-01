@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Table, Switch, Button, Tag, message, Drawer, Input, Checkbox, Popconfirm, Space,
 } from 'antd'
 import { CheckCircleOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 import {
   getOrderStatuses, createOrderStatus, updateOrderStatus, deleteOrderStatus,
 } from '../../api/orderStatuses'
@@ -111,17 +112,27 @@ export default function OrderStatusesPage() {
   const [form, setForm] = useState<SaveOrderStatusRequest>(emptyForm())
   const [saving, setSaving] = useState(false)
   const [toggling, setToggling] = useState<number | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
 
-  useEffect(() => {
-    load()
-  }, [])
+  useEffect(() => { load() }, [])
 
-  function load() {
+  async function load() {
     setLoading(true)
-    getOrderStatuses()
-      .then(setStatuses)
-      .catch(() => message.error('Помилка завантаження'))
-      .finally(() => setLoading(false))
+    try {
+      const data = await getOrderStatuses()
+      setStatuses(data)
+      if (initialOpenId.current) {
+        const item = data.find(i => i.id === Number(initialOpenId.current))
+        if (item) openEdit(item)
+        initialOpenId.current = null
+        setSearchParams({}, { replace: true })
+      }
+    } catch {
+      message.error('Помилка завантаження')
+    } finally {
+      setLoading(false)
+    }
   }
 
   function openCreate() {
@@ -179,6 +190,7 @@ export default function OrderStatusesPage() {
   }
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Назва',
       key: 'name',

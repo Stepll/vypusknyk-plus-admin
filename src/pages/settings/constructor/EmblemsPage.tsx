@@ -7,6 +7,7 @@ import {
   PictureOutlined, PlusOutlined, EditOutlined, DeleteOutlined,
   UploadOutlined, DownloadOutlined, InfoCircleOutlined,
 } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 import {
   getRibbonEmblems, createRibbonEmblem, updateRibbonEmblem, deleteRibbonEmblem, uploadRibbonEmblemSvg,
 } from '../../../api/ribbonEmblems'
@@ -51,19 +52,31 @@ export default function EmblemsPage() {
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState<'left' | 'right' | null>(null)
   const [form] = Form.useForm<SaveRibbonEmblemRequest>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
 
   const fileLeftRef  = useRef<HTMLInputElement>(null)
   const fileRightRef = useRef<HTMLInputElement>(null)
 
-  const load = () => {
+  const load = async () => {
     setLoading(true)
-    getRibbonEmblems()
-      .then(setEmblems)
-      .catch(() => message.error('Не вдалося завантажити емблеми'))
-      .finally(() => setLoading(false))
+    try {
+      const data = await getRibbonEmblems()
+      setEmblems(data)
+      if (initialOpenId.current) {
+        const item = data.find(i => i.id === Number(initialOpenId.current))
+        if (item) openEdit(item)
+        initialOpenId.current = null
+        setSearchParams({}, { replace: true })
+      }
+    } catch {
+      message.error('Не вдалося завантажити емблеми')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(load, [])
+  useEffect(() => { load() }, [])
 
   const openCreate = () => {
     setEditing(null)
@@ -133,6 +146,7 @@ export default function EmblemsPage() {
   }
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Ліва / Права',
       key: 'preview',

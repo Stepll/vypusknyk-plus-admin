@@ -31,6 +31,7 @@ export default function PaymentMethodsPage() {
   }
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Назва',
       dataIndex: 'name',

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { observer } from 'mobx-react-lite'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Table, Button, Tag, Select, Input, Card, Row, Col, Modal, Tabs,
   Drawer, Form, InputNumber, DatePicker, Statistic, Space, Badge, Spin, Checkbox,
@@ -608,12 +608,24 @@ const WarehousePage = observer(() => {
   const [activeProductId, setActiveProductId] = useState<number | null>(null)
   const [presetMaterial, setPresetMaterial] = useState<StockMaterial | undefined>()
   const [presetColor, setPresetColor] = useState<string | undefined>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
 
   useEffect(() => {
     store.fetchStats()
     store.fetchCategories()
     store.fetchProducts()
   }, [])
+
+  useEffect(() => {
+    if (!initialOpenId.current || store.products.length === 0) return
+    const product = store.products.find(p => p.id === Number(initialOpenId.current))
+    if (product) {
+      openDetail(product.id)
+      initialOpenId.current = null
+      setSearchParams({}, { replace: true })
+    }
+  }, [store.products.length])
 
   const openIncome = (id: number, material?: StockMaterial, color?: string) => {
     setActiveProductId(id); setPresetMaterial(material); setPresetColor(color); setIncomeOpen(true)
@@ -629,6 +641,7 @@ const WarehousePage = observer(() => {
   }
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Назва', dataIndex: 'name', key: 'name',
       render: (name: string) => <span style={{ fontWeight: 500 }}>{name}</span>,

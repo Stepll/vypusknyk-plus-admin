@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Table, Switch, Button, Drawer, Form, Input, InputNumber,
   Popconfirm, message, Space, Tag,
 } from 'antd'
 import { BgColorsOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 import {
   getRibbonColors, createRibbonColor, updateRibbonColor, deleteRibbonColor,
 } from '../../../api/ribbonColors'
@@ -41,18 +42,30 @@ export default function ColorsPage() {
   const [editing, setEditing] = useState<RibbonColorResponse | null>(null)
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm<SaveRibbonColorRequest>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
 
   const secondaryHexWatch = Form.useWatch('secondaryHex', form)
 
-  const load = () => {
+  const load = async () => {
     setLoading(true)
-    getRibbonColors()
-      .then(setColors)
-      .catch(() => message.error('Не вдалося завантажити кольори'))
-      .finally(() => setLoading(false))
+    try {
+      const data = await getRibbonColors()
+      setColors(data)
+      if (initialOpenId.current) {
+        const item = data.find(i => i.id === Number(initialOpenId.current))
+        if (item) openEdit(item)
+        initialOpenId.current = null
+        setSearchParams({}, { replace: true })
+      }
+    } catch {
+      message.error('Не вдалося завантажити кольори')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(load, [])
+  useEffect(() => { load() }, [])
 
   const openCreate = () => {
     setEditing(null)
@@ -118,6 +131,7 @@ export default function ColorsPage() {
   }
 
   const columns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: '',
       key: 'swatch',

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button, Table, Input, Form, Drawer, Popconfirm, message, Tag, Space } from 'antd'
 import { TagsOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 import type { ProductCategoryResponse, ProductSubcategoryResponse } from '../../api/types'
 import {
   getProductCategories,
@@ -23,6 +24,9 @@ export default function CategoriesPage() {
   const [catForm] = Form.useForm()
   const [subForm] = Form.useForm()
   const [saving, setSaving] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialOpenId = useRef(searchParams.get('openId'))
+  const initialOpenSubcatId = useRef(searchParams.get('openSubcatId'))
 
   const load = async () => {
     setLoading(true)
@@ -31,6 +35,22 @@ export default function CategoriesPage() {
       setCategories(data)
       if (selectedCategory) {
         setSelectedCategory(data.find(c => c.id === selectedCategory.id) ?? null)
+      }
+      if (initialOpenId.current) {
+        const cat = data.find(c => c.id === Number(initialOpenId.current))
+        if (cat) openCatDrawer(cat)
+        initialOpenId.current = null
+        setSearchParams({}, { replace: true })
+      } else if (initialOpenSubcatId.current) {
+        const subcatId = Number(initialOpenSubcatId.current)
+        const parentCat = data.find(c => c.subcategories.some(s => s.id === subcatId))
+        if (parentCat) {
+          const sub = parentCat.subcategories.find(s => s.id === subcatId)
+          setSelectedCategory(parentCat)
+          if (sub) openSubDrawer(parentCat.id, sub)
+        }
+        initialOpenSubcatId.current = null
+        setSearchParams({}, { replace: true })
       }
     } finally {
       setLoading(false)
@@ -112,6 +132,7 @@ export default function CategoriesPage() {
   }
 
   const catColumns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     {
       title: 'Назва',
       dataIndex: 'name',
@@ -150,6 +171,7 @@ export default function CategoriesPage() {
   ]
 
   const subColumns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
     { title: 'Назва', dataIndex: 'name', key: 'name' },
     { title: 'Порядок', dataIndex: 'order', key: 'order', width: 90 },
     {
