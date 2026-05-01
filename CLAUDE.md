@@ -89,7 +89,7 @@ src/
     ├── dashboard/DashboardPage.tsx  # 9 блоків: Stats, Статуси+Recent, Distributions, Charts,
     │                                # TopItems+LowStock, Deliveries, Designs, TopProducts, SalesByCategory
     ├── orders/
-    │   ├── OrdersPage.tsx
+    │   ├── OrdersPage.tsx         # Таблиця замовлень (ID + № колонки)
     │   └── OrderDetailPage.tsx
     ├── products/
     │   ├── ProductsPage.tsx       # Таблиця продуктів; кнопки: Шаблон / Експорт / Імпорт / Новий продукт
@@ -116,40 +116,50 @@ src/
     │   └── AdminDetailPage.tsx    # Inline role select (SuperAdmin: іконка олівця → borderless select)
     │                              # Password drawer (SuperAdmin → будь-хто; інші → тільки своя сторінка)
     ├── warehouse/
-    │   └── WarehousePage.tsx    # Облік товарів: таблиця продуктів, статистика, прихід/видача
+    │   └── WarehousePage.tsx    # Облік товарів: таблиця продуктів (ID колонка), статистика, прихід/видача
+    │                             # Підтримка ?openId=X — відкриває ProductDetailModal для товару після завантаження
     ├── deliveries/
-    │   ├── DeliveriesPage.tsx   # Таблиця поставок з фільтрами, прогрес-бар
+    │   ├── DeliveriesPage.tsx   # Таблиця поставок з фільтрами, прогрес-бар (ID колонка)
     │   ├── DeliveryDetailPage.tsx  # Деталі поставки: позиції, прийом товару, історія прийому (drawer)
     │   └── NewDeliveryPage.tsx  # Повна сторінка створення поставки (dynamic item rows)
     ├── chats/
     │   └── ChatsPage.tsx        # Full-page Telegram-like чат; header з іконкою
     │                             # margin: '0 -28px -24px' для ChatPanel (притискає до країв)
     ├── history/
-    │   └── HistoryPage.tsx      # (порожньо)
-    ├── history/
-│   └── HistoryPage.tsx      # Таблиця audit-логів: фільтри (тип сутності, дія, діапазон дат),
-│                             # колонки: Коли / Адмін / Дія (тег) / Сутність (посилання) / Зміни
-│                             # Create: collapse зі snapshot полів; Update: old→new по кожному полю
+    │   └── HistoryPage.tsx      # Таблиця audit-логів: фільтри (тип сутності multi-select + "Вибрати всі",
+    │                             # адмін, дія, діапазон дат)
+    │                             # Колонки: Коли / Адмін / Дія (тег) / Сутність (Link) / Зміни
+    │                             # Create: collapse зі snapshot полів; Update: old→new по кожному полю
+    │                             # ENTITY_ROUTE: Order/Product/User/Admin/Delivery → detail pages;
+    │                             #   Role/Supplier/OrderStatus/Categories → ?openId=X;
+    │                             #   ProductSubcategory → ?openSubcatId=X; DeliveryMethod → /settings/delivery/:id;
+    │                             #   Warehouse/RibbonColors/Materials/PrintColors/Fonts/PrintTypes/Emblems → ?openId=X;
+    │                             #   ConstructorIncompatibility/ForcedText → /rules?openId=X/?openForcedId=X
     └── settings/
         ├── NotificationsPage.tsx  # Таблиця тригерів: new_order, order_status_changed (expandable з per-status дочірніми),
         │                          # new_user. Drawer: таби System/Email/Telegram + Divider перед шаблоном + MetadataTable
         │                          # System: картки адмінів + Select; Email: теги адрес; Telegram: теги user ID
         │                          # Recipients з /notification-triggers/recipients (Super Admin id=0 першим)
-        ├── CategoriesPage.tsx   # CRUD категорій товарів: ліва панель (категорії) + права (підкатегорії), drawer форми
-        ├── DeliveryMethodsPage.tsx    # Таблиця методів (НП, УП), switch активності + кнопка редагувати
+        │                          # ВАЖЛИВО: handleSave використовує form.getFieldsValue(true) — повертає значення
+        │                          # незмонтованих Form.Item (вкладки Email/Telegram які не були відкриті)
+        ├── CategoriesPage.tsx   # CRUD категорій товарів: ліва панель (категорії ID) + права (підкатегорії ID), drawer форми
+        │                        # Підтримка ?openId=X (категорія) та ?openSubcatId=X (підкатегорія + auto-select parent)
+        ├── DeliveryMethodsPage.tsx    # Таблиця методів (ID колонка), switch активності + кнопка редагувати
         ├── DeliveryMethodDetailPage.tsx  # Налаштування: isEnabled switch, Settings JSON, CheckoutFields editor (таблиця полів)
-        ├── PaymentMethodsPage.tsx
-        ├── OrderStatusesPage.tsx
-        ├── RolesPage.tsx        # CRUD ролей: таблиця, drawer з color picker (10 кольорів) + чекбокси сторінок
-        ├── SuppliersPage.tsx    # CRUD постачальників (drawer форма + popconfirm delete)
+        ├── PaymentMethodsPage.tsx      # ID колонка; кнопка "Редагувати" → navigate /settings/payment/:id
+        ├── OrderStatusesPage.tsx       # ID колонка; підтримка ?openId=X → відкриває drawer статусу
+        ├── RolesPage.tsx        # CRUD ролей: таблиця (ID колонка), drawer з color picker (10 кольорів) + чекбокси сторінок
+        │                        # Підтримка ?openId=X → відкриває drawer для ролі
+        ├── SuppliersPage.tsx    # CRUD постачальників (ID колонка, drawer форма + popconfirm delete)
+        │                        # Підтримка ?openId=X → відкриває drawer для постачальника
         ├── InfoPageEditPage.tsx # Редактор інформаційних сторінок (markdown textarea + save)
         └── constructor/
-            ├── ColorsPage.tsx
-            ├── MaterialsPage.tsx
-            ├── PrintColorsPage.tsx
-            ├── FontsPage.tsx
-            ├── PrintTypesPage.tsx   # CRUD типів друку (Name, Slug, PriceModifier, SortOrder, IsActive)
-            ├── EmblemsPage.tsx      # CRUD емблем + окремий SVG upload ліва/права
+            ├── ColorsPage.tsx       # ID колонка; підтримка ?openId=X
+            ├── MaterialsPage.tsx    # ID колонка; підтримка ?openId=X
+            ├── PrintColorsPage.tsx  # ID колонка; підтримка ?openId=X
+            ├── FontsPage.tsx        # ID колонка; підтримка ?openId=X
+            ├── PrintTypesPage.tsx   # CRUD типів друку (ID колонка; підтримка ?openId=X)
+            ├── EmblemsPage.tsx      # CRUD емблем + окремий SVG upload ліва/права (ID колонка; підтримка ?openId=X)
             │                        # Превью на білому фоні (56×56), upload тільки в drawer
             │                        # handleUpload(side, file) → uploadRibbonEmblemSvg(id, side, file)
             └── RulesPage.tsx        # Scratch-подібний UI для правил конструктора
@@ -355,10 +365,12 @@ src/
 |--------|------|------|
 | GET    | /api/v1/admin/audit-logs | Журнал дій (?entityType, entityId, adminId, action, from, to, page, pageSize) |
 
-**Трековані сутності:** Order, Product, User, Admin, Role, Delivery, Supplier, ProductCategory, ProductSubcategory
+**Трековані сутності (22):** Order, Product, User, Admin, Role, Delivery, Supplier, ProductCategory, ProductSubcategory, StockProduct, DeliveryMethod, PaymentMethod, OrderStatus, NotificationTriggerConfig, RibbonColor, RibbonMaterial, RibbonPrintColor, RibbonFont, RibbonPrintType, RibbonEmblem, ConstructorIncompatibility, ConstructorForcedText
 **Дії:** Create (snapshot scalar полів), Update (old→new змінених полів), Delete (soft-delete через IsDeleted flag)
 **adminId=null** → "Система" (seeder/background); **adminId=0** → Super Admin
 **Виключені поля:** PasswordHash, IsDeleted, CreatedAt, UpdatedAt
+**Constructor rule children**: ConstructorIncompatibilityTarget та ConstructorForcedTextValue мерджаться в parent-запис (SlugsB / Values: old→new) через `MergeChildChanges<T>` в AuditInterceptor
+**NotificationTriggerConfig**: рядковий PK (TriggerType), entityId зберігається як 0 в audit logs
 
 ### Сповіщення адмінів
 | Метод  | Шлях | Опис |
@@ -530,6 +542,13 @@ src/
 - Super Admin (id=0): тільки real-time push через SignalR, без запису в БД (немає рядка в таблиці Admins)
 - Email відправляється через `SendRawEmailAsync` якщо `EmailEnabled=true`; Telegram — конфіг є, відправки немає
 
+**URL-based drawer opening (`?openId=X`):**
+- Всі сторінки з drawer-редагуванням підтримують URL-параметр `?openId=X` — після завантаження даних автоматично відкривається drawer для запису з відповідним ID
+- Паттерн: `const initialOpenId = useRef(searchParams.get('openId'))` → після fetch знаходить item за ID, викликає `openEdit(item)`, очищає ref та URL (`setSearchParams({}, { replace: true })`)
+- CategoriesPage: також `?openSubcatId=X` — знаходить батьківську категорію, встановлює `selectedCategory`, відкриває sub-drawer
+- HistoryPage використовує `Link` (React Router) а не `<a href>` для навігації до сутностей
+- Всі таблиці мають колонку `ID` (width: 70px) як першу колонку
+
 **SalesByCategoryBlock (Block 9 дашборду)** — двоярусна кругова діаграма Recharts:
 - Внутрішнє кільце = категорії, зовнішнє = підкатегорії (вирівняні за кутом до батьківської категорії)
 - При наведенні на сектор — ліва панель показує заголовок (назва + кількість шт.) + топ 10 продуктів
@@ -635,4 +654,3 @@ location /hubs/ {
 ## TODO
 
 - [ ] Наповнити сторінки налаштувань (доставка, оплата, статуси, кольори)
-- [ ] Історія змін
