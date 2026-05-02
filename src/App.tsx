@@ -35,6 +35,8 @@ import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
 import NotificationsPage from './pages/settings/NotificationsPage'
+import PromotionsPage from './pages/settings/PromotionsPage'
+import PromoCodesPage from './pages/settings/PromoCodesPage'
 import HomeContentPage from './pages/settings/content/HomeContentPage'
 import AboutContentPage from './pages/settings/content/AboutContentPage'
 import CatalogContentPage from './pages/settings/content/CatalogContentPage'
@@ -82,6 +84,8 @@ export default function App() {
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
             <Route path="settings/notifications" element={<NotificationsPage />} />
+            <Route path="settings/promotions" element={<PromotionsPage />} />
+            <Route path="settings/promo-codes" element={<PromoCodesPage />} />
             <Route path="settings/content/home" element={<HomeContentPage />} />
             <Route path="settings/content/about" element={<AboutContentPage />} />
             <Route path="settings/content/catalog" element={<CatalogContentPage />} />

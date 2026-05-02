@@ -7,6 +7,7 @@ import {
   CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
   TruckOutlined, ShopOutlined, FileTextOutlined, ExperimentOutlined, FormatPainterOutlined,
   PrinterOutlined, FontSizeOutlined, PictureOutlined, ApartmentOutlined, BellOutlined,
+  PercentageOutlined, GiftOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
@@ -38,6 +39,8 @@ const ROUTE_KEYS = [
   '/settings/content/events',
   '/settings/content/contacts',
   '/settings/content',
+  '/settings/promotions',
+  '/settings/promo-codes',
   '/settings/categories',
   '/settings/delivery',
   '/settings/payment',
@@ -79,6 +82,8 @@ const ALL_MENU_ITEMS: MenuItem[] = [
       { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники', pageKey: 'settings.suppliers' },
       { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі', pageKey: 'settings.roles' },
       { key: '/settings/notifications', icon: <BellOutlined />, label: 'Сповіщення', pageKey: 'settings.notifications' },
+      { key: '/settings/promotions', icon: <PercentageOutlined />, label: 'Акції', pageKey: 'settings.promotions' },
+      { key: '/settings/promo-codes', icon: <GiftOutlined />, label: 'Промокоди', pageKey: 'settings.promotions' },
       {
         key: 'content',
         icon: <FileTextOutlined />,
