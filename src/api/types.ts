@@ -312,6 +312,7 @@ export interface AdminUserDetail {
   createdAt: string
   orders: AdminUserOrderSummary[]
   savedDesigns: AdminUserSavedDesign[]
+  hasGoogleId: boolean
 }
 
 // Warehouse / Stock types
