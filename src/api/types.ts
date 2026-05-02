@@ -196,6 +196,7 @@ export interface AdminUser {
   isPhoneVerified: boolean
   createdAt: string
   ordersCount: number
+  hasGoogleId: boolean
 }
 
 export interface AdminUserOrderSummary {
