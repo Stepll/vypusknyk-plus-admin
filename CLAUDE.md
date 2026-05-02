@@ -100,7 +100,10 @@ src/
     ├── users/
     │   ├── UsersPage.tsx          # Таблиця з колонкою "Тип" (тег Гість/Зареєстрований)
     │   │                          # Зелена галочка (CheckCircleFilled) при verified email/name/phone
+    │   │                          # Якщо hasGoogleId=true → замість галочки кольорова SVG іконка Google
     │   └── UserDetailPage.tsx     # Ліва колонка (xl=9): "Зв'язок з клієнтом" card
+    │                              # Якщо hasGoogleId=true → тег "Google" (з SVG іконкою) поруч з типом акаунту
+    │                              # (в заголовку і в рядку "Тип" info-картки)
     │                              #   Email: Drawer (тема + тіло → POST send-email)
     │                              #   SMS, Telegram бот, Viber бізнес-чат: disabled (Незабаром)
     │                              #   Viber: deep link viber://chat?number=+380...
@@ -462,8 +465,8 @@ src/
 - Відображення: `RibbonEditorPreview` отримує `names` як `string[]` (flatMap по classes)
 
 **Users (гостьові користувачі + верифікація):**
-- `AdminUser` — id, isGuest, email: string | null, fullName, phone?, createdAt, ordersCount, **isEmailVerified, isNameVerified, isPhoneVerified**
-- `AdminUserDetail` — + orders[], savedDesigns[], + всі verification поля
+- `AdminUser` — id, isGuest, email: string | null, fullName, phone?, createdAt, ordersCount, **isEmailVerified, isNameVerified, isPhoneVerified**, **hasGoogleId**
+- `AdminUserDetail` — + orders[], savedDesigns[], + всі verification поля, **hasGoogleId**
 - `PatchUserInfoRequest` — fullName?, phone?
 - `PatchUserVerificationRequest` — isEmailVerified?, isNameVerified?, isPhoneVerified?
 - `SendUserEmailRequest` — subject, body
