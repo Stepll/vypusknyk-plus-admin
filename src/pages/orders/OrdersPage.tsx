@@ -43,6 +43,26 @@ const OrdersPage = observer(() => {
       render: (v: number) => <strong>{v} грн</strong>,
     },
     {
+      title: 'Знижка',
+      key: 'discount',
+      render: (_: unknown, r: AdminOrder) => {
+        const tags = []
+        if (r.promotionDiscount > 0)
+          tags.push(
+            <Tag key="promo" color="green" style={{ marginBottom: 2 }}>
+              −{r.promotionDiscount} грн
+            </Tag>
+          )
+        if (r.promoCodeDiscount > 0)
+          tags.push(
+            <Tag key="code" color="purple" style={{ marginBottom: 2 }}>
+              −{r.promoCodeDiscount} грн
+            </Tag>
+          )
+        return tags.length > 0 ? <div>{tags}</div> : <span style={{ color: '#d9d9d9' }}>—</span>
+      },
+    },
+    {
       title: 'Статус',
       dataIndex: 'status',
       key: 'status',

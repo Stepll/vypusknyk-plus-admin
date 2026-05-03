@@ -53,6 +53,14 @@ export interface AdminOrder {
   recipient: { fullName: string; phone: string }
   delivery: { method: string; methodName: string; city: string | null; warehouse: string | null; postalCode: string | null }
   items: AdminOrderItem[]
+  promotionDiscount: number
+  promotionName: string | null
+  promotionDiscountType: 'Percentage' | 'FixedAmount' | null
+  promotionDiscountValue: number | null
+  promoCodeDiscount: number
+  promoCodeDisplayName: string | null
+  promoCodeDiscountType: 'Percentage' | 'FixedAmount' | null
+  promoCodeDiscountValue: number | null
 }
 
 export interface ProductCategoryResponse {

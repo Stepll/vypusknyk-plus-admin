@@ -235,15 +235,70 @@ export default function OrderDetailPage() {
               <OrderItemRow key={item.id} item={item} />
             ))}
 
-            {/* Total */}
-            <div style={{
-              display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-              gap: 16, paddingTop: 12, marginTop: 4,
-            }}>
-              <span style={{ fontSize: 15, color: '#8c8c8c' }}>Разом:</span>
-              <span style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e' }}>
-                {order.total.toFixed(2)} ₴
-              </span>
+            {/* Subtotal + discounts + total */}
+            <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 12, marginTop: 4 }}>
+              {/* Subtotal (before discounts) */}
+              {(order.promotionDiscount > 0 || order.promoCodeDiscount > 0) && (() => {
+                const subtotal = order.total + order.promotionDiscount + order.promoCodeDiscount
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, color: '#8c8c8c' }}>Сума без знижок:</span>
+                    <span style={{ fontSize: 13, color: '#8c8c8c', width: 110, textAlign: 'right' }}>
+                      {subtotal.toFixed(2)} ₴
+                    </span>
+                  </div>
+                )
+              })()}
+
+              {/* Promotion discount */}
+              {order.promotionDiscount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginBottom: 6 }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: 13, color: '#059669' }}>
+                      Акція «{order.promotionName}»
+                    </span>
+                    {order.promotionDiscountType && order.promotionDiscountValue != null && (
+                      <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 6 }}>
+                        ({order.promotionDiscountType === 'Percentage'
+                          ? `${order.promotionDiscountValue}%`
+                          : `${order.promotionDiscountValue} ₴`})
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 13, color: '#059669', fontWeight: 600, width: 110, textAlign: 'right' }}>
+                    −{order.promotionDiscount.toFixed(2)} ₴
+                  </span>
+                </div>
+              )}
+
+              {/* Promo code discount */}
+              {order.promoCodeDiscount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 16, marginBottom: 6 }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: 13, color: '#7c3aed' }}>
+                      Промокод «{order.promoCodeDisplayName}»
+                    </span>
+                    {order.promoCodeDiscountType && order.promoCodeDiscountValue != null && (
+                      <span style={{ fontSize: 12, color: '#8c8c8c', marginLeft: 6 }}>
+                        ({order.promoCodeDiscountType === 'Percentage'
+                          ? `${order.promoCodeDiscountValue}%`
+                          : `${order.promoCodeDiscountValue} ₴`})
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 13, color: '#7c3aed', fontWeight: 600, width: 110, textAlign: 'right' }}>
+                    −{order.promoCodeDiscount.toFixed(2)} ₴
+                  </span>
+                </div>
+              )}
+
+              {/* Final total */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 16, paddingTop: 8 }}>
+                <span style={{ fontSize: 15, color: '#8c8c8c' }}>До сплати:</span>
+                <span style={{ fontSize: 20, fontWeight: 700, color: '#1a1a2e', width: 110, textAlign: 'right' }}>
+                  {order.total.toFixed(2)} ₴
+                </span>
+              </div>
             </div>
           </Card>
         </Col>
