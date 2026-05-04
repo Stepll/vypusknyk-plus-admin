@@ -8,6 +8,7 @@ export const TASK_TYPE_LABELS: Record<string, string> = {
   TotalSpent: 'Загальна сума витрат',
   OrderAmount: 'Сума одного замовлення',
   CategoryOrders: 'Замовлення з категорії',
+  AccountActivation: 'Активація акаунту',
 }
 
 export const TASK_TYPE_WITH_TARGET: Record<string, string> = {
