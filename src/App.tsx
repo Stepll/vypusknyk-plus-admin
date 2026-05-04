@@ -39,6 +39,8 @@ import PromotionsPage from './pages/settings/PromotionsPage'
 import PromotionEditPage from './pages/settings/PromotionEditPage'
 import PromoCodesPage from './pages/settings/PromoCodesPage'
 import PromoCodeEditPage from './pages/settings/PromoCodeEditPage'
+import TasksPage from './pages/settings/TasksPage'
+import TaskEditPage from './pages/settings/TaskEditPage'
 import HomeContentPage from './pages/settings/content/HomeContentPage'
 import AboutContentPage from './pages/settings/content/AboutContentPage'
 import CatalogContentPage from './pages/settings/content/CatalogContentPage'
@@ -90,6 +92,8 @@ export default function App() {
             <Route path="settings/promotions/:id" element={<PromotionEditPage />} />
             <Route path="settings/promo-codes" element={<PromoCodesPage />} />
             <Route path="settings/promo-codes/:id" element={<PromoCodeEditPage />} />
+            <Route path="settings/tasks" element={<TasksPage />} />
+            <Route path="settings/tasks/:id" element={<TaskEditPage />} />
             <Route path="settings/content/home" element={<HomeContentPage />} />
             <Route path="settings/content/about" element={<AboutContentPage />} />
             <Route path="settings/content/catalog" element={<CatalogContentPage />} />

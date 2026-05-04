@@ -54,9 +54,9 @@ export default function PromoCodesPage() {
       title: 'Код',
       dataIndex: 'code',
       key: 'code',
-      render: (code: string) => (
-        <Tag style={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: 1 }}>{code}</Tag>
-      ),
+      render: (code: string | null) => code
+        ? <Tag style={{ fontFamily: 'monospace', fontWeight: 600, letterSpacing: 1 }}>{code}</Tag>
+        : <span style={{ color: '#bfbfbf' }}>тільки за завдання</span>,
     },
     {
       title: 'Знижка',

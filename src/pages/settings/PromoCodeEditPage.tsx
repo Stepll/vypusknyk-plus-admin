@@ -142,8 +142,9 @@ export default function PromoCodeEditPage() {
     setSaving(true)
     try {
       const [start, end] = (values.dateRange as [dayjs.Dayjs | null, dayjs.Dayjs | null] | undefined) ?? [null, null]
+      const rawCode = (values.code as string | undefined)?.trim()
       const req: SavePromoCodeRequest = {
-        code: (values.code as string).trim().toUpperCase(),
+        code: rawCode ? rawCode.toUpperCase() : undefined,
         displayName: values.displayName as string,
         cardColor,
         description: values.description as string | undefined,
@@ -202,9 +203,13 @@ export default function PromoCodeEditPage() {
             <Input placeholder="Весняна знижка" />
           </Form.Item>
 
-          <Form.Item label="Код (прихований від юзера)" name="code" rules={[{ required: true, message: 'Введіть код' }]}>
+          <Form.Item
+            label="Код (для ручної активації)"
+            name="code"
+            extra="Залиште порожнім для промокодів, які видаються тільки через завдання"
+          >
             <Input
-              placeholder="SPRING2025"
+              placeholder="SPRING2025 (необов'язково)"
               style={{ fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: 1 }}
               addonAfter={
                 <Button

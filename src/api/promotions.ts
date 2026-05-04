@@ -88,7 +88,7 @@ export interface AdminPromoCodeResponse {
 }
 
 export interface SavePromoCodeRequest {
-  code: string
+  code?: string
   displayName: string
   cardColor: string
   description?: string
