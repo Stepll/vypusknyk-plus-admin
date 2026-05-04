@@ -1,18 +1,36 @@
 import { apiFetch } from './client'
 
+export interface PromotionTargetDto {
+  categoryId?: number
+  categoryName?: string
+  subcategoryId?: number
+  subcategoryName?: string
+}
+
+export interface VolumeTierDto {
+  id: number
+  minQty: number
+  discountType: string
+  discountValue: number
+}
+
+export interface BundleItemDto {
+  id: number
+  subcategoryId: number
+  subcategoryName: string
+  requiredQty: number
+}
+
 export interface AdminPromotionResponse {
   id: number
   name: string
   description?: string
   discountType: 'Percentage' | 'FixedAmount'
   discountValue: number
-  scope: 'Global' | 'Category' | 'Subcategory' | 'Product'
-  categoryId?: number
-  categoryName?: string
-  subcategoryId?: number
-  subcategoryName?: string
-  productId?: number
-  productName?: string
+  scope: 'Global' | 'Category' | 'Volume' | 'Bundle'
+  targets: PromotionTargetDto[]
+  volumeTiers: VolumeTierDto[]
+  bundleItems: BundleItemDto[]
   minOrderAmount?: number
   startsAt?: string
   endsAt?: string
@@ -22,15 +40,27 @@ export interface AdminPromotionResponse {
   status: 'active' | 'upcoming' | 'expired' | 'inactive'
 }
 
+export interface SaveVolumeTierRequest {
+  minQty: number
+  discountType: string
+  discountValue: number
+}
+
+export interface SaveBundleItemRequest {
+  subcategoryId: number
+  requiredQty: number
+}
+
 export interface SavePromotionRequest {
   name: string
   description?: string
   discountType: string
   discountValue: number
   scope: string
-  categoryId?: number
-  subcategoryId?: number
-  productId?: number
+  targetCategoryIds: number[]
+  targetSubcategoryIds: number[]
+  volumeTiers: SaveVolumeTierRequest[]
+  bundleItems: SaveBundleItemRequest[]
   minOrderAmount?: number
   startsAt?: string
   endsAt?: string
@@ -74,6 +104,9 @@ export interface SavePromoCodeRequest {
 
 export const getAdminPromotions = (): Promise<AdminPromotionResponse[]> =>
   apiFetch('/api/v1/admin/promotions')
+
+export const getAdminPromotion = (id: number): Promise<AdminPromotionResponse> =>
+  apiFetch(`/api/v1/admin/promotions/${id}`)
 
 export const createPromotion = (data: SavePromotionRequest): Promise<AdminPromotionResponse> =>
   apiFetch('/api/v1/admin/promotions', { method: 'POST', body: JSON.stringify(data) })
