@@ -44,6 +44,9 @@ const ENTITY_ROUTE: Record<string, (id: number) => string> = {
   RibbonEmblem: (id) => `/settings/constructor/emblems?openId=${id}`,
   ConstructorIncompatibility: (id) => `/settings/constructor/rules?openId=${id}`,
   ConstructorForcedText: (id) => `/settings/constructor/rules?openForcedId=${id}`,
+  Promotion: (id) => `/settings/promotions/${id}`,
+  PromoCode: (id) => `/settings/promo-codes/${id}`,
+  UserTask: (id) => `/settings/tasks/${id}`,
 }
 
 interface FieldChange {

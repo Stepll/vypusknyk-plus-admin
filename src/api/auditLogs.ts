@@ -52,6 +52,9 @@ export const AUDIT_ENTITY_TYPES: Record<string, string> = {
   RibbonEmblem: 'Емблема',
   ConstructorIncompatibility: 'Несумісність',
   ConstructorForcedText: 'Фіксований текст',
+  Promotion: 'Акція',
+  PromoCode: 'Промокод',
+  UserTask: 'Завдання',
 };
 
 export const AUDIT_ACTIONS: Record<string, string> = {
@@ -88,6 +91,21 @@ export const AUDIT_FIELD_NAMES: Record<string, string> = {
   CategoryId: 'Категорія',
   SubcategoryId: 'Підкатегорія',
   Order: 'Порядок',
+  DiscountType: 'Тип знижки',
+  DiscountValue: 'Розмір знижки',
+  MinOrderAmount: 'Мін. сума замовлення',
+  MaxUsages: 'Ліміт використань',
+  IsOneTimePerUser: 'Один раз на юзера',
+  Scope: 'Тип акції',
+  Code: 'Код',
+  CardColor: 'Колір картки',
+  DisplayName: 'Назва картки',
+  TaskType: 'Тип завдання',
+  TargetValue: 'Цільове значення',
+  TargetCategoryId: 'Категорія',
+  RewardPromoCodeId: 'Нагорода (промокод)',
+  IsVisibleToGuests: 'Видно гостям',
+  EndsAt: 'Дедлайн',
 };
 
 export async function getAuditLogs(filters: AuditLogFilters = {}): Promise<AuditLogsPagedResponse> {

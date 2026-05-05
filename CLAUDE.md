@@ -39,7 +39,16 @@ src/
 │   ├── ribbonEmblems.ts       # CRUD /admin/ribbon-emblems + uploadRibbonEmblemSvg(id, side, file)
 │   ├── constructorRules.ts    # CRUD /admin/constructor-rules/incompatibilities + /forced-texts
 │   ├── chat.ts                # ChatMessageDto, ChatConversationListItem; getConversations(), getConversationMessages(id)
+│   ├── promotions.ts          # AdminPromotionResponse (scope: Global/Category/Volume/Bundle, targets[], volumeTiers[], bundleItems[]),
+│   │                          # AdminPromoCodeResponse (code?: string — nullable для task-only),
+│   │                          # SavePromotionRequest (targetCategoryIds[], targetSubcategoryIds[], volumeTiers[], bundleItems[]),
+│   │                          # SavePromoCodeRequest (code?: string — optional),
+│   │                          # CartItemForDiscount, getAdminPromotions, getAdminPromotion(id), getAdminPromoCodes,
+│   │                          # createPromotion/updatePromotion/deletePromotion, createPromoCode/updatePromoCode/deletePromoCode
+│   ├── tasks.ts               # AdminTaskResponse, SaveTaskRequest, TASK_TYPE_LABELS, TASK_TYPE_WITH_TARGET,
+│   │                          # TASK_TYPE_NEEDS_CATEGORY, getAdminTasks, createTask, updateTask, deleteTask
 │   ├── auditLogs.ts           # AuditLogResponse, AUDIT_ENTITY_TYPES/ACTIONS/FIELD_NAMES maps, getAuditLogs(filters)
+│   │                          # AUDIT_ENTITY_TYPES включає: Promotion, PromoCode, UserTask (+поля знижок/завдань)
 │   └── notifications.ts       # AdminNotificationDto, NotificationTriggerConfigResponse (+emailSubject/emailMessage/
 │                              # telegramMessage/systemTitle/systemMessage), UpdateNotificationTriggerConfigRequest,
 │                              # NotificationAdminRecipientDto; getMyNotifications, getUnreadCount, markNotificationRead,
@@ -128,6 +137,17 @@ src/
     ├── chats/
     │   └── ChatsPage.tsx        # Full-page Telegram-like чат; header з іконкою
     │                             # margin: '0 -28px -24px' для ChatPanel (притискає до країв)
+    ├── settings/
+    │   ├── PromotionsPage.tsx       # Список акцій → navigate /settings/promotions/:id
+    │   ├── PromotionEditPage.tsx    # Редактор: scope (Global/Category/Volume/Bundle), цільові категорії/підкатегорії,
+    │   │                            # таблиця volume тирів, bundle items, дати, switches
+    │   ├── PromoCodesPage.tsx       # Список промокодів; Code null → "тільки за завдання"
+    │   ├── PromoCodeEditPage.tsx    # Редактор з live CardPreview; Code — optional (task-only promo codes)
+    │   │                            # Preset кольори + ColorPicker; generate code кнопка
+    │   ├── TasksPage.tsx            # Список завдань: тип (Tag), нагорода (кольор.крапка+назва), виконань
+    │   └── TaskEditPage.tsx         # Редактор: taskType Select → умовний targetValue input (з одиницями),
+    │                                # targetCategoryId для CategoryOrders, reward PromoCode Select (з кольоровим dot),
+    │                                # DatePicker дедлайн, switches (isActive, isVisibleToGuests)
     ├── history/
     │   └── HistoryPage.tsx      # Таблиця audit-логів: фільтри (тип сутності multi-select + "Вибрати всі",
     │                             # адмін, дія, діапазон дат)
@@ -138,6 +158,8 @@ src/
     │                             #   ProductSubcategory → ?openSubcatId=X; DeliveryMethod → /settings/delivery/:id;
     │                             #   Warehouse/RibbonColors/Materials/PrintColors/Fonts/PrintTypes/Emblems → ?openId=X;
     │                             #   ConstructorIncompatibility/ForcedText → /rules?openId=X/?openForcedId=X
+│                             #   Promotion → /settings/promotions/:id; PromoCode → /settings/promo-codes/:id
+│                             #   UserTask → /settings/tasks/:id
     └── settings/
         ├── NotificationsPage.tsx  # Таблиця тригерів: new_order, order_status_changed (expandable з per-status дочірніми),
         │                          # new_user. Drawer: таби System/Email/Telegram + Divider перед шаблоном + MetadataTable
@@ -190,6 +212,12 @@ src/
 /deliveries         → DeliveriesPage
 /deliveries/new     → NewDeliveryPage
 /deliveries/:id     → DeliveryDetailPage
+/settings/promotions         → PromotionsPage
+/settings/promotions/:id     → PromotionEditPage
+/settings/promo-codes        → PromoCodesPage
+/settings/promo-codes/:id    → PromoCodeEditPage
+/settings/tasks              → TasksPage
+/settings/tasks/:id          → TaskEditPage
 /settings/delivery           → DeliveryMethodsPage
 /settings/delivery/:id       → DeliveryMethodDetailPage
 /settings/suppliers          → SuppliersPage
@@ -238,6 +266,10 @@ src/
     Емблеми          (/settings/constructor/emblems)
     Правила          (/settings/constructor/rules)
   Сповіщення             (/settings/notifications)
+  Знижки та завдання ▶   (підменю)
+    Акції                (/settings/promotions)
+    Промокоди            (/settings/promo-codes)
+    Завдання             (/settings/tasks)
 ```
 
 ## API ендпоінти (бекенд)
@@ -363,12 +395,34 @@ src/
 **Slugs:** `home`, `about`, `catalog`, `constructors`, `events`, `contacts`
 **Seeder:** `PageContentSeeder` ініціалізує дефолтний контент при старті бекенду
 
+### Акції та Промокоди
+| Метод  | Шлях | Опис |
+|--------|------|------|
+| GET    | /api/v1/admin/promotions | Список акцій |
+| GET    | /api/v1/admin/promotions/{id} | Деталі акції |
+| POST   | /api/v1/admin/promotions | Створити |
+| PUT    | /api/v1/admin/promotions/{id} | Оновити |
+| DELETE | /api/v1/admin/promotions/{id} | Soft delete |
+| GET    | /api/v1/admin/promo-codes | Список промокодів |
+| POST   | /api/v1/admin/promo-codes | Створити (Code — optional, null для task-only) |
+| PUT    | /api/v1/admin/promo-codes/{id} | Оновити |
+| DELETE | /api/v1/admin/promo-codes/{id} | Soft delete |
+
+### Завдання
+| Метод  | Шлях | Опис |
+|--------|------|------|
+| GET    | /api/v1/admin/tasks | Список завдань |
+| POST   | /api/v1/admin/tasks | Створити |
+| PUT    | /api/v1/admin/tasks/{id} | Оновити |
+| DELETE | /api/v1/admin/tasks/{id} | Soft delete |
+| GET    | /api/v1/tasks | Публічний список (авторизований — з прогресом, фільтрує виконані) |
+
 ### Аудит-лог
 | Метод  | Шлях | Опис |
 |--------|------|------|
 | GET    | /api/v1/admin/audit-logs | Журнал дій (?entityType, entityId, adminId, action, from, to, page, pageSize) |
 
-**Трековані сутності (22):** Order, Product, User, Admin, Role, Delivery, Supplier, ProductCategory, ProductSubcategory, StockProduct, DeliveryMethod, PaymentMethod, OrderStatus, NotificationTriggerConfig, RibbonColor, RibbonMaterial, RibbonPrintColor, RibbonFont, RibbonPrintType, RibbonEmblem, ConstructorIncompatibility, ConstructorForcedText
+**Трековані сутності (25):** Order, Product, User, Admin, Role, Delivery, Supplier, ProductCategory, ProductSubcategory, StockProduct, DeliveryMethod, PaymentMethod, OrderStatus, NotificationTriggerConfig, RibbonColor, RibbonMaterial, RibbonPrintColor, RibbonFont, RibbonPrintType, RibbonEmblem, ConstructorIncompatibility, ConstructorForcedText, Promotion, PromoCode, UserTask
 **Дії:** Create (snapshot scalar полів), Update (old→new змінених полів), Delete (soft-delete через IsDeleted flag)
 **adminId=null** → "Система" (seeder/background); **adminId=0** → Super Admin
 **Виключені поля:** PasswordHash, IsDeleted, CreatedAt, UpdatedAt

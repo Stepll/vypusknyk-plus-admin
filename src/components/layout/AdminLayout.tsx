@@ -83,9 +83,16 @@ const ALL_MENU_ITEMS: MenuItem[] = [
       { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники', pageKey: 'settings.suppliers' },
       { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі', pageKey: 'settings.roles' },
       { key: '/settings/notifications', icon: <BellOutlined />, label: 'Сповіщення', pageKey: 'settings.notifications' },
-      { key: '/settings/promotions', icon: <PercentageOutlined />, label: 'Акції', pageKey: 'settings.promotions' },
-      { key: '/settings/promo-codes', icon: <GiftOutlined />, label: 'Промокоди', pageKey: 'settings.promotions' },
-      { key: '/settings/tasks', icon: <TrophyOutlined />, label: 'Завдання', pageKey: 'settings.promotions' },
+      {
+        key: 'discounts',
+        icon: <PercentageOutlined />,
+        label: 'Знижки та завдання',
+        children: [
+          { key: '/settings/promotions', icon: <PercentageOutlined />, label: 'Акції', pageKey: 'settings.promotions' },
+          { key: '/settings/promo-codes', icon: <GiftOutlined />, label: 'Промокоди', pageKey: 'settings.promotions' },
+          { key: '/settings/tasks', icon: <TrophyOutlined />, label: 'Завдання', pageKey: 'settings.promotions' },
+        ],
+      },
       {
         key: 'content',
         icon: <FileTextOutlined />,
@@ -160,6 +167,7 @@ const AdminLayout = observer(() => {
     if (pathname.startsWith('/settings/constructor')) return ['settings', 'constructor']
     if (pathname.startsWith('/settings/info-pages')) return ['settings', 'info-pages']
     if (pathname.startsWith('/settings/content')) return ['settings', 'content']
+    if (pathname.startsWith('/settings/promotions') || pathname.startsWith('/settings/promo-codes') || pathname.startsWith('/settings/tasks')) return ['settings', 'discounts']
     if (pathname.startsWith('/settings')) return ['settings']
     return []
   })
@@ -194,7 +202,7 @@ const AdminLayout = observer(() => {
           openKeys={openKeys}
           onOpenChange={keys => setOpenKeys(keys as string[])}
           items={menuItems}
-          onClick={({ key }) => { if (!['settings', 'constructor', 'info-pages', 'content'].includes(key)) navigate(key) }}
+          onClick={({ key }) => { if (!['settings', 'constructor', 'info-pages', 'content', 'discounts'].includes(key)) navigate(key) }}
           style={{ background: 'transparent', border: 'none' }}
         />
       </Sider>
