@@ -1,37 +1,62 @@
 import { useEffect, useState } from 'react'
-import { Input, Table } from 'antd'
+import { Input, Table, Tabs, Tag } from 'antd'
 import { HeartOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { getSavedDesigns } from '../../api/designs'
-import type { AdminSavedDesignItem } from '../../api/types'
+import { getBadgeDesigns } from '../../api/badgeDesigns'
+import type { AdminSavedDesignItem, AdminSavedBadgeDesignItem } from '../../api/types'
 import RibbonEditorPreview from '../../components/RibbonEditorPreview'
 import type { RibbonColor, TextColor, ExtraTextColor, Font } from '../../constants/ribbonRules'
 
+const pageSize = 20
+
 export default function SavedDesignsPage() {
   const navigate = useNavigate()
-  const [items, setItems] = useState<AdminSavedDesignItem[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'ribbon' | 'badge'>('ribbon')
+
+  const [ribbonItems, setRibbonItems] = useState<AdminSavedDesignItem[]>([])
+  const [ribbonTotal, setRibbonTotal] = useState(0)
+  const [ribbonPage, setRibbonPage] = useState(1)
+  const [ribbonLoading, setRibbonLoading] = useState(false)
+
+  const [badgeItems, setBadgeItems] = useState<AdminSavedBadgeDesignItem[]>([])
+  const [badgeTotal, setBadgeTotal] = useState(0)
+  const [badgePage, setBadgePage] = useState(1)
+  const [badgeLoading, setBadgeLoading] = useState(false)
+
   const [search, setSearch] = useState('')
-  const pageSize = 20
 
   useEffect(() => {
-    setLoading(true)
-    getSavedDesigns(page, pageSize)
-      .then(res => { setItems(res.items); setTotal(res.total) })
-      .finally(() => setLoading(false))
-  }, [page])
+    setRibbonLoading(true)
+    getSavedDesigns(ribbonPage, pageSize)
+      .then(res => { setRibbonItems(res.items); setRibbonTotal(res.total) })
+      .finally(() => setRibbonLoading(false))
+  }, [ribbonPage])
 
-  const filtered = search.trim()
-    ? items.filter(d =>
+  useEffect(() => {
+    setBadgeLoading(true)
+    getBadgeDesigns(badgePage, pageSize)
+      .then(res => { setBadgeItems(res.items); setBadgeTotal(res.total) })
+      .finally(() => setBadgeLoading(false))
+  }, [badgePage])
+
+  const filteredRibbons = search.trim()
+    ? ribbonItems.filter(d =>
         d.userFullName.toLowerCase().includes(search.toLowerCase()) ||
-        d.userEmail.toLowerCase().includes(search.toLowerCase()) ||
+        (d.userEmail ?? '').toLowerCase().includes(search.toLowerCase()) ||
         d.designName.toLowerCase().includes(search.toLowerCase())
       )
-    : items
+    : ribbonItems
 
-  const columns = [
+  const filteredBadges = search.trim()
+    ? badgeItems.filter(d =>
+        d.userFullName.toLowerCase().includes(search.toLowerCase()) ||
+        (d.userEmail ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        d.designName.toLowerCase().includes(search.toLowerCase())
+      )
+    : badgeItems
+
+  const ribbonColumns = [
     {
       title: 'Превью',
       key: 'preview',
@@ -73,6 +98,54 @@ export default function SavedDesignsPage() {
     },
   ]
 
+  const badgeColumns = [
+    {
+      title: 'Превью',
+      key: 'preview',
+      width: 100,
+      render: (_: unknown, row: AdminSavedBadgeDesignItem) => (
+        <div style={{
+          width: 72, height: 72, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #e91e8c 0%, #8b5cf6 100%)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#fff', fontSize: 11, fontWeight: 700, textAlign: 'center',
+          padding: 6, lineHeight: 1.2,
+        }}>
+          {row.state.topText ? row.state.topText.slice(0, 12) : '•'}
+        </div>
+      ),
+    },
+    {
+      title: 'Назва',
+      key: 'info',
+      render: (_: unknown, row: AdminSavedBadgeDesignItem) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{row.designName}</div>
+          {row.state.topText && <div style={{ fontSize: 13, color: '#555' }}>Верх: {row.state.topText}</div>}
+          {row.state.bottomText && <div style={{ fontSize: 13, color: '#555' }}>Низ: {row.state.bottomText}</div>}
+          <div style={{ color: '#8c8c8c', fontSize: 12 }}>{row.userFullName}</div>
+          <div style={{ color: '#8c8c8c', fontSize: 12 }}>{row.userEmail}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Тип',
+      key: 'type',
+      width: 80,
+      render: () => <Tag color="purple">Значок</Tag>,
+    },
+    {
+      title: 'Збережено',
+      dataIndex: 'savedAt',
+      key: 'savedAt',
+      width: 130,
+      render: (v: string) => new Date(v).toLocaleString('uk-UA', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      }),
+    },
+  ]
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
@@ -98,22 +171,50 @@ export default function SavedDesignsPage() {
         allowClear
       />
 
-      <Table
-        rowKey="id"
-        dataSource={filtered}
-        columns={columns}
-        loading={loading}
-        pagination={{ current: page, pageSize, total, onChange: setPage }}
-        onRow={record => ({ onClick: () => navigate(`/designs/${record.id}`) })}
-        rowClassName={() => 'clickable-row'}
-        style={{ cursor: 'pointer' }}
-        components={{
-          body: {
-            row: (props: React.HTMLAttributes<HTMLTableRowElement>) => (
-              <tr {...props} style={{ ...props.style, height: 200 }} />
+      <Tabs
+        activeKey={activeTab}
+        onChange={k => setActiveTab(k as 'ribbon' | 'badge')}
+        items={[
+          {
+            key: 'ribbon',
+            label: `Стрічки (${ribbonTotal})`,
+            children: (
+              <Table
+                rowKey="id"
+                dataSource={filteredRibbons}
+                columns={ribbonColumns}
+                loading={ribbonLoading}
+                pagination={{ current: ribbonPage, pageSize, total: ribbonTotal, onChange: setRibbonPage }}
+                onRow={record => ({ onClick: () => navigate(`/designs/${record.id}`) })}
+                rowClassName={() => 'clickable-row'}
+                style={{ cursor: 'pointer' }}
+                components={{
+                  body: {
+                    row: (props: React.HTMLAttributes<HTMLTableRowElement>) => (
+                      <tr {...props} style={{ ...props.style, height: 200 }} />
+                    ),
+                  },
+                }}
+              />
             ),
           },
-        }}
+          {
+            key: 'badge',
+            label: `Значки (${badgeTotal})`,
+            children: (
+              <Table
+                rowKey="id"
+                dataSource={filteredBadges}
+                columns={badgeColumns}
+                loading={badgeLoading}
+                pagination={{ current: badgePage, pageSize, total: badgeTotal, onChange: setBadgePage }}
+                onRow={record => ({ onClick: () => navigate(`/designs/badge/${record.id}`) })}
+                rowClassName={() => 'clickable-row'}
+                style={{ cursor: 'pointer' }}
+              />
+            ),
+          },
+        ]}
       />
     </div>
   )

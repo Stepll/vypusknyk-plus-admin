@@ -255,6 +255,35 @@ export interface AdminSavedDesignDetail extends AdminSavedDesignItem {
   state: RibbonState
 }
 
+export interface BadgeDesignState {
+  sizeId: number
+  topText: string
+  bottomText: string
+  photoUrl: string | null
+  photoTransform: { scale: number; x: number; y: number; rotation: number }
+  textColorId: number
+  fontSize: number
+  fontSlug: string
+  comment: string
+}
+
+export interface AdminSavedBadgeDesignItem {
+  id: number
+  designName: string
+  savedAt: string
+  userId: number
+  userFullName: string
+  userEmail: string | null
+  state: BadgeDesignState
+}
+
+export interface AdminUserSavedBadgeDesign {
+  id: number
+  designName: string
+  savedAt: string
+  state: BadgeDesignState
+}
+
 export interface RoleInfo {
   id: number
   name: string

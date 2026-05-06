@@ -10,7 +10,8 @@ import {
 } from '@ant-design/icons'
 import { getUser, patchUserInfo, patchUserVerification, sendUserActivationEmail } from '../../api/users'
 import { apiFetch } from '../../api/client'
-import type { AdminUserDetail, AdminUserOrderSummary } from '../../api/types'
+import { getBadgeDesignsByUser } from '../../api/badgeDesigns'
+import type { AdminUserDetail, AdminUserOrderSummary, AdminUserSavedBadgeDesign } from '../../api/types'
 
 const GoogleSvg = () => (
   <svg viewBox="0 0 24 24" width="12" height="12" style={{ flexShrink: 0 }}>
@@ -233,10 +234,48 @@ const LABEL_STYLE: React.CSSProperties = {
   flexShrink: 0,
 }
 
+const badgeDesignColumns = (navigate: (path: string) => void) => [
+  {
+    title: 'Назва дизайну',
+    key: 'name',
+    render: (_: unknown, row: AdminUserSavedBadgeDesign) => (
+      <div>
+        <div style={{ fontWeight: 500 }}>{row.designName}</div>
+        {row.state.topText && <div style={{ fontSize: 12, color: '#8c8c8c' }}>Верх: {row.state.topText}</div>}
+        {row.state.bottomText && <div style={{ fontSize: 12, color: '#8c8c8c' }}>Низ: {row.state.bottomText}</div>}
+      </div>
+    ),
+  },
+  {
+    title: 'Збережено',
+    dataIndex: 'savedAt',
+    key: 'savedAt',
+    render: (v: string) => new Date(v).toLocaleString('uk-UA', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    }),
+  },
+  {
+    title: '',
+    key: 'actions',
+    width: 80,
+    render: (_: unknown, row: AdminUserSavedBadgeDesign) => (
+      <Button
+        size="small"
+        type="link"
+        onClick={() => navigate(`/designs/badge/${row.id}`)}
+      >
+        Деталі
+      </Button>
+    ),
+  },
+]
+
 export default function UserDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [user, setUser] = useState<AdminUserDetail | null>(null)
+  const [badgeDesigns, setBadgeDesigns] = useState<AdminUserSavedBadgeDesign[]>([])
   const [loading, setLoading] = useState(true)
   const [sendingEmail, setSendingEmail] = useState(false)
 
@@ -246,8 +285,15 @@ export default function UserDetailPage() {
   const [sendingCustomEmail, setSendingCustomEmail] = useState(false)
 
   useEffect(() => {
-    getUser(Number(id))
-      .then(setUser)
+    const userId = Number(id)
+    Promise.all([
+      getUser(userId),
+      getBadgeDesignsByUser(userId).catch(() => []),
+    ])
+      .then(([userData, badgeData]) => {
+        setUser(userData)
+        setBadgeDesigns(badgeData)
+      })
       .catch(() => { message.error('Не вдалося завантажити користувача'); navigate('/users') })
       .finally(() => setLoading(false))
   }, [id, navigate])
@@ -492,7 +538,7 @@ export default function UserDetailPage() {
 
                   <div style={ROW_STYLE}>
                     <span style={LABEL_STYLE}>Дизайнів</span>
-                    <span style={{ fontSize: 14 }}>{user.savedDesigns.length}</span>
+                    <span style={{ fontSize: 14 }}>{user.savedDesigns.length + badgeDesigns.length}</span>
                   </div>
 
                 </div>
@@ -523,10 +569,10 @@ export default function UserDetailPage() {
           </Card>
 
           <Card
-            style={{ borderRadius: 12 }}
+            style={{ borderRadius: 12, marginBottom: 16 }}
             title={
               <span style={{ fontSize: 14, fontWeight: 600 }}>
-                Збережені дизайни{user.savedDesigns.length > 0 && ` (${user.savedDesigns.length})`}
+                Дизайни стрічок{user.savedDesigns.length > 0 && ` (${user.savedDesigns.length})`}
               </span>
             }
           >
@@ -537,6 +583,27 @@ export default function UserDetailPage() {
               pagination={false}
               size="small"
               locale={{ emptyText: 'Немає збережених дизайнів' }}
+              onRow={record => ({ onClick: () => navigate(`/designs/${record.id}`) })}
+              rowClassName={() => 'clickable-row'}
+              style={{ cursor: 'pointer' }}
+            />
+          </Card>
+
+          <Card
+            style={{ borderRadius: 12 }}
+            title={
+              <span style={{ fontSize: 14, fontWeight: 600 }}>
+                Дизайни значків{badgeDesigns.length > 0 && ` (${badgeDesigns.length})`}
+              </span>
+            }
+          >
+            <Table
+              rowKey="id"
+              dataSource={badgeDesigns}
+              columns={badgeDesignColumns(navigate)}
+              pagination={false}
+              size="small"
+              locale={{ emptyText: 'Немає збережених дизайнів значків' }}
             />
           </Card>
         </Col>
