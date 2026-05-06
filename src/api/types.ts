@@ -785,6 +785,20 @@ export interface SaveRibbonMaterialRequest {
   sortOrder: number
 }
 
+export interface BadgeImageResponse {
+  id: number
+  name: string
+  imageUrl: string | null
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveBadgeImageRequest {
+  name: string
+  isActive: boolean
+  sortOrder: number
+}
+
 export interface BadgeSizeResponse {
   id: number
   name: string
