@@ -4,8 +4,11 @@ import { HeartOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { getSavedDesigns } from '../../api/designs'
 import { getBadgeDesigns } from '../../api/badgeDesigns'
-import type { AdminSavedDesignItem, AdminSavedBadgeDesignItem } from '../../api/types'
+import { getBadgeTextColors } from '../../api/badgeTextColors'
+import { getBadgeFonts } from '../../api/badgeFonts'
+import type { AdminSavedDesignItem, AdminSavedBadgeDesignItem, BadgeTextColorResponse, BadgeFontResponse } from '../../api/types'
 import RibbonEditorPreview from '../../components/RibbonEditorPreview'
+import BadgeStaticPreview from '../../components/BadgeStaticPreview'
 import type { RibbonColor, TextColor, ExtraTextColor, Font } from '../../constants/ribbonRules'
 
 const pageSize = 20
@@ -25,6 +28,14 @@ export default function SavedDesignsPage() {
   const [badgeLoading, setBadgeLoading] = useState(false)
 
   const [search, setSearch] = useState('')
+
+  const [textColors, setTextColors] = useState<BadgeTextColorResponse[]>([])
+  const [fonts, setFonts] = useState<BadgeFontResponse[]>([])
+
+  useEffect(() => {
+    Promise.all([getBadgeTextColors(), getBadgeFonts()])
+      .then(([tc, f]) => { setTextColors(tc); setFonts(f) })
+  }, [])
 
   useEffect(() => {
     setRibbonLoading(true)
@@ -103,17 +114,24 @@ export default function SavedDesignsPage() {
       title: 'Превью',
       key: 'preview',
       width: 100,
-      render: (_: unknown, row: AdminSavedBadgeDesignItem) => (
-        <div style={{
-          width: 72, height: 72, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #e91e8c 0%, #8b5cf6 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#fff', fontSize: 11, fontWeight: 700, textAlign: 'center',
-          padding: 6, lineHeight: 1.2,
-        }}>
-          {row.state.topText ? row.state.topText.slice(0, 12) : '•'}
-        </div>
-      ),
+      render: (_: unknown, row: AdminSavedBadgeDesignItem) => {
+        const colorHex   = textColors.find(c => c.id === row.state.textColorId)?.hex ?? '#1a1a2e'
+        const fontFamily = fonts.find(f => f.slug === row.state.fontSlug)?.fontFamily ?? 'Arial, sans-serif'
+        return (
+          <div style={{ pointerEvents: 'none' }}>
+            <BadgeStaticPreview
+              photoUrl={row.state.photoUrl}
+              photoTransform={row.state.photoTransform}
+              topText={row.state.topText}
+              bottomText={row.state.bottomText}
+              textColor={colorHex}
+              fontSize={row.state.fontSize}
+              fontFamily={fontFamily}
+              size={80}
+            />
+          </div>
+        )
+      },
     },
     {
       title: 'Назва',

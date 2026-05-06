@@ -50,14 +50,28 @@ export default function BadgeDesignDetailPage() {
     }
   }
 
-  function handleDownloadPhoto() {
+  async function handleDownloadPhoto() {
     const url = design?.state.photoUrl
     if (!url) return
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${design!.designName}-photo.png`
-    a.target = '_blank'
-    a.click()
+    try {
+      if (url.startsWith('data:')) {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${design!.designName}-photo.png`
+        a.click()
+      } else {
+        const response = await fetch(url)
+        const blob = await response.blob()
+        const objectUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = objectUrl
+        a.download = `${design!.designName}-photo.png`
+        a.click()
+        URL.revokeObjectURL(objectUrl)
+      }
+    } catch {
+      message.error('Не вдалося завантажити фото')
+    }
   }
 
   function handleDownloadBadge() {
