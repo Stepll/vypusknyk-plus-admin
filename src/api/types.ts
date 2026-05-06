@@ -785,6 +785,23 @@ export interface SaveRibbonMaterialRequest {
   sortOrder: number
 }
 
+export interface BadgeSizeResponse {
+  id: number
+  name: string
+  diameter: number
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveBadgeSizeRequest {
+  name: string
+  diameter: number
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
 export interface RibbonEmblemResponse {
   id: number
   name: string
