@@ -20,6 +20,12 @@ import NotificationsPopover from '../notifications/NotificationsPopover'
 const { Header, Sider, Content } = Layout
 
 const ROUTE_KEYS = [
+  '/settings/constructor/badges/text-sizes',
+  '/settings/constructor/badges/fonts',
+  '/settings/constructor/badges/colors',
+  '/settings/constructor/badges/images',
+  '/settings/constructor/badges/sizes',
+  '/settings/constructor/badges',
   '/settings/constructor/rules',
   '/settings/constructor/emblems',
   '/settings/constructor/fonts',
@@ -122,13 +128,32 @@ const ALL_MENU_ITEMS: MenuItem[] = [
         icon: <ToolOutlined />,
         label: 'Конструктор',
         children: [
-          { key: '/settings/constructor/colors', icon: <BgColorsOutlined />, label: 'Кольори', pageKey: 'settings.colors' },
-          { key: '/settings/constructor/materials', icon: <ExperimentOutlined />, label: 'Матеріали', pageKey: 'settings.colors' },
-          { key: '/settings/constructor/print-colors', icon: <FormatPainterOutlined />, label: 'Кольори друку', pageKey: 'settings.colors' },
-          { key: '/settings/constructor/print-types', icon: <PrinterOutlined />, label: 'Типи друку', pageKey: 'settings.colors' },
-          { key: '/settings/constructor/fonts', icon: <FontSizeOutlined />, label: 'Шрифти', pageKey: 'settings.colors' },
-          { key: '/settings/constructor/emblems', icon: <PictureOutlined />, label: 'Емблеми', pageKey: 'settings.colors' },
-          { key: '/settings/constructor/rules', icon: <ApartmentOutlined />, label: 'Правила', pageKey: 'settings.colors' },
+          {
+            key: 'constructor-ribbons',
+            icon: <PrinterOutlined />,
+            label: 'Стрічки',
+            children: [
+              { key: '/settings/constructor/colors',       icon: <BgColorsOutlined />,    label: 'Кольори',       pageKey: 'settings.colors' },
+              { key: '/settings/constructor/materials',    icon: <ExperimentOutlined />,  label: 'Матеріали',     pageKey: 'settings.colors' },
+              { key: '/settings/constructor/print-colors', icon: <FormatPainterOutlined />, label: 'Кольори друку', pageKey: 'settings.colors' },
+              { key: '/settings/constructor/print-types',  icon: <PrinterOutlined />,     label: 'Типи друку',    pageKey: 'settings.colors' },
+              { key: '/settings/constructor/fonts',        icon: <FontSizeOutlined />,    label: 'Шрифти',        pageKey: 'settings.colors' },
+              { key: '/settings/constructor/emblems',      icon: <PictureOutlined />,     label: 'Емблеми',       pageKey: 'settings.colors' },
+              { key: '/settings/constructor/rules',        icon: <ApartmentOutlined />,   label: 'Правила',       pageKey: 'settings.colors' },
+            ],
+          },
+          {
+            key: 'constructor-badges',
+            icon: <TagsOutlined />,
+            label: 'Значки',
+            children: [
+              { key: '/settings/constructor/badges/sizes',      icon: <AppstoreOutlined />,    label: 'Розміри',        pageKey: 'settings.colors' },
+              { key: '/settings/constructor/badges/images',     icon: <PictureOutlined />,     label: 'Готові картинки', pageKey: 'settings.colors' },
+              { key: '/settings/constructor/badges/colors',     icon: <BgColorsOutlined />,    label: 'Кольори тексту', pageKey: 'settings.colors' },
+              { key: '/settings/constructor/badges/fonts',      icon: <FontSizeOutlined />,    label: 'Шрифти',         pageKey: 'settings.colors' },
+              { key: '/settings/constructor/badges/text-sizes', icon: <FormatPainterOutlined />, label: 'Розміри тексту', pageKey: 'settings.colors' },
+            ],
+          },
         ],
       },
     ],
@@ -164,7 +189,8 @@ const AdminLayout = observer(() => {
   const selectedKey = pathname === '/' ? '/' : ROUTE_KEYS.find(k => pathname.startsWith(k)) ?? '/'
 
   const [openKeys, setOpenKeys] = useState<string[]>(() => {
-    if (pathname.startsWith('/settings/constructor')) return ['settings', 'constructor']
+    if (pathname.startsWith('/settings/constructor/badges')) return ['settings', 'constructor', 'constructor-badges']
+    if (pathname.startsWith('/settings/constructor')) return ['settings', 'constructor', 'constructor-ribbons']
     if (pathname.startsWith('/settings/info-pages')) return ['settings', 'info-pages']
     if (pathname.startsWith('/settings/content')) return ['settings', 'content']
     if (pathname.startsWith('/settings/promotions') || pathname.startsWith('/settings/promo-codes') || pathname.startsWith('/settings/tasks')) return ['settings', 'discounts']
@@ -202,7 +228,7 @@ const AdminLayout = observer(() => {
           openKeys={openKeys}
           onOpenChange={keys => setOpenKeys(keys as string[])}
           items={menuItems}
-          onClick={({ key }) => { if (!['settings', 'constructor', 'info-pages', 'content', 'discounts'].includes(key)) navigate(key) }}
+          onClick={({ key }) => { if (!['settings', 'constructor', 'constructor-ribbons', 'constructor-badges', 'info-pages', 'content', 'discounts'].includes(key)) navigate(key) }}
           style={{ background: 'transparent', border: 'none' }}
         />
       </Sider>

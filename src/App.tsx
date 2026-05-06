@@ -31,6 +31,11 @@ import PrintTypesPage from './pages/settings/constructor/PrintTypesPage'
 import FontsPage from './pages/settings/constructor/FontsPage'
 import EmblemsPage from './pages/settings/constructor/EmblemsPage'
 import RulesPage from './pages/settings/constructor/RulesPage'
+import BadgeSizesPage from './pages/settings/constructor/badge/BadgeSizesPage'
+import BadgeImagesPage from './pages/settings/constructor/badge/BadgeImagesPage'
+import BadgeColorsPage from './pages/settings/constructor/badge/BadgeColorsPage'
+import BadgeFontsPage from './pages/settings/constructor/badge/BadgeFontsPage'
+import BadgeTextSizesPage from './pages/settings/constructor/badge/BadgeTextSizesPage'
 import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
@@ -85,6 +90,11 @@ export default function App() {
             <Route path="settings/constructor/fonts" element={<FontsPage />} />
             <Route path="settings/constructor/emblems" element={<EmblemsPage />} />
             <Route path="settings/constructor/rules" element={<RulesPage />} />
+            <Route path="settings/constructor/badges/sizes" element={<BadgeSizesPage />} />
+            <Route path="settings/constructor/badges/images" element={<BadgeImagesPage />} />
+            <Route path="settings/constructor/badges/colors" element={<BadgeColorsPage />} />
+            <Route path="settings/constructor/badges/fonts" element={<BadgeFontsPage />} />
+            <Route path="settings/constructor/badges/text-sizes" element={<BadgeTextSizesPage />} />
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
             <Route path="settings/notifications" element={<NotificationsPage />} />
