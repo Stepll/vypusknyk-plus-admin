@@ -28,6 +28,10 @@ src/
 │   ├── users.ts               # GET /admin/users, GET /admin/users/:id, PATCH info/verification,
 │   │                          # sendUserActivationEmail, apiFetch → POST send-email
 │   ├── designs.ts             # GET /admin/designs, GET /admin/designs/:id, DELETE /admin/designs/:id
+│   ├── badgeDesigns.ts        # getBadgeDesigns(page,size), getBadgeDesign(id), deleteBadgeDesign(id), getBadgeDesignsByUser(userId)
+│   ├── badgeTextColors.ts     # getBadgeTextColors() → BadgeTextColorResponse[]
+│   ├── badgeFonts.ts          # getBadgeFonts() → BadgeFontResponse[]
+│   ├── badgeImages.ts         # getBadgeImages() → BadgeImageResponse[]
 │   ├── admins.ts              # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
 │   ├── roles.ts               # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
 │   ├── warehouse.ts           # GET stats/categories/products/products/:id, POST transactions, POST products
@@ -75,6 +79,11 @@ src/
 │   │                            # EmblemEntry = { sortOrder, svgUrlLeft, svgUrlRight }
 │   │                            # EmblemFromUrl: auto-scale SVG via viewBox parsing + ref.current.innerHTML
 │   ├── RibbonEditorPreview.css
+│   ├── BadgeStaticPreview.tsx   # forwardRef canvas-компонент для статичного рендеру значка
+│   │                            # Пропси: photoUrl, photoTransform, topText, bottomText, textColor, fontSize, fontFamily, size?
+│   │                            # toDataUrl() через useImperativeHandle → offscreen canvas 358×358 (320 + 5mm padding * 2) з білим фоном
+│   │                            # renderBadge(ctx, img, transform, ..., cx, cy, withWhiteBg) — shared функція для preview і download
+│   │                            # crossOrigin='anonymous' для не-data URL (MinIO CORS)
 │   ├── notifications/
 │   │   └── NotificationsPopover.tsx  # Badge+Bell кнопка в header; Popover зі списком сповіщень
 │   │                                  # Клік на сповіщення → navigate до /orders/:id або /users/:id
@@ -120,9 +129,14 @@ src/
     │                              # Права колонка (xl=15): Info card
     │                              #   EditableField: inline редагування name/phone (олівець → input)
     │                              #   VerificationTag: Dropdown для зміни isEmailVerified/isNameVerified/isPhoneVerified
+    │                              # "Дизайни значків" Card: Promise.all([getUser, getBadgeDesignsByUser]) при завантаженні
+    │                              #   badgeDesignColumns: перегляд (link → /designs/badge/:id), навігація до деталей
     ├── designs/
-    │   ├── SavedDesignsPage.tsx   # Таблиця з SVG-превью стрічки в кожному рядку (h=200px), пошук
-    │   └── DesignDetailPage.tsx   # Превью, параметри, класи+імена, delete (Popconfirm)
+    │   ├── SavedDesignsPage.tsx   # Tabs: Стрічки (SVG-превью, h=200px) + Значки (BadgeStaticPreview canvas 80px)
+    │   │                          # Завантажує textColors+fonts один раз для резолвації кольору/шрифту в кожному рядку
+    │   ├── DesignDetailPage.tsx   # Превью стрічки, параметри, класи+імена, delete (Popconfirm)
+    │   └── BadgeDesignDetailPage.tsx  # Превью значка (BadgeStaticPreview), фото шаблону + download photo (blob fetch),
+    │                                  # download badge (offscreen canvas 358×358 з 5mm padding), параметри, user link
     ├── admins/
     │   ├── AdminsPage.tsx         # Таблиця з колонкою "Роль" (кольоровий тег); select ролі при створенні
     │   └── AdminDetailPage.tsx    # Inline role select (SuperAdmin: іконка олівця → borderless select)
@@ -206,6 +220,7 @@ src/
 /users/:id          → UserDetailPage
 /designs            → SavedDesignsPage
 /designs/:id        → DesignDetailPage
+/designs/badge/:id  → BadgeDesignDetailPage
 /admins             → AdminsPage
 /admins/:id         → AdminDetailPage
 /warehouse          → WarehousePage
@@ -297,6 +312,10 @@ src/
 | GET    | /api/v1/admin/designs                                 | Всі збережені дизайни (paginated, з state) |
 | GET    | /api/v1/admin/designs/{id}                            | Деталі дизайну (з state + classes)       |
 | DELETE | /api/v1/admin/designs/{id}                            | Soft delete дизайну → 204               |
+| GET    | /api/v1/admin/badge-designs                           | Всі дизайни значків (paginated)          |
+| GET    | /api/v1/admin/badge-designs/{id}                      | Деталі дизайну значка                    |
+| DELETE | /api/v1/admin/badge-designs/{id}                      | Soft delete → 204                        |
+| GET    | /api/v1/admin/badge-designs/by-user/{userId}          | Дизайни значків конкретного юзера        |
 | GET    | /api/v1/admin/admins                                  | Список адмінів (paginated, з role)       |
 | GET    | /api/v1/admin/admins/{id}                             | Деталі адміна (з lastLoginAt + role)     |
 | POST   | /api/v1/admin/admins                                  | Створити адміна (з roleId?)              |
@@ -517,6 +536,11 @@ src/
 - `AdminSavedDesignDetail` extends Item (повертається з GET /:id)
 - `RibbonState.classes` зберігається як JSON-масив у полі `State` таблиці `SavedDesigns`
 - Відображення: `RibbonEditorPreview` отримує `names` як `string[]` (flatMap по classes)
+- `BadgeDesignState` — sizeId, photoUrl, photoTransform {scale,x,y,rotation}, topText, bottomText, textColorId, fontSlug, fontSize, comment
+- `AdminSavedBadgeDesignItem` — id, designName, savedAt, userId, userFullName, userEmail?, state: BadgeDesignState
+- `BadgeTextColorResponse` — id, name, hex, priceModifier
+- `BadgeFontResponse` — id, name, slug, fontFamily
+- `BadgeImageResponse` — id, name, imageUrl
 
 **Users (гостьові користувачі + верифікація):**
 - `AdminUser` — id, isGuest, email: string | null, fullName, phone?, createdAt, ordersCount, **isEmailVerified, isNameVerified, isPhoneVerified**, **hasGoogleId**
