@@ -205,7 +205,7 @@ const AdminLayout = observer(() => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider
-        width={230}
+        width={260}
         style={{
           background: 'linear-gradient(180deg, #1e1b4b 0%, #312e81 60%, #1e1b4b 100%)',
           boxShadow: '2px 0 8px rgba(0,0,0,0.18)',
