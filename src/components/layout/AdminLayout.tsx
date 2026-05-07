@@ -20,6 +20,10 @@ import NotificationsPopover from '../notifications/NotificationsPopover'
 const { Header, Sider, Content } = Layout
 
 const ROUTE_KEYS = [
+  '/settings/constructor/certificates/templates',
+  '/settings/constructor/certificates/paper-types',
+  '/settings/constructor/certificates/fonts',
+  '/settings/constructor/certificates',
   '/settings/constructor/badges/text-sizes',
   '/settings/constructor/badges/fonts',
   '/settings/constructor/badges/colors',
@@ -154,6 +158,16 @@ const ALL_MENU_ITEMS: MenuItem[] = [
               { key: '/settings/constructor/badges/text-sizes', icon: <FormatPainterOutlined />, label: 'Розміри тексту', pageKey: 'settings.colors' },
             ],
           },
+          {
+            key: 'constructor-certificates',
+            icon: <SafetyCertificateOutlined />,
+            label: 'Грамоти',
+            children: [
+              { key: '/settings/constructor/certificates/templates',   icon: <PictureOutlined />,   label: 'Шаблони',      pageKey: 'settings.colors' },
+              { key: '/settings/constructor/certificates/paper-types', icon: <FileTextOutlined />,  label: 'Типи паперу',  pageKey: 'settings.colors' },
+              { key: '/settings/constructor/certificates/fonts',       icon: <FontSizeOutlined />,  label: 'Шрифти',       pageKey: 'settings.colors' },
+            ],
+          },
         ],
       },
     ],
@@ -190,6 +204,7 @@ const AdminLayout = observer(() => {
 
   const [openKeys, setOpenKeys] = useState<string[]>(() => {
     if (pathname.startsWith('/settings/constructor/badges')) return ['settings', 'constructor', 'constructor-badges']
+    if (pathname.startsWith('/settings/constructor/certificates')) return ['settings', 'constructor', 'constructor-certificates']
     if (pathname.startsWith('/settings/constructor')) return ['settings', 'constructor', 'constructor-ribbons']
     if (pathname.startsWith('/settings/info-pages')) return ['settings', 'info-pages']
     if (pathname.startsWith('/settings/content')) return ['settings', 'content']

@@ -37,6 +37,9 @@ import BadgeImagesPage from './pages/settings/constructor/badge/BadgeImagesPage'
 import BadgeColorsPage from './pages/settings/constructor/badge/BadgeColorsPage'
 import BadgeFontsPage from './pages/settings/constructor/badge/BadgeFontsPage'
 import BadgeTextSizesPage from './pages/settings/constructor/badge/BadgeTextSizesPage'
+import CertificateTemplatesPage from './pages/settings/constructor/certificate/CertificateTemplatesPage'
+import CertificatePaperTypesPage from './pages/settings/constructor/certificate/CertificatePaperTypesPage'
+import CertificateFontsPage from './pages/settings/constructor/certificate/CertificateFontsPage'
 import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
@@ -97,6 +100,9 @@ export default function App() {
             <Route path="settings/constructor/badges/colors" element={<BadgeColorsPage />} />
             <Route path="settings/constructor/badges/fonts" element={<BadgeFontsPage />} />
             <Route path="settings/constructor/badges/text-sizes" element={<BadgeTextSizesPage />} />
+            <Route path="settings/constructor/certificates/templates" element={<CertificateTemplatesPage />} />
+            <Route path="settings/constructor/certificates/paper-types" element={<CertificatePaperTypesPage />} />
+            <Route path="settings/constructor/certificates/fonts" element={<CertificateFontsPage />} />
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
             <Route path="settings/notifications" element={<NotificationsPage />} />

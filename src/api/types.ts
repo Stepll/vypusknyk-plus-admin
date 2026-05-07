@@ -980,3 +980,67 @@ export interface ConstructorRulesResponse {
   incompatibilities: ConstructorIncompatibilityResponse[]
   forcedTexts: ConstructorForcedTextResponse[]
 }
+
+export interface CertificateTemplateResponse {
+  id: number
+  name: string
+  slug: string
+  imageUrl: string | null
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveCertificateTemplateRequest {
+  name: string
+  slug: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface CertificatePaperTypeResponse {
+  id: number
+  name: string
+  slug: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveCertificatePaperTypeRequest {
+  name: string
+  slug: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface CertificateFontResponse {
+  id: number
+  name: string
+  slug: string
+  fontFamily: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface SaveCertificateFontRequest {
+  name: string
+  slug: string
+  fontFamily: string
+  priceModifier: number
+  isActive: boolean
+  sortOrder: number
+}
+
+export interface AdminCertificateDesignItem {
+  id: number
+  designName: string
+  savedAt: string
+  userId: number
+  userFullName: string
+  userEmail: string | null
+  state: unknown
+}

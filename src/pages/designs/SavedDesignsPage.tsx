@@ -4,9 +4,13 @@ import { HeartOutlined, SearchOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { getSavedDesigns } from '../../api/designs'
 import { getBadgeDesigns } from '../../api/badgeDesigns'
+import { getCertificateDesigns } from '../../api/certificateDesigns'
 import { getBadgeTextColors } from '../../api/badgeTextColors'
 import { getBadgeFonts } from '../../api/badgeFonts'
-import type { AdminSavedDesignItem, AdminSavedBadgeDesignItem, BadgeTextColorResponse, BadgeFontResponse } from '../../api/types'
+import type {
+  AdminSavedDesignItem, AdminSavedBadgeDesignItem, AdminCertificateDesignItem,
+  BadgeTextColorResponse, BadgeFontResponse,
+} from '../../api/types'
 import RibbonEditorPreview from '../../components/RibbonEditorPreview'
 import BadgeStaticPreview from '../../components/BadgeStaticPreview'
 import type { RibbonColor, TextColor, ExtraTextColor, Font } from '../../constants/ribbonRules'
@@ -15,7 +19,7 @@ const pageSize = 20
 
 export default function SavedDesignsPage() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'ribbon' | 'badge'>('ribbon')
+  const [activeTab, setActiveTab] = useState<'ribbon' | 'badge' | 'certificate'>('ribbon')
 
   const [ribbonItems, setRibbonItems] = useState<AdminSavedDesignItem[]>([])
   const [ribbonTotal, setRibbonTotal] = useState(0)
@@ -26,6 +30,11 @@ export default function SavedDesignsPage() {
   const [badgeTotal, setBadgeTotal] = useState(0)
   const [badgePage, setBadgePage] = useState(1)
   const [badgeLoading, setBadgeLoading] = useState(false)
+
+  const [certItems, setCertItems] = useState<AdminCertificateDesignItem[]>([])
+  const [certTotal, setCertTotal] = useState(0)
+  const [certPage, setCertPage] = useState(1)
+  const [certLoading, setCertLoading] = useState(false)
 
   const [search, setSearch] = useState('')
 
@@ -51,6 +60,13 @@ export default function SavedDesignsPage() {
       .finally(() => setBadgeLoading(false))
   }, [badgePage])
 
+  useEffect(() => {
+    setCertLoading(true)
+    getCertificateDesigns(certPage, pageSize)
+      .then(res => { setCertItems(res.items); setCertTotal(res.total) })
+      .finally(() => setCertLoading(false))
+  }, [certPage])
+
   const filteredRibbons = search.trim()
     ? ribbonItems.filter(d =>
         d.userFullName.toLowerCase().includes(search.toLowerCase()) ||
@@ -66,6 +82,45 @@ export default function SavedDesignsPage() {
         d.designName.toLowerCase().includes(search.toLowerCase())
       )
     : badgeItems
+
+  const filteredCerts = search.trim()
+    ? certItems.filter(d =>
+        d.userFullName.toLowerCase().includes(search.toLowerCase()) ||
+        (d.userEmail ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        d.designName.toLowerCase().includes(search.toLowerCase())
+      )
+    : certItems
+
+  const certColumns = [
+    { title: 'ID', dataIndex: 'id', key: 'id', width: 70 },
+    {
+      title: 'Назва',
+      key: 'info',
+      render: (_: unknown, row: AdminCertificateDesignItem) => (
+        <div>
+          <div style={{ fontWeight: 600 }}>{row.designName}</div>
+          <div style={{ color: '#8c8c8c', fontSize: 12 }}>{row.userFullName}</div>
+          <div style={{ color: '#8c8c8c', fontSize: 12 }}>{row.userEmail}</div>
+        </div>
+      ),
+    },
+    {
+      title: 'Тип',
+      key: 'type',
+      width: 80,
+      render: () => <Tag color="gold">Грамота</Tag>,
+    },
+    {
+      title: 'Збережено',
+      dataIndex: 'savedAt',
+      key: 'savedAt',
+      width: 130,
+      render: (v: string) => new Date(v).toLocaleString('uk-UA', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      }),
+    },
+  ]
 
   const ribbonColumns = [
     {
@@ -191,7 +246,7 @@ export default function SavedDesignsPage() {
 
       <Tabs
         activeKey={activeTab}
-        onChange={k => setActiveTab(k as 'ribbon' | 'badge')}
+        onChange={k => setActiveTab(k as 'ribbon' | 'badge' | 'certificate')}
         items={[
           {
             key: 'ribbon',
@@ -227,6 +282,21 @@ export default function SavedDesignsPage() {
                 loading={badgeLoading}
                 pagination={{ current: badgePage, pageSize, total: badgeTotal, onChange: setBadgePage }}
                 onRow={record => ({ onClick: () => navigate(`/designs/badge/${record.id}`) })}
+                rowClassName={() => 'clickable-row'}
+                style={{ cursor: 'pointer' }}
+              />
+            ),
+          },
+          {
+            key: 'certificate',
+            label: `Грамоти (${certTotal})`,
+            children: (
+              <Table
+                rowKey="id"
+                dataSource={filteredCerts}
+                columns={certColumns}
+                loading={certLoading}
+                pagination={{ current: certPage, pageSize, total: certTotal, onChange: setCertPage }}
                 rowClassName={() => 'clickable-row'}
                 style={{ cursor: 'pointer' }}
               />
