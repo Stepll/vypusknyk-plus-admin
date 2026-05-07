@@ -91,6 +91,9 @@ export default function CertificateTemplateEditPage() {
 
   const currentLayout = layout[viewOrientation]
   const { w: canvasW, h: canvasH } = viewOrientation === 'landscape' ? CANVAS_LANDSCAPE : CANVAS_PORTRAIT
+  const BOARD_W = 640
+  const BOARD_H = 500
+  const scale = Math.min(BOARD_W / canvasW, BOARD_H / canvasH)
 
   const handleLayoutChange = (updated: CertificateOrientationLayout) => {
     setLayout(prev => ({ ...prev, [viewOrientation]: updated }))
@@ -160,29 +163,34 @@ export default function CertificateTemplateEditPage() {
             </Radio.Group>
           </div>
 
-          {template.imageUrl ? (
-            <CertificateZoneEditor
-              imageUrl={template.imageUrl}
-              nativeOrientation={nativeOrientation}
-              viewOrientation={viewOrientation}
-              canvasW={canvasW}
-              canvasH={canvasH}
-              layout={currentLayout}
-              activeZones={activeZones}
-              selectedZone={selectedZone}
-              onZoneSelect={setSelectedZone}
-              onChange={handleLayoutChange}
-            />
-          ) : (
-            <div style={{
-              width: canvasW, height: canvasH,
-              background: '#f0f0f0', border: '2px dashed #d9d9d9',
-              borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#aaa', fontSize: 14,
-            }}>
-              Спочатку завантажте зображення шаблону
-            </div>
-          )}
+          <div style={{ width: BOARD_W, height: BOARD_H, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+            {template.imageUrl ? (
+              <div style={{ position: 'absolute', top: 0, left: 0, transformOrigin: 'top left', transform: `scale(${scale})` }}>
+                <CertificateZoneEditor
+                  imageUrl={template.imageUrl}
+                  nativeOrientation={nativeOrientation}
+                  viewOrientation={viewOrientation}
+                  canvasW={canvasW}
+                  canvasH={canvasH}
+                  scale={scale}
+                  layout={currentLayout}
+                  activeZones={activeZones}
+                  selectedZone={selectedZone}
+                  onZoneSelect={setSelectedZone}
+                  onChange={handleLayoutChange}
+                />
+              </div>
+            ) : (
+              <div style={{
+                width: BOARD_W, height: BOARD_H,
+                background: '#f0f0f0', border: '2px dashed #d9d9d9',
+                borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#aaa', fontSize: 14,
+              }}>
+                Спочатку завантажте зображення шаблону
+              </div>
+            )}
+          </div>
         </div>
 
         {/* ── Right: settings + coordinates ── */}

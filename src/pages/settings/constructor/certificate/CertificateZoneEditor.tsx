@@ -42,6 +42,7 @@ interface Props {
   viewOrientation: 'portrait' | 'landscape'
   canvasW: number
   canvasH: number
+  scale: number
   layout: CertificateOrientationLayout
   activeZones: CertificateZoneKey[]
   selectedZone: CertificateZoneKey | null
@@ -51,7 +52,7 @@ interface Props {
 
 export default function CertificateZoneEditor({
   imageUrl, nativeOrientation, viewOrientation,
-  canvasW, canvasH, layout, activeZones, selectedZone, onZoneSelect, onChange,
+  canvasW, canvasH, scale, layout, activeZones, selectedZone, onZoneSelect, onChange,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imgRef    = useRef<HTMLImageElement | null>(null)
@@ -106,8 +107,8 @@ export default function CertificateZoneEditor({
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!dragRef.current) return
     const { type, key, startX, startY, startRect } = dragRef.current
-    const dx = e.clientX - startX
-    const dy = e.clientY - startY
+    const dx = (e.clientX - startX) / scale
+    const dy = (e.clientY - startY) / scale
     const r = { ...startRect }
     const MIN = 20
     if (type === 'move') {
@@ -133,7 +134,7 @@ export default function CertificateZoneEditor({
       r.height = Math.max(MIN, startRect.height + dy)
     }
     onChange({ ...layout, [key]: { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) } })
-  }, [layout, canvasW, canvasH, onChange])
+  }, [layout, canvasW, canvasH, scale, onChange])
 
   const handleMouseUp = () => { dragRef.current = null }
 
