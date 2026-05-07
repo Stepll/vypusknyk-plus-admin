@@ -46,6 +46,7 @@ import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
 import NotificationsPage from './pages/settings/NotificationsPage'
+import AppSettingsPage from './pages/settings/AppSettingsPage'
 import PromotionsPage from './pages/settings/PromotionsPage'
 import PromotionEditPage from './pages/settings/PromotionEditPage'
 import PromoCodesPage from './pages/settings/PromoCodesPage'
@@ -110,6 +111,7 @@ export default function App() {
             <Route path="settings/roles" element={<RolesPage />} />
             <Route path="settings/suppliers" element={<SuppliersPage />} />
             <Route path="settings/notifications" element={<NotificationsPage />} />
+            <Route path="settings/app" element={<AppSettingsPage />} />
             <Route path="settings/promotions" element={<PromotionsPage />} />
             <Route path="settings/promotions/:id" element={<PromotionEditPage />} />
             <Route path="settings/promo-codes" element={<PromoCodesPage />} />

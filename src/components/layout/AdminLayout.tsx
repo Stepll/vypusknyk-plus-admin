@@ -7,7 +7,7 @@ import {
   CreditCardOutlined, CheckCircleOutlined, ToolOutlined, SafetyCertificateOutlined,
   TruckOutlined, ShopOutlined, FileTextOutlined, ExperimentOutlined, FormatPainterOutlined,
   PrinterOutlined, FontSizeOutlined, PictureOutlined, ApartmentOutlined, BellOutlined,
-  PercentageOutlined, GiftOutlined, TrophyOutlined,
+  PercentageOutlined, GiftOutlined, TrophyOutlined, SlidersOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
@@ -43,6 +43,7 @@ const ROUTE_KEYS = [
   '/settings/info-pages/delivery',
   '/settings/info-pages',
   '/settings/notifications',
+  '/settings/app',
   '/settings/content/home',
   '/settings/content/about',
   '/settings/content/catalog',
@@ -94,6 +95,7 @@ const ALL_MENU_ITEMS: MenuItem[] = [
       { key: '/settings/suppliers', icon: <ShopOutlined />, label: 'Постачальники', pageKey: 'settings.suppliers' },
       { key: '/settings/roles', icon: <SafetyCertificateOutlined />, label: 'Ролі', pageKey: 'settings.roles' },
       { key: '/settings/notifications', icon: <BellOutlined />, label: 'Сповіщення', pageKey: 'settings.notifications' },
+      { key: '/settings/app', icon: <SlidersOutlined />, label: 'Налаштування магазину', pageKey: 'settings.app' },
       {
         key: 'discounts',
         icon: <PercentageOutlined />,
