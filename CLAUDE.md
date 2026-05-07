@@ -32,6 +32,12 @@ src/
 │   ├── badgeTextColors.ts     # getBadgeTextColors() → BadgeTextColorResponse[]
 │   ├── badgeFonts.ts          # getBadgeFonts() → BadgeFontResponse[]
 │   ├── badgeImages.ts         # getBadgeImages() → BadgeImageResponse[]
+│   ├── certificateDesigns.ts  # getCertificateDesigns(page,size), getCertificateDesign(id), getCertificateDesignsByUser(userId), deleteCertificateDesign(id)
+│   ├── certificateTemplates.ts # CRUD /admin/certificate-templates + uploadCertificateTemplateImage(id, file)
+│   │                           # saveCertificateTemplateLayout(id, data) → PUT /{id}/layout
+│   │                           # getCertificateTemplateById(id) → GET /{id}
+│   ├── certificatePaperTypes.ts # CRUD /admin/certificate-paper-types
+│   ├── certificateFonts.ts    # CRUD /admin/certificate-fonts
 │   ├── admins.ts              # GET/POST /admin/admins, GET/DELETE/:id, PATCH password/role
 │   ├── roles.ts               # GET/POST /admin/roles, PUT/DELETE /admin/roles/:id
 │   ├── warehouse.ts           # GET stats/categories/products/products/:id, POST transactions, POST products
@@ -84,6 +90,14 @@ src/
 │   │                            # toDataUrl() через useImperativeHandle → offscreen canvas 358×358 (320 + 5mm padding * 2) з білим фоном
 │   │                            # renderBadge(ctx, img, transform, ..., cx, cy, withWhiteBg) — shared функція для preview і download
 │   │                            # crossOrigin='anonymous' для не-data URL (MinIO CORS)
+│   ├── CertificatePreview.tsx   # forwardRef<HTMLCanvasElement, Props> canvas-компонент рендеру грамоти
+│   │                            # Пропси: templateUrl, nativeOrientation, orientation, layout, title, bodyText,
+│   │                            # organization, year, signerName, signerTitle, signer2Name?, signer2Title?,
+│   │                            # additionalText?, fontFamily, previewName?, style?
+│   │                            # Ротація фону: needsRotation = orientation !== nativeOrientation (той самий алгоритм що у frontend)
+│   │                            # drawWithLayout: кожна зона кліпується через ctx.rect+clip до своїх меж
+│   │                            # drawFallback: хардкод Y-позицій без шаблону (золота рамка)
+│   │                            # crossOrigin='anonymous' для MinIO CORS; ref → canvas element для toDataURL()
 │   ├── notifications/
 │   │   └── NotificationsPopover.tsx  # Badge+Bell кнопка в header; Popover зі списком сповіщень
 │   │                                  # Клік на сповіщення → navigate до /orders/:id або /users/:id
@@ -102,7 +116,8 @@ src/
 │                            # useEffect → chatStore.connect(token) при монтуванні; cleanup disconnect()
 │                            # Рендерить <FloatingChat /> перед закриваючим </Layout>
 ├── constants/
-│   └── ribbonRules.ts       # RibbonColor, Font, RIBBON_COLORS, FONTS, PRINT_TYPES, MATERIALS (без disabled логіки — правила в БД)
+│   ├── ribbonRules.ts       # RibbonColor, Font, RIBBON_COLORS, FONTS, PRINT_TYPES, MATERIALS (без disabled логіки — правила в БД)
+│   └── certificateLayout.ts # CANVAS_LANDSCAPE = {w:640,h:453}, CANVAS_PORTRAIT = {w:453,h:640}
 └── pages/
     ├── dashboard/DashboardPage.tsx  # 9 блоків: Stats, Статуси+Recent, Distributions, Charts,
     │                                # TopItems+LowStock, Deliveries, Designs, TopProducts, SalesByCategory
@@ -129,14 +144,20 @@ src/
     │                              # Права колонка (xl=15): Info card
     │                              #   EditableField: inline редагування name/phone (олівець → input)
     │                              #   VerificationTag: Dropdown для зміни isEmailVerified/isNameVerified/isPhoneVerified
-    │                              # "Дизайни значків" Card: Promise.all([getUser, getBadgeDesignsByUser]) при завантаженні
+    │                              # "Дизайни значків" Card: Promise.all([getUser, getBadgeDesignsByUser, getCertificateDesignsByUser])
     │                              #   badgeDesignColumns: перегляд (link → /designs/badge/:id), навігація до деталей
+    │                              # "Дизайни грамот" Card: certDesignColumns → navigate /designs/certificate/:id
+    │                              #   Показує designName, title, orientation; лічильник "Дизайнів" включає cert
     ├── designs/
-    │   ├── SavedDesignsPage.tsx   # Tabs: Стрічки (SVG-превью, h=200px) + Значки (BadgeStaticPreview canvas 80px)
-    │   │                          # Завантажує textColors+fonts один раз для резолвації кольору/шрифту в кожному рядку
+    │   ├── SavedDesignsPage.tsx   # Tabs: Стрічки + Значки (BadgeStaticPreview canvas 80px) + Грамоти
+    │   │                          # Вкладка Грамоти: клікабельні рядки → navigate /designs/certificate/:id
     │   ├── DesignDetailPage.tsx   # Превью стрічки, параметри, класи+імена, delete (Popconfirm)
-    │   └── BadgeDesignDetailPage.tsx  # Превью значка (BadgeStaticPreview), фото шаблону + download photo (blob fetch),
-    │                                  # download badge (offscreen canvas 358×358 з 5mm padding), параметри, user link
+    │   ├── BadgeDesignDetailPage.tsx  # Превью значка (BadgeStaticPreview), фото шаблону + download photo (blob fetch),
+    │   │                              # download badge (offscreen canvas 358×358 з 5mm padding), параметри, user link
+    │   └── CertificateDesignDetailPage.tsx  # Превью грамоти (CertificatePreview canvas), параметри, підписанти
+    │                                        # "Завантажити фон" → blob fetch template.imageUrl → download PNG
+    │                                        # "Завантажити дизайн" → canvasRef.current.toDataURL() → download PNG
+    │                                        # Завантажує: getCertificateDesign → getCertificateTemplateById + getCertificateFonts
     ├── admins/
     │   ├── AdminsPage.tsx         # Таблиця з колонкою "Роль" (кольоровий тег); select ролі при створенні
     │   └── AdminDetailPage.tsx    # Inline role select (SuperAdmin: іконка олівця → borderless select)
@@ -201,10 +222,29 @@ src/
             ├── EmblemsPage.tsx      # CRUD емблем + окремий SVG upload ліва/права (ID колонка; підтримка ?openId=X)
             │                        # Превью на білому фоні (56×56), upload тільки в drawer
             │                        # handleUpload(side, file) → uploadRibbonEmblemSvg(id, side, file)
-            └── RulesPage.tsx        # Scratch-подібний UI для правил конструктора
-                                     # Вкладка "Несумісності": блоки [поле][slug]→[недоступні|попередження][поле]: checkboxes
-                                     # Вкладка "Фіксований текст": блоки [поле][slug]→[targetField]: tag chips
-                                     # Slug-дропдауни завантажуються з API (printTypes, materials, fonts, printColors, colors, emblems)
+            ├── RulesPage.tsx        # Scratch-подібний UI для правил конструктора
+            │                        # Вкладка "Несумісності": блоки [поле][slug]→[недоступні|попередження][поле]: checkboxes
+            │                        # Вкладка "Фіксований текст": блоки [поле][slug]→[targetField]: tag chips
+            │                        # Slug-дропдауни завантажуються з API (printTypes, materials, fonts, printColors, colors, emblems)
+            └── certificate/
+                ├── CertificateTemplatesPage.tsx   # CRUD шаблонів грамот + upload PNG + кнопка "Налаштувати зони"
+                │                                  # Колонка "Зони": зелений тег "Налаштовано" або сірий "Не задано"
+                │                                  # navigate → /settings/constructor/certificates/templates/:id
+                ├── CertificateTemplateEditPage.tsx # Редагування зон шаблону
+                │                                   # Ліворуч: фіксований контейнер 640×500px; inner div з transform:scale(scale)
+                │                                   # scale = min(640/canvasW, 500/canvasH) — не змінює розмір контейнера при перемиканні орієнтації
+                │                                   # Перемикач орієнтації (Radio.Group альбомна/книжкова)
+                │                                   # CertificateZoneEditor: інтерактивні зони + scale prop для коректних deltas
+                │                                   # Праворуч: nativeOrientation, hasSecondSigner, hasAdditionalText + координати зон
+                ├── CertificateZoneEditor.tsx       # Інтерактивний редактор зон (canvas фон + absolute div зони)
+                │                                   # Props: imageUrl, nativeOrientation, viewOrientation, canvasW, canvasH, scale,
+                │                                   #   layout, activeZones, selectedZone, onZoneSelect, onChange
+                │                                   # ZONE_LABELS, ZONE_COLORS (10 зон)
+                │                                   # DragState: {type: 'move'|'nw'|'ne'|'sw'|'se', key, startX, startY, startRect}
+                │                                   # handleMouseMove: dx/dy ділиться на scale для коректних координат
+                │                                   # Кутові handles 10×10, колір зони, label над рамкою
+                ├── CertificatePaperTypesPage.tsx   # CRUD типів паперу
+                └── CertificateFontsPage.tsx        # CRUD шрифтів грамот
 ```
 
 ## Маршрути (App.tsx)
@@ -218,9 +258,10 @@ src/
 /products/:id       → ProductEditPage
 /users              → UsersPage
 /users/:id          → UserDetailPage
-/designs            → SavedDesignsPage
-/designs/:id        → DesignDetailPage
-/designs/badge/:id  → BadgeDesignDetailPage
+/designs                    → SavedDesignsPage
+/designs/:id                → DesignDetailPage
+/designs/badge/:id          → BadgeDesignDetailPage
+/designs/certificate/:id    → CertificateDesignDetailPage
 /admins             → AdminsPage
 /admins/:id         → AdminDetailPage
 /warehouse          → WarehousePage
@@ -245,7 +286,11 @@ src/
 /settings/constructor/print-types   → PrintTypesPage
 /settings/constructor/emblems       → EmblemsPage
 /settings/constructor/rules         → RulesPage
-/settings/notifications             → NotificationsPage
+/settings/notifications                              → NotificationsPage
+/settings/constructor/certificates/templates         → CertificateTemplatesPage
+/settings/constructor/certificates/templates/:id     → CertificateTemplateEditPage
+/settings/constructor/certificates/paper-types       → CertificatePaperTypesPage
+/settings/constructor/certificates/fonts             → CertificateFontsPage
 ```
 
 ## Меню (AdminLayout)
@@ -280,6 +325,10 @@ src/
     Типи друку       (/settings/constructor/print-types)
     Емблеми          (/settings/constructor/emblems)
     Правила          (/settings/constructor/rules)
+    Грамоти ▶
+      Шаблони        (/settings/constructor/certificates/templates)
+      Типи паперу    (/settings/constructor/certificates/paper-types)
+      Шрифти         (/settings/constructor/certificates/fonts)
   Сповіщення             (/settings/notifications)
   Знижки та завдання ▶   (підменю)
     Акції                (/settings/promotions)
@@ -316,6 +365,10 @@ src/
 | GET    | /api/v1/admin/badge-designs/{id}                      | Деталі дизайну значка                    |
 | DELETE | /api/v1/admin/badge-designs/{id}                      | Soft delete → 204                        |
 | GET    | /api/v1/admin/badge-designs/by-user/{userId}          | Дизайни значків конкретного юзера        |
+| GET    | /api/v1/admin/certificate-designs                     | Всі дизайни грамот (paginated)           |
+| GET    | /api/v1/admin/certificate-designs/{id}                | Деталі дизайну грамоти                   |
+| DELETE | /api/v1/admin/certificate-designs/{id}                | Soft delete → 204                        |
+| GET    | /api/v1/admin/certificate-designs/by-user/{userId}    | Дизайни грамот конкретного юзера         |
 | GET    | /api/v1/admin/admins                                  | Список адмінів (paginated, з role)       |
 | GET    | /api/v1/admin/admins/{id}                             | Деталі адміна (з lastLoginAt + role)     |
 | POST   | /api/v1/admin/admins                                  | Створити адміна (з roleId?)              |
@@ -481,6 +534,25 @@ src/
 - `admins` — всі підключені адміни (для `ConversationUpdated`)
 - `conversation:{id}` — учасники конкретної розмови
 
+### Конструктор — грамоти
+| Метод  | Шлях                                                        | Опис                                          |
+|--------|-------------------------------------------------------------|-----------------------------------------------|
+| GET    | /api/v1/admin/certificate-templates                         | Список шаблонів                               |
+| GET    | /api/v1/admin/certificate-templates/{id}                    | Деталі шаблону                                |
+| POST   | /api/v1/admin/certificate-templates                         | Створити шаблон                               |
+| PUT    | /api/v1/admin/certificate-templates/{id}                    | Оновити шаблон                                |
+| DELETE | /api/v1/admin/certificate-templates/{id}                    | Soft delete                                   |
+| POST   | /api/v1/admin/certificate-templates/{id}/image              | Upload PNG фону (multipart) → оновлений шаблон |
+| PUT    | /api/v1/admin/certificate-templates/{id}/layout             | Зберегти конфіг зон (nativeOrientation, hasSecondSigner, hasAdditionalText, layoutJson) |
+| GET    | /api/v1/admin/certificate-paper-types                       | Список типів паперу                           |
+| POST   | /api/v1/admin/certificate-paper-types                       | Створити                                      |
+| PUT    | /api/v1/admin/certificate-paper-types/{id}                  | Оновити                                       |
+| DELETE | /api/v1/admin/certificate-paper-types/{id}                  | Soft delete                                   |
+| GET    | /api/v1/admin/certificate-fonts                             | Список шрифтів                                |
+| POST   | /api/v1/admin/certificate-fonts                             | Створити                                      |
+| PUT    | /api/v1/admin/certificate-fonts/{id}                        | Оновити                                       |
+| DELETE | /api/v1/admin/certificate-fonts/{id}                        | Soft delete                                   |
+
 ### Конструктор — правила
 | Метод  | Шлях                                                        | Опис                                          |
 |--------|-------------------------------------------------------------|-----------------------------------------------|
@@ -541,6 +613,20 @@ src/
 - `BadgeTextColorResponse` — id, name, hex, priceModifier
 - `BadgeFontResponse` — id, name, slug, fontFamily
 - `BadgeImageResponse` — id, name, imageUrl
+
+**Certificate Constructor:**
+- `CertificateZoneRect` — x, y, width, height
+- `CertificateZoneKey` — 'title'|'name'|'bodyText'|'organization'|'year'|'signerName'|'signerTitle'|'signer2Name'|'signer2Title'|'additionalText'
+- `CertificateOrientationLayout` — Record<CertificateZoneKey, CertificateZoneRect>
+- `CertificateLayoutConfig` — { portrait: CertificateOrientationLayout, landscape: CertificateOrientationLayout }
+- `CertificateTemplateResponse` — id, name, slug, imageUrl, priceModifier, isActive, sortOrder, nativeOrientation, hasSecondSigner, hasAdditionalText, layoutJson
+- `SaveCertificateTemplateLayoutRequest` — nativeOrientation, hasSecondSigner, hasAdditionalText, layoutJson
+- `CertificatePaperTypeResponse` — id, name, slug, priceModifier, isActive, sortOrder
+- `CertificateFontResponse` — id, name, slug, fontFamily, priceModifier, isActive, sortOrder
+- `CertificateDesignState` — templateId, paperTypeId, orientation, title, bodyText, organization, year, signerName, signerTitle, signer2Name, signer2Title, additionalText, fontId, comment
+- `AdminCertificateDesignItem` — id, designName, savedAt, userId, userFullName, userEmail?, state: CertificateDesignState
+- `layoutJson` зберігається в БД як JSON-рядок `{ portrait: {...zones}, landscape: {...zones} }`; парситься на клієнті через `JSON.parse` з fallback на дефолтні значення
+- Дефолтні позиції зон задані в `CertificateTemplateEditPage` як `DEFAULT_LANDSCAPE` / `DEFAULT_PORTRAIT` константи
 
 **Users (гостьові користувачі + верифікація):**
 - `AdminUser` — id, isGuest, email: string | null, fullName, phone?, createdAt, ordersCount, **isEmailVerified, isNameVerified, isPhoneVerified**, **hasGoogleId**
@@ -655,6 +741,17 @@ src/
 - Кожне правило — картка з горизонтальними Select-ами: `Якщо [поле] = [slug] → [недоступні|попередження] [поле]:`
 - Slug-опції для кожного типу завантажуються з відповідного ribbon API при завантаженні сторінки
 - Збереження per-card (не глобальна кнопка); від'ємні ID для нових (ще не збережених) правил
+
+**CertificateZoneEditor — масштабування дошки:**
+- Зовнішній контейнер фіксований 640×500px — не змінює розмір при перемиканні орієнтації
+- Внутрішній div з `transform: scale(scale); transformOrigin: top left` де `scale = min(640/canvasW, 500/canvasH)`
+- Альбомна (640×453): scale≈1; Книжкова (453×640): scale≈0.78
+- `CertificateZoneEditor` приймає `scale` prop; `handleMouseMove` ділить `dx/dy` на `scale` для коректних координат зон
+
+**CertificatePreview canvas — рендер тексту:**
+- Кожна текстова зона використовує `ctx.save(); ctx.beginPath(); ctx.rect(zone.x, zone.y, zone.width, zone.height); ctx.clip()` перед fillText — текст не виходить за межі зони
+- Декоративні лінії (підкреслення заголовку, лінії підписантів) малюються в окремих save/restore блоках БЕЗ кліпування (вони навмисно виходять за межу зони)
+- Той самий алгоритм ротації фону що у `CertificateEditorPreview` на frontend
 
 **ChatPanel + FloatingChat (чат):**
 - `ChatPanel` — shared компонент; ліва панель = список розмов (Avatar + ім'я + preview + unread badge); права панель = повідомлення + textarea input
