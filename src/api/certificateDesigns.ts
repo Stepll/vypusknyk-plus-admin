@@ -5,6 +5,10 @@ export function getCertificateDesigns(page: number, pageSize: number): Promise<P
   return apiFetch(`/api/v1/admin/certificate-designs?page=${page}&pageSize=${pageSize}`)
 }
 
+export function getCertificateDesign(id: number): Promise<AdminCertificateDesignItem> {
+  return apiFetch(`/api/v1/admin/certificate-designs/${id}`)
+}
+
 export function getCertificateDesignsByUser(userId: number): Promise<AdminCertificateDesignItem[]> {
   return apiFetch(`/api/v1/admin/certificate-designs/by-user/${userId}`)
 }

@@ -1061,6 +1061,23 @@ export interface SaveCertificateFontRequest {
   sortOrder: number
 }
 
+export interface CertificateDesignState {
+  templateId: number
+  paperTypeId: number
+  orientation: 'landscape' | 'portrait'
+  title: string
+  bodyText: string
+  organization: string
+  year: string
+  signerName: string
+  signerTitle: string
+  signer2Name: string
+  signer2Title: string
+  additionalText: string
+  fontId: number
+  comment: string
+}
+
 export interface AdminCertificateDesignItem {
   id: number
   designName: string
@@ -1068,5 +1085,5 @@ export interface AdminCertificateDesignItem {
   userId: number
   userFullName: string
   userEmail: string | null
-  state: unknown
+  state: CertificateDesignState
 }

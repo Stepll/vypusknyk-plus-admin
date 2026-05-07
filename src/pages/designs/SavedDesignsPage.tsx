@@ -297,6 +297,7 @@ export default function SavedDesignsPage() {
                 columns={certColumns}
                 loading={certLoading}
                 pagination={{ current: certPage, pageSize, total: certTotal, onChange: setCertPage }}
+                onRow={record => ({ onClick: () => navigate(`/designs/certificate/${record.id}`) })}
                 rowClassName={() => 'clickable-row'}
                 style={{ cursor: 'pointer' }}
               />

@@ -12,6 +12,7 @@ import UserDetailPage from './pages/users/UserDetailPage'
 import SavedDesignsPage from './pages/designs/SavedDesignsPage'
 import DesignDetailPage from './pages/designs/DesignDetailPage'
 import BadgeDesignDetailPage from './pages/designs/BadgeDesignDetailPage'
+import CertificateDesignDetailPage from './pages/designs/CertificateDesignDetailPage'
 import AdminsPage from './pages/admins/AdminsPage'
 import AdminDetailPage from './pages/admins/AdminDetailPage'
 import WarehousePage from './pages/warehouse/WarehousePage'
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="designs" element={<SavedDesignsPage />} />
             <Route path="designs/:id" element={<DesignDetailPage />} />
             <Route path="designs/badge/:id" element={<BadgeDesignDetailPage />} />
+            <Route path="designs/certificate/:id" element={<CertificateDesignDetailPage />} />
             <Route path="admins" element={<AdminsPage />} />
             <Route path="admins/:id" element={<AdminDetailPage />} />
             <Route path="warehouse" element={<WarehousePage />} />
