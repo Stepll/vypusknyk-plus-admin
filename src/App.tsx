@@ -40,6 +40,7 @@ import BadgeTextSizesPage from './pages/settings/constructor/badge/BadgeTextSize
 import CertificateTemplatesPage from './pages/settings/constructor/certificate/CertificateTemplatesPage'
 import CertificatePaperTypesPage from './pages/settings/constructor/certificate/CertificatePaperTypesPage'
 import CertificateFontsPage from './pages/settings/constructor/certificate/CertificateFontsPage'
+import CertificateTemplateEditPage from './pages/settings/constructor/certificate/CertificateTemplateEditPage'
 import RolesPage from './pages/settings/RolesPage'
 import SuppliersPage from './pages/settings/SuppliersPage'
 import InfoPageEditPage from './pages/settings/InfoPageEditPage'
@@ -101,6 +102,7 @@ export default function App() {
             <Route path="settings/constructor/badges/fonts" element={<BadgeFontsPage />} />
             <Route path="settings/constructor/badges/text-sizes" element={<BadgeTextSizesPage />} />
             <Route path="settings/constructor/certificates/templates" element={<CertificateTemplatesPage />} />
+            <Route path="settings/constructor/certificates/templates/:id" element={<CertificateTemplateEditPage />} />
             <Route path="settings/constructor/certificates/paper-types" element={<CertificatePaperTypesPage />} />
             <Route path="settings/constructor/certificates/fonts" element={<CertificateFontsPage />} />
             <Route path="settings/roles" element={<RolesPage />} />

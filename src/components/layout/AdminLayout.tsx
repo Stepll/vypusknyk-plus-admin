@@ -20,6 +20,7 @@ import NotificationsPopover from '../notifications/NotificationsPopover'
 const { Header, Sider, Content } = Layout
 
 const ROUTE_KEYS = [
+  '/settings/constructor/certificates/templates/',
   '/settings/constructor/certificates/templates',
   '/settings/constructor/certificates/paper-types',
   '/settings/constructor/certificates/fonts',

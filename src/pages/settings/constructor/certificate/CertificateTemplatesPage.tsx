@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   Table, Switch, Button, Drawer, Form, Input, InputNumber,
-  Popconfirm, message, Space, Divider,
+  Popconfirm, message, Space, Divider, Tag,
 } from 'antd'
-import { PictureOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons'
-import { useSearchParams } from 'react-router-dom'
+import { PictureOutlined, PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, SettingOutlined } from '@ant-design/icons'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   getCertificateTemplates, createCertificateTemplate, updateCertificateTemplate,
   deleteCertificateTemplate, uploadCertificateTemplateImage,
@@ -29,6 +29,7 @@ function TemplatePreview({ url }: { url: string | null }) {
 }
 
 export default function CertificateTemplatesPage() {
+  const navigate = useNavigate()
   const [items, setItems]           = useState<CertificateTemplateResponse[]>([])
   const [loading, setLoading]       = useState(true)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -150,11 +151,22 @@ export default function CertificateTemplatesPage() {
       ),
     },
     {
-      title: '',
-      key: 'actions',
+      title: 'Зони',
+      key: 'zones',
       width: 80,
       render: (_: unknown, t: CertificateTemplateResponse) => (
+        t.layoutJson
+          ? <Tag color="green" style={{ fontSize: 11 }}>Налаштовано</Tag>
+          : <Tag color="default" style={{ fontSize: 11 }}>Не задано</Tag>
+      ),
+    },
+    {
+      title: '',
+      key: 'actions',
+      width: 110,
+      render: (_: unknown, t: CertificateTemplateResponse) => (
         <Space>
+          <Button size="small" icon={<SettingOutlined />} onClick={() => navigate(`/settings/constructor/certificates/templates/${t.id}`)} />
           <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(t)} />
           <Popconfirm title="Видалити шаблон?" onConfirm={() => handleDelete(t.id)} okText="Так" cancelText="Ні">
             <Button size="small" danger icon={<DeleteOutlined />} />

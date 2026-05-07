@@ -1,5 +1,5 @@
 import { apiFetch } from './client'
-import type { CertificateTemplateResponse, SaveCertificateTemplateRequest } from './types'
+import type { CertificateTemplateResponse, SaveCertificateTemplateRequest, SaveCertificateTemplateLayoutRequest } from './types'
 
 export function getCertificateTemplates(): Promise<CertificateTemplateResponse[]> {
   return apiFetch('/api/v1/admin/certificate-templates')
@@ -21,4 +21,12 @@ export function uploadCertificateTemplateImage(id: number, file: File): Promise<
   const form = new FormData()
   form.append('image', file)
   return apiFetch(`/api/v1/admin/certificate-templates/${id}/image`, { method: 'POST', body: form })
+}
+
+export function saveCertificateTemplateLayout(id: number, data: SaveCertificateTemplateLayoutRequest): Promise<CertificateTemplateResponse> {
+  return apiFetch(`/api/v1/admin/certificate-templates/${id}/layout`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export function getCertificateTemplateById(id: number): Promise<CertificateTemplateResponse> {
+  return apiFetch(`/api/v1/admin/certificate-templates/${id}`)
 }

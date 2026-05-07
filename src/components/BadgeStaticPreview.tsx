@@ -1,9 +1,8 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 
 const CANVAS_SIZE = 320
-const CX = CANVAS_SIZE / 2
-const CY = CANVAS_SIZE / 2
 const BADGE_RADIUS = 148
+const PADDING_5MM = 19 // 5mm at 96dpi
 
 function drawArcText(
   ctx: CanvasRenderingContext2D,
@@ -12,6 +11,8 @@ function drawArcText(
   fontSize: number,
   fontFamily: string,
   textColor: string,
+  cx: number,
+  cy: number,
 ) {
   const r = BADGE_RADIUS - fontSize / 2 - 4
 
@@ -26,7 +27,7 @@ function drawArcText(
   chars.forEach(ch => { totalWidth += ctx.measureText(ch).width })
   const totalAngle = totalWidth / r
 
-  ctx.translate(CX, CY)
+  ctx.translate(cx, cy)
 
   if (pos === 'top') {
     let angle = -totalAngle / 2
@@ -56,6 +57,88 @@ function drawArcText(
   }
 
   ctx.restore()
+}
+
+function renderBadge(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement | null,
+  transform: Transform,
+  topText: string,
+  bottomText: string,
+  textColor: string,
+  fontSize: number,
+  fontFamily: string,
+  cx: number,
+  cy: number,
+  withWhiteBg = false,
+) {
+  const totalSize = cx * 2
+
+  if (withWhiteBg) {
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, totalSize, totalSize)
+  } else {
+    ctx.clearRect(0, 0, totalSize, totalSize)
+  }
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, BADGE_RADIUS, 0, Math.PI * 2)
+  ctx.fillStyle = '#f0f0f0'
+  ctx.fill()
+  ctx.restore()
+
+  if (img) {
+    const { scale, x, y, rotation } = transform
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(cx, cy, BADGE_RADIUS, 0, Math.PI * 2)
+    ctx.clip()
+
+    const fitScale =
+      Math.max(
+        (BADGE_RADIUS * 2) / img.naturalWidth,
+        (BADGE_RADIUS * 2) / img.naturalHeight,
+      ) * scale
+
+    ctx.translate(cx + x, cy + y)
+    ctx.rotate((rotation * Math.PI) / 180)
+    ctx.drawImage(
+      img,
+      (-img.naturalWidth  * fitScale) / 2,
+      (-img.naturalHeight * fitScale) / 2,
+      img.naturalWidth  * fitScale,
+      img.naturalHeight * fitScale,
+    )
+    ctx.restore()
+  } else {
+    ctx.save()
+    ctx.beginPath()
+    ctx.arc(cx, cy, BADGE_RADIUS, 0, Math.PI * 2)
+    ctx.clip()
+    ctx.fillStyle = '#d1d5db'
+    ctx.font = '48px Arial'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText('📷', cx, cy - 10)
+    ctx.font = '13px Arial'
+    ctx.fillStyle = '#9ca3af'
+    ctx.fillText('Немає фото', cx, cy + 34)
+    ctx.restore()
+  }
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.arc(cx, cy, BADGE_RADIUS - 1, 0, Math.PI * 2)
+  ctx.strokeStyle = 'rgba(233, 30, 140, 0.55)'
+  ctx.lineWidth = 2
+  ctx.setLineDash([6, 5])
+  ctx.stroke()
+  ctx.restore()
+
+  if (topText)    drawArcText(ctx, topText,    'top',    fontSize, fontFamily, textColor, cx, cy)
+  if (bottomText) drawArcText(ctx, bottomText, 'bottom', fontSize, fontFamily, textColor, cx, cy)
 }
 
 interface Transform {
@@ -90,68 +173,9 @@ const BadgeStaticPreview = forwardRef<BadgeStaticPreviewRef, Props>(
       if (!canvas) return
       const ctx = canvas.getContext('2d')
       if (!ctx) return
-
-      ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
-
-      ctx.save()
-      ctx.beginPath()
-      ctx.arc(CX, CY, BADGE_RADIUS, 0, Math.PI * 2)
-      ctx.fillStyle = '#f0f0f0'
-      ctx.fill()
-      ctx.restore()
-
-      if (imgRef.current) {
-        const img = imgRef.current
-        const { scale, x, y, rotation } = photoTransform
-
-        ctx.save()
-        ctx.beginPath()
-        ctx.arc(CX, CY, BADGE_RADIUS, 0, Math.PI * 2)
-        ctx.clip()
-
-        const fitScale =
-          Math.max(
-            (BADGE_RADIUS * 2) / img.naturalWidth,
-            (BADGE_RADIUS * 2) / img.naturalHeight,
-          ) * scale
-
-        ctx.translate(CX + x, CY + y)
-        ctx.rotate((rotation * Math.PI) / 180)
-        ctx.drawImage(
-          img,
-          (-img.naturalWidth  * fitScale) / 2,
-          (-img.naturalHeight * fitScale) / 2,
-          img.naturalWidth  * fitScale,
-          img.naturalHeight * fitScale,
-        )
-        ctx.restore()
-      } else {
-        ctx.save()
-        ctx.beginPath()
-        ctx.arc(CX, CY, BADGE_RADIUS, 0, Math.PI * 2)
-        ctx.clip()
-        ctx.fillStyle = '#d1d5db'
-        ctx.font = '48px Arial'
-        ctx.textAlign = 'center'
-        ctx.textBaseline = 'middle'
-        ctx.fillText('📷', CX, CY - 10)
-        ctx.font = '13px Arial'
-        ctx.fillStyle = '#9ca3af'
-        ctx.fillText('Немає фото', CX, CY + 34)
-        ctx.restore()
-      }
-
-      ctx.save()
-      ctx.beginPath()
-      ctx.arc(CX, CY, BADGE_RADIUS - 1, 0, Math.PI * 2)
-      ctx.strokeStyle = 'rgba(233, 30, 140, 0.55)'
-      ctx.lineWidth = 2
-      ctx.setLineDash([6, 5])
-      ctx.stroke()
-      ctx.restore()
-
-      if (topText)    drawArcText(ctx, topText,    'top',    fontSize, fontFamily, textColor)
-      if (bottomText) drawArcText(ctx, bottomText, 'bottom', fontSize, fontFamily, textColor)
+      const cx = CANVAS_SIZE / 2
+      const cy = CANVAS_SIZE / 2
+      renderBadge(ctx, imgRef.current, photoTransform, topText, bottomText, textColor, fontSize, fontFamily, cx, cy)
     }, [photoTransform, topText, bottomText, textColor, fontSize, fontFamily])
 
     useEffect(() => {
@@ -169,8 +193,19 @@ const BadgeStaticPreview = forwardRef<BadgeStaticPreviewRef, Props>(
     useEffect(() => { draw() }, [draw])
 
     useImperativeHandle(ref, () => ({
-      toDataUrl: () => canvasRef.current?.toDataURL('image/png') ?? '',
-    }))
+      toDataUrl: () => {
+        const pad = PADDING_5MM
+        const paddedSize = CANVAS_SIZE + pad * 2
+        const offscreen = document.createElement('canvas')
+        offscreen.width  = paddedSize
+        offscreen.height = paddedSize
+        const ctx = offscreen.getContext('2d')!
+        const cx  = paddedSize / 2
+        const cy  = paddedSize / 2
+        renderBadge(ctx, imgRef.current, photoTransform, topText, bottomText, textColor, fontSize, fontFamily, cx, cy, true)
+        return offscreen.toDataURL('image/png')
+      },
+    }), [photoTransform, topText, bottomText, textColor, fontSize, fontFamily])
 
     return (
       <canvas
