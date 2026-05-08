@@ -32,6 +32,8 @@ src/
 │   ├── badgeTextColors.ts     # getBadgeTextColors() → BadgeTextColorResponse[]
 │   ├── badgeFonts.ts          # getBadgeFonts() → BadgeFontResponse[]
 │   ├── badgeImages.ts         # getBadgeImages() → BadgeImageResponse[]
+│   ├── appSettings.ts         # AppSettingResponse (key, value, group, label, type), UpdateAppSettingRequest
+│   │                          # GROUP_LABELS map; getAppSettings() → AppSettingResponse[]; updateAppSettings(requests[])
 │   ├── certificateDesigns.ts  # getCertificateDesigns(page,size), getCertificateDesign(id), getCertificateDesignsByUser(userId), deleteCertificateDesign(id)
 │   ├── certificateTemplates.ts # CRUD /admin/certificate-templates + uploadCertificateTemplateImage(id, file)
 │   │                           # saveCertificateTemplateLayout(id, data) → PUT /{id}/layout
@@ -196,6 +198,9 @@ src/
 │                             #   Promotion → /settings/promotions/:id; PromoCode → /settings/promo-codes/:id
 │                             #   UserTask → /settings/tasks/:id
     └── settings/
+        ├── AppSettingsPage.tsx    # Налаштування магазину (/settings/app); групує по group: orders/store/ribbon/badge/certificate/contacts
+        │                          # boolean → Switch, number → InputNumber, string → Input
+        │                          # Одна кнопка "Зберегти зміни" → updateAppSettings (bulk PUT)
         ├── NotificationsPage.tsx  # Таблиця тригерів: new_order, order_status_changed (expandable з per-status дочірніми),
         │                          # new_user. Drawer: таби System/Email/Telegram + Divider перед шаблоном + MetadataTable
         │                          # System: картки адмінів + Select; Email: теги адрес; Telegram: теги user ID
@@ -286,6 +291,7 @@ src/
 /settings/constructor/print-types   → PrintTypesPage
 /settings/constructor/emblems       → EmblemsPage
 /settings/constructor/rules         → RulesPage
+/settings/app                                        → AppSettingsPage
 /settings/notifications                              → NotificationsPage
 /settings/constructor/certificates/templates         → CertificateTemplatesPage
 /settings/constructor/certificates/templates/:id     → CertificateTemplateEditPage
@@ -330,6 +336,7 @@ src/
       Типи паперу    (/settings/constructor/certificates/paper-types)
       Шрифти         (/settings/constructor/certificates/fonts)
   Сповіщення             (/settings/notifications)
+  Налаштування магазину  (/settings/app)
   Знижки та завдання ▶   (підменю)
     Акції                (/settings/promotions)
     Промокоди            (/settings/promo-codes)
