@@ -1,18 +1,52 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  Button, Card, Switch, Input, Select, Table, message, Spin, Tag, Popconfirm,
+  Button, Card, Switch, Input, Select, Table, message, Spin, Tag, Popconfirm, Tooltip, Collapse,
 } from 'antd'
 import {
-  ArrowLeftOutlined, PlusOutlined, DeleteOutlined, SaveOutlined,
+  ArrowLeftOutlined, PlusOutlined, DeleteOutlined, SaveOutlined, InfoCircleOutlined,
 } from '@ant-design/icons'
 import { getDeliveryMethod, updateDeliveryMethod } from '../../api/deliveryMethods'
 import type { DeliveryMethodResponse, DeliveryCheckoutField } from '../../api/types'
 
 type FieldKey = keyof DeliveryCheckoutField
 
+const NP_CITY_EXAMPLE = JSON.stringify({
+  modelName: 'Address',
+  calledMethod: 'searchSettlements',
+  searchParam: 'CityName',
+  dataPath: 'data[0].Addresses',
+  labelKey: 'Present',
+  refKey: 'DeliveryCityRef',
+})
+
+const NP_WAREHOUSE_EXAMPLE = JSON.stringify({
+  modelName: 'Address',
+  calledMethod: 'getWarehouses',
+  searchParam: 'FindByString',
+  dataPath: 'data',
+  labelKey: 'Description',
+  refKey: 'Ref',
+  dependsOn: 'city',
+  dependsOnParam: 'CityRef',
+})
+
+const OPTIONS_JSON_TOOLTIP = (
+  <div style={{ maxWidth: 360, fontSize: 12 }}>
+    <div style={{ marginBottom: 6 }}>Конфіг для селекту (Nova Poshta):</div>
+    <div style={{ marginBottom: 4 }}><b>Місто:</b></div>
+    <pre style={{ fontSize: 11, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{NP_CITY_EXAMPLE}</pre>
+    <div style={{ marginBottom: 4 }}><b>Відділення:</b></div>
+    <pre style={{ fontSize: 11, margin: 0, whiteSpace: 'pre-wrap' }}>{NP_WAREHOUSE_EXAMPLE}</pre>
+  </div>
+)
+
 function newField(): DeliveryCheckoutField {
   return { key: '', label: '', type: 'input', required: false, isEnabled: true, optionsJson: '' }
+}
+
+function parseSettings(raw: string): Record<string, unknown> {
+  try { return JSON.parse(raw || '{}') } catch { return {} }
 }
 
 export default function DeliveryMethodDetailPage() {
@@ -24,7 +58,9 @@ export default function DeliveryMethodDetailPage() {
   const [saving, setSaving] = useState(false)
 
   const [isEnabled, setIsEnabled] = useState(false)
-  const [settings, setSettings] = useState('{}')
+  const [apiUrl, setApiUrl] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [extraSettings, setExtraSettings] = useState('{}')
   const [fields, setFields] = useState<DeliveryCheckoutField[]>([])
 
   useEffect(() => {
@@ -32,7 +68,11 @@ export default function DeliveryMethodDetailPage() {
       .then(m => {
         setMethod(m)
         setIsEnabled(m.isEnabled)
-        setSettings(m.settings)
+        const obj = parseSettings(m.settings)
+        setApiUrl(String(obj.apiUrl ?? ''))
+        setApiKey(String(obj.apiKey ?? ''))
+        const { apiUrl: _u, apiKey: _k, ...rest } = obj
+        setExtraSettings(Object.keys(rest).length ? JSON.stringify(rest, null, 2) : '{}')
         setFields(m.checkoutFields)
       })
       .catch(() => message.error('Помилка завантаження'))
@@ -48,9 +88,21 @@ export default function DeliveryMethodDetailPage() {
   }
 
   async function handleSave() {
+    let extra: Record<string, unknown> = {}
+    try { extra = JSON.parse(extraSettings) } catch { message.error('Некоректний JSON в додаткових налаштуваннях'); return }
+
+    const merged: Record<string, unknown> = {}
+    if (apiUrl) merged.apiUrl = apiUrl
+    if (apiKey) merged.apiKey = apiKey
+    Object.assign(merged, extra)
+
     setSaving(true)
     try {
-      const updated = await updateDeliveryMethod(Number(id), { isEnabled, settings, checkoutFields: fields })
+      const updated = await updateDeliveryMethod(Number(id), {
+        isEnabled,
+        settings: JSON.stringify(merged),
+        checkoutFields: fields,
+      })
       setMethod(updated)
       message.success('Збережено')
     } catch {
@@ -116,14 +168,22 @@ export default function DeliveryMethodDetailPage() {
       ),
     },
     {
-      title: 'Options JSON',
+      title: (
+        <span>
+          Options JSON{' '}
+          <Tooltip title={OPTIONS_JSON_TOOLTIP} overlayStyle={{ maxWidth: 420 }}>
+            <InfoCircleOutlined style={{ color: '#8c8c8c', cursor: 'pointer' }} />
+          </Tooltip>
+        </span>
+      ),
       key: 'optionsJson',
       render: (_: unknown, f: DeliveryCheckoutField, i: number) => (
         <Input
           size="small"
           value={f.optionsJson}
-          placeholder='{"url": "..."}'
+          placeholder={f.type === 'select' ? '{"modelName":"Address","calledMethod":"..."}' : '—'}
           onChange={e => updateField(i, 'optionsJson', e.target.value)}
+          disabled={f.type !== 'select'}
         />
       ),
     },
@@ -182,20 +242,51 @@ export default function DeliveryMethodDetailPage() {
         </div>
       </div>
 
-      {/* Settings JSON */}
+      {/* API Settings */}
       <Card
-        title="Налаштування (JSON)"
+        title="Налаштування API"
         style={{ marginBottom: 16 }}
         size="small"
-        extra={<span style={{ color: '#8c8c8c', fontSize: 12 }}>API ключі та інтеграції</span>}
+        extra={<span style={{ color: '#8c8c8c', fontSize: 12 }}>Ключі для інтеграції з службою доставки</span>}
       >
-        <Input.TextArea
-          value={settings}
-          onChange={e => setSettings(e.target.value)}
-          autoSize={{ minRows: 4, maxRows: 12 }}
-          style={{ fontFamily: 'monospace', fontSize: 13 }}
-          placeholder="{}"
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>API URL</div>
+              <Input
+                value={apiUrl}
+                onChange={e => setApiUrl(e.target.value)}
+                placeholder="https://api.novaposhta.ua/v2.0/json/"
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, color: '#8c8c8c', marginBottom: 4 }}>API Key</div>
+              <Input.Password
+                value={apiKey}
+                onChange={e => setApiKey(e.target.value)}
+                placeholder="Ключ API"
+              />
+            </div>
+          </div>
+
+          <Collapse
+            ghost
+            size="small"
+            items={[{
+              key: 'extra',
+              label: <span style={{ fontSize: 12, color: '#8c8c8c' }}>Додаткові налаштування (JSON)</span>,
+              children: (
+                <Input.TextArea
+                  value={extraSettings}
+                  onChange={e => setExtraSettings(e.target.value)}
+                  autoSize={{ minRows: 3, maxRows: 8 }}
+                  style={{ fontFamily: 'monospace', fontSize: 12 }}
+                  placeholder="{}"
+                />
+              ),
+            }]}
+          />
+        </div>
       </Card>
 
       {/* Checkout Fields */}
